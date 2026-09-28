@@ -1,0 +1,10 @@
+# venvs, model binaries, caches — never commit
+.venv/
+__pycache__/
+*.pyc
+course-creator/tools/kokoro/.venv/
+course-creator/tools/kokoro/models/*.onnx
+course-creator/tools/kokoro/models/*.bin
+course-creator/tools/kokoro/__pycache__/
+course-tts/tools/kokoro/models/*.onnx
+course-tts/tools/kokoro/models/*.bin

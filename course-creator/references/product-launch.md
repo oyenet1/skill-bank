@@ -1,0 +1,9 @@
+# Product Launch Video Handoff
+
+Use this for a course, skill, or other product launch video when the requested renderer is Remotion. The independent `product-launch-remotion` skill owns the full screenshot-to-video workflow when installed; this reference keeps the course bundle able to coordinate it.
+
+Accept screenshots alone, or combine them with a product URL, repository, course map, sample lesson, founder footage, or supplied narration. Inspect screenshots and read available product information. Record what each screenshot actually shows and which claims it supports. Do not infer a successful click, automatic process, or customer result from a static screen. A screenshot-based demo may pan, zoom, and highlight real UI; use a real recording or matching before/after screenshots to show a completed interaction.
+
+Write a product brief, script, storyboard, and per-video `style.md` with colors, fonts, tone, frame descriptions, and an effects bible before authoring. Tell one clear story: recognizable problem, product reveal, genuine workflow, supported benefit, one verified CTA. For a course product, show an actual sample lesson, slide, project, or learner artifact. Use course-local images and icons where useful. Build editable Remotion scenes, render an MP4 when available, and inspect frames, captions, audio, legibility, and claim accuracy. Load the installed mandatory video entrypoint and relevant Remotion skill references; consult current documentation for APIs.
+
+Store a course launch video under `marketing/product-launch/`. Register script, style, storyboard, Remotion source entry, and rendered MP4 in course-level `artifacts` only when those files exist. In `artifactSources`, reference lesson inputs as `lesson-id.artifactName`; mark dependent outputs stale when a source screenshot, lesson, offer, or narration changes. TTS and CapCut handoff are separate requested outputs.

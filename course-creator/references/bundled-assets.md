@@ -1,0 +1,9 @@
+# Bundled Images and Icons
+
+The course-creator bundle includes 580 SVG files under `assets/`. Browse these before searching the web when a lesson needs a recognizable software, hardware, browser, operating-system, cloud, database, or tool icon. The folders are `browsers-web/`, `cloud/`, `databases/`, `devops-tools/`, `editors-ides/`, `extras/`, `icons/`, `logo/`, and `os/`. The `audio/` folder contains local Kokoro sample WAVs, not course narration to reuse.
+
+Search by the concept or tool name, then inspect the actual SVG and choose the exact variant that matches what is taught. For example, a browser lesson might compare files from `browsers-web/`, while a later programming lesson may use a language icon from `icons/`. A logo identifies a product; it cannot by itself explain a process such as how files are stored. Pair icons with labels, arrows, screenshots, or a diagram when the learner needs to see the mechanism.
+
+Copy each selected SVG into the course's `assets/` folder. Reference that course-local copy from lesson notes, Slidev, PDFs, and video, so exported materials still work if the skill is moved or uninstalled. Add a record to the course `assets/manifest.json` with the bundled path, local copy, concept IDs, caption, alt text, and known provenance or use terms. Do not claim a blanket license for this collection: verify the selected logo or icon's origin and allowed public use when publishing, and record `license: null` with a verification note when unknown. Respect trademark names and do not use a logo to imply endorsement.
+
+Keep a small, relevant set per lesson. Check visual consistency, contrast, legibility at slide and phone size, and whether the icon's color or label could mislead beginners. Use teacher-supplied images or a new illustration when they explain the concept more clearly.

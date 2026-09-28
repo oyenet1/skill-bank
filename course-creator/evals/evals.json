@@ -3,20 +3,80 @@
   "evals": [
     {
       "id": 1,
-      "prompt": "Create a fullstack course for a beginner who wants Nuxt.js + Hono.js, 16 weeks, 10 hours per week, and AI-driven development enabled. Include chapter lessons, page-by-page content, exercises, assignments, and 7 projects.",
-      "expected_output": "Includes complete intake handling, dependency-ordered foundations-first curriculum, AI workflow chapter, minimum exercises and assignments, and fullstack project count with at least one realtime project and societal usefulness.",
+      "prompt": "Map an instructor-led programming course for children with no computer experience. Start from what a computer is and reach a first web page. List the entire table of contents and proposed projects, but do not write lessons or media yet.",
+      "expected_output": "Creates only a valid course-plan.json and synchronized README; hierarchy is sections > chapters > lessons > concepts; computer basics precede code; each chapter has a small project; at least three small projects precede the first section project.",
       "files": []
     },
     {
       "id": 2,
-      "prompt": "Build a backend course for Go + Fiber for someone transitioning from frontend. Duration is 12 weeks, 8 hours weekly. Must emphasize UML, ERD, DB design, and system design before advanced APIs.",
-      "expected_output": "Starts from internet and architecture fundamentals, includes backend-first sequencing, terminology explanations, devops basics, and at least 3 backend projects.",
+      "prompt": "Using an existing course map, move the lesson on file extensions after the operating-system lesson. Keep its ID and existing notes path. Check prerequisites and update the table of contents only where needed.",
+      "expected_output": "Updates map order and generated table of contents without regenerating lessons or media; preserves stable IDs and teacher edits; validates prerequisite order and artifact paths.",
       "files": []
     },
     {
       "id": 3,
-      "prompt": "Generate a frontend course using TypeScript and Nuxt.js for a total beginner in 10 weeks at 6 hours/week. Keep explanations simple enough for a 10-year-old and include 4 practical projects.",
-      "expected_output": "Teaches HTML-CSS-JS-TypeScript-Nuxt in order, uses simple analogies, includes minimum practice requirements, and delivers at least 4 frontend projects.",
+      "prompt": "Write only the lesson on file extensions for an absolute beginner. Use my story about a child sorting school files. Include a practical file task but no exercise bank.",
+      "expected_output": "Creates one lesson with example first, What/Why/Where/When/How, a visual explanation plan, demonstration, and learner check; does not create unrelated lessons or an exercise bank.",
+      "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "Create fifteen optional practice exercises and a publishable online assignment package for the file extensions lesson. Keep answers separate from learner materials.",
+      "expected_output": "Produces requested exercises and an assignment with instructions, submission requirements, starter material if needed, rubric, and separate teacher guidance; does not build hosting or student accounts.",
+      "files": []
+    },
+    {
+      "id": 5,
+      "prompt": "Create the Slidev deck for the hardware lesson. Use images in the course folder first; if none fits, find a reusable image with credit, then generate or draw one. Export a slide handout PDF only if requested later.",
+      "expected_output": "Creates one editable, concept-mapped Slidev deck and storyboard; records source, usage terms, alt text, and caption for visuals; does not export PDF or video.",
+      "files": []
+    },
+    {
+      "id": 6,
+      "prompt": "Turn the hardware lesson deck and my recorded teacher video plus transcript into a Remotion lesson video. Place me beside the diagram for the demonstration, add captions, and prepare a CapCut Desktop editing package.",
+      "expected_output": "Loads relevant video skills, writes shared and per-video style.md including an effects bible, aligns scenes and captions to footage, creates editable Remotion source and MP4 when rendering works, and packages separate CapCut media with a timecoded editing guide.",
+      "files": []
+    },
+    {
+      "id": 7,
+      "prompt": "Create a beginner lesson about the water cycle for adult learners, then make just its notes as a PDF and an online page source. No programming stack, fixed exercise count, slide deck, or video is needed.",
+      "expected_output": "Handles a nontechnical subject, creates only the lesson and requested notes outputs, uses appropriate factual sources, and does not impose programming requirements or unrelated assets.",
+      "files": []
+    },
+    {
+      "id": 8,
+      "prompt": "Expand the written course only: create a chapter overview, one lesson, a weekly schedule, and an alphabetical index. Use the existing course map and preserve its project ideas. No slides or video are requested.",
+      "expected_output": "Produces the selected written assets with navigation and stable IDs, uses the preserved text-course guidance where helpful, and creates no media outputs.",
+      "files": []
+    },
+    {
+      "id": 9,
+      "prompt": "Use Kokoro to narrate only this supplied lesson script. Save editable text and a WAV; do not create slides, captions, or video.",
+      "expected_output": "Uses the local Kokoro workflow to create and verify a WAV, records narrationText and narrationAudio with their dependency, and does not create unrelated outputs.",
+      "files": []
+    },
+    {
+      "id": 10,
+      "prompt": "For the existing file extensions lesson, make a Slidev deck, Kokoro narration, and Remotion video based on the deck. Leave the written notes alone, and record what depends on what so later edits can be refreshed selectively.",
+      "expected_output": "Creates only the requested deck, narration, and video artifacts; aligns them by stable concept and beat IDs; writes a per-video style.md; records actual artifactSources and staleArtifacts in the course map.",
+      "files": []
+    },
+    {
+      "id": 11,
+      "prompt": "I sell beginner coding skills. Write five opening hooks and one short enrollment post for parents whose children have never used a computer. Use the existing course map; there is a sample lesson but no verified job promise, certificate, or limited-time offer. Do not write lessons or make a video.",
+      "expected_output": "Uses specific beginner learner problems and real sample-lesson or project proof, gives five distinct honest hooks and one clear next step, avoids invented guarantees or urgency, and creates only marketing copy.",
+      "files": []
+    },
+    {
+      "id": 12,
+      "prompt": "Make a Slidev lesson about browsers using suitable icons already inside the course-creator assets folder. Keep the deck portable, include alt text and source details, and do not make a video.",
+      "expected_output": "Inspects matching bundled SVGs, copies selected useful icons into the course, uses them in a concept-mapped deck, records provenance and any unresolved public reuse terms, and creates no video.",
+      "files": []
+    },
+    {
+      "id": 13,
+      "prompt": "Launch my coding course as a product. I supplied screenshots of the course page, one sample lesson, and a learner project, plus a URL with product details. Create a Remotion motion ad that shows the real screens. Do not invent enrollment claims or use TTS unless I ask.",
+      "expected_output": "Reads the supplied product source and screenshots, writes a claim-grounded brief, storyboard, and per-video style.md, creates editable Remotion source and MP4 when rendering works, records course-level artifact dependencies, and keeps unshown interactions out of the demo.",
       "files": []
     }
   ]

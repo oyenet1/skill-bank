@@ -1,45 +1,28 @@
-# PDF-Derived Roadmap Notes
+# Roadmap Notes for Written Technical Courses
 
-This file summarizes the local roadmap PDFs in the repository:
-- backend.pdf
-- frontend.pdf
-- devops.pdf
+These text notes preserve the original frontend, backend, and DevOps roadmap guidance. They are planning prompts, not a substitute for current roadmap pages or official documentation. The original PDFs are not part of this repository.
 
-Use these notes as structural guidance when building course outlines.
+## Common foundations
 
-## Common Foundation Across Tracks
+- Internet basics: HTTP, HTTPS, domains, hosting, DNS, and browser behavior.
+- Git, repository hosting, security basics, and practical collaboration.
+- Teach a prerequisite before the task or project that uses it.
 
-- Internet basics: HTTP, HTTPS, domain, hosting, DNS, browser behavior
-- Git and repository hosting
-- Security basics and best practices
+## Frontend emphasis
 
-## Frontend Emphasis
+- HTML → CSS → JavaScript fundamentals; TypeScript if selected.
+- Package management and build tooling after language basics.
+- Framework and rendering choices, browser APIs, performance, testing, and deployment.
 
-- HTML, CSS, JavaScript fundamentals in strict dependency order
-- Package managers and build tooling
-- Framework selection and SSR/static paths
-- Browser APIs, performance, testing, and deployment
+## Backend emphasis
 
-## Backend Emphasis
+- Language and command-line foundations, HTTP and API styles.
+- Data modeling and relational or document databases as the target requires; indexing, transactions, and migrations when learners need them.
+- Authentication, caching, testing, architecture, infrastructure, and observability in concrete project contexts.
 
-- Language choice and version control first
-- API styles, auth, caching, testing
-- Database depth: relational and NoSQL, indexing, transactions, migrations
-- Architecture and scaling patterns
-- Infrastructure and observability basics
+## DevOps emphasis
 
-## DevOps Emphasis
+- Operating systems, terminal, networking, and protocols.
+- Containers, deployment, CI/CD, infrastructure tools, monitoring, logs, and cloud options when relevant to the course goal.
 
-- OS, terminal, networking, protocols
-- Containers and orchestration
-- CI/CD and infrastructure tooling
-- Monitoring, logs, observability, and GitOps
-- Cloud and deployment options
-
-## Course-Creation Guidance
-
-When producing a curriculum:
-- Start from foundational internet concepts
-- Preserve dependency order
-- Add practical exercises and project milestones at each stage
-- Include deployment and operations fundamentals before final capstones
+Use these topic groups to spot gaps in a technical table of contents. Keep the actual course sized to the learner's level, time, and projects; provide a practical checkpoint at each stage.
