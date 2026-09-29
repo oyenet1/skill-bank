@@ -11,7 +11,7 @@ up front instead of failing mid-render.
 | `slide-decks` | `node` · `npx`/`pnpm` | `node --version` · `npx slidev --version` |
 | `explainer-video` (motion graphics) | `node` · `ffmpeg` · Playwright | `node --version` · `ffmpeg -version` |
 | `product-launch-video` | `node` · `npm`/`bun` · `ffmpeg` · Remotion | `npx remotion versions` · `ffmpeg -version` |
-| `content-authoring`, `sales-copy` | none | — |
+| `content-authoring`, `marketing-copy` | none | — |
 | Brand extraction from a URL | web fetch tooling | the environment's web fetch capability |
 | asset/object downloads | network | reachable asset source |
 

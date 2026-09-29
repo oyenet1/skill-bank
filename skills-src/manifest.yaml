@@ -51,9 +51,9 @@ capabilities:
     bundle: course-creator-voice-narration
     modules: [intake, brand, voice, preflight]
 
-  sales-copy:
-    standalone: sales-copy
-    bundle: course-creator-sales-copy
+  marketing-copy:
+    standalone: marketing-copy
+    bundle: course-creator-marketing-copy
     modules: [intake, brand]
 
   product-launch-video:
