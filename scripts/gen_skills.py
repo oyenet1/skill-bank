@@ -61,8 +61,10 @@ def resolve_tokens(text: str, mode: str, caps: dict, modules: dict, depth: int =
             prefix = "" if depth else "references/"
             return f"[{label or key}]({prefix}{fname})"
         if kind == "doc":
-            prefix = "../" if depth else "../../"
-            return f"[{label or key}]({prefix}references/{key})"
+            # Parent reference docs ship only with the course-creator bundle.
+            if mode == "standalone":
+                return f"`{key}`"
+            return f"[{label or key}](../../references/{key})"
         if kind == "sibling":
             other = caps[key]
             if mode == "bundle":

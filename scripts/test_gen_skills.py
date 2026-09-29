@@ -75,6 +75,18 @@ class Frontmatter(unittest.TestCase):
                 f"{cap}: bundle name must be namespaced",
             )
 
+    def test_standalone_never_links_parent_references(self):
+        """The course-creator reference docs are not shipped with a standalone target."""
+        for cap, spec in gen_skills.load_manifest()["capabilities"].items():
+            if not spec.get("standalone"):
+                continue
+            skill = (REPO / spec["standalone"] / "SKILL.md").read_text()
+            self.assertNotIn(
+                "../../references/",
+                skill,
+                f"{cap}: standalone target points at a parent reference doc",
+            )
+
 
 class CraftFirst(unittest.TestCase):
     """A standalone skill must not be framed as course-only.

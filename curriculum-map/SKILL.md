@@ -1,16 +1,6 @@
 ---
-standalone:
-  name: curriculum-map
-  description: >-
-    Plan or revise a learning structure — sections, units, concepts, prerequisites
-    and a simple-to-complex project ladder — from any brief or existing outline.
-    Keeps stable IDs so items can be reordered without breaking links. Use for
-    curriculum, workshop or learning-path planning.
-bundle:
-  name: course-creator-map
-  description: >-
-    Plan or revise a course hierarchy, prerequisite order, table of contents, and
-    simple-to-complex project ladder inside the course-creator bundle.
+name: curriculum-map
+description: Plan or revise a learning structure — sections, units, concepts, prerequisites and a simple-to-complex project ladder — from any brief or existing outline. Keeps stable IDs so items can be reordered without breaking links. Use for curriculum, workshop or learning-path planning.
 ---
 
 # Curriculum Map
@@ -20,7 +10,7 @@ and projects, and keep a readable outline beside it.
 
 ## 1. Intake
 
-Read {{ref:intake}}. Ask only what changes the map: the subject, who it is for,
+Read [intake](references/intake.md). Ask only what changes the map: the subject, who it is for,
 their real starting level, what they must be able to do at the end, and roughly
 how long it should run. Batch the rest. Do not write full lessons when a map was
 requested.
@@ -46,25 +36,6 @@ actually move, and keep unrelated material intact.
 Confirm the hierarchy, the prerequisite order, the project ladder and the
 synchronized outline. Say what changed and what was deliberately left alone.
 
-{{mode:bundle}}
-## Course integration
-
-Read the {{doc:course-blueprint.md|course blueprint}}. Use `course-plan.json` as
-the ordered source and keep the human-readable table of contents in the course
-`README.md`.
-
-After a structural change, run:
-
-```
-python {{asset:scripts/validate_course.py}} <course-root>/course-plan.json --sync-toc
-```
-
-It replaces only its marked table-of-contents block. Register existing artifacts
-and their real dependencies; mark affected derived files stale after source
-changes. Keep unrelated teacher-written material intact.
-{{/mode}}
-
-{{mode:standalone}}
 ## Standalone output
 
 Write the plan where the requester names it — `curriculum-plan.json` plus a
@@ -72,4 +43,3 @@ readable outline beside it. If a `course-plan.json` already exists and the
 requester points at it, use the course layout instead: keep the human-readable
 table of contents in the course `README.md`, and validate with
 `course-creator/scripts/validate_course.py` when that bundle is installed.
-{{/mode}}

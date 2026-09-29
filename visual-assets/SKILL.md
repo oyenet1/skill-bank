@@ -1,6 +1,6 @@
 ---
-name: course-creator-assets
-description: Find, inspect, copy, generate, or draw a teaching image or icon for a course lesson, with provenance and accessible description. Falls back to the bundled 580-SVG library, then downloads or draws what is missing.
+name: visual-assets
+description: Find, inspect, copy, draw or generate an illustration, icon or diagram with recorded provenance, licence and alt text. Sources from supplied files, the asset bank, or online, and generates only what cannot be found. Use when a visual is needed and nothing suitable exists yet.
 ---
 
 # Visual Assets
@@ -50,17 +50,9 @@ sighted reader would get from the image.
 [brand](references/brand.md) governs imagery style: photographic, illustrated, ui-only or mixed,
 plus icon and illustration rules. Follow it when one exists.
 
+## Standalone output
 
-
-
-
-## Course integration
-
-Read the [bundled asset guide](../../references/bundled-assets.md) and the visual-sourcing
-section of the [media workflow](../../references/visual-media.md). Inspect the 580 bundled
-SVGs before going online — they cover most icons, logos and technology marks.
-
-Copy each selected file into the course `assets/` folder and reference that
-course-local copy from lesson notes, Slidev, PDFs and video, so exported material
-still works if the skill is moved or uninstalled. Record the bundled path, the
-local copy, concept IDs, caption and alt text in the course `assets/manifest.json`.
+Use the project's `assets/` folder when one exists, otherwise the directory the
+requester names, and keep the manifest beside the files. If a `course-plan.json`
+is present and the requester points at a mapped lesson, record the asset against
+that lesson's artifacts as well.

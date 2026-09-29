@@ -1,4 +1,11 @@
 ---
+standalone:
+  name: visual-assets
+  description: >-
+    Find, inspect, copy, draw or generate an illustration, icon or diagram with
+    recorded provenance, licence and alt text. Sources from supplied files, the
+    asset bank, or online, and generates only what cannot be found. Use when a
+    visual is needed and nothing suitable exists yet.
 bundle:
   name: course-creator-assets
   description: >-
@@ -7,21 +14,21 @@ bundle:
     580-SVG library, then downloads or draws what is missing.
 ---
 
-# Course Assets
+# Visual Assets
 
-Read the {{doc:bundled-assets.md|bundled asset guide}} and the
-visual-sourcing section of the {{doc:visual-media.md|media workflow}}, then
-the object library in {{ref:objects}}.
+Resolve the object or image the work needs, place it where the project can use it,
+and record where it came from. The object vocabulary is in {{ref:objects}}.
 
 ## 1. Source in this order
 
 1. **Requester-supplied files** — inspect them first and at readable size.
-2. **The asset bank** — the bundled 580 SVGs plus the project's own assets.
+2. **The asset bank** — the project's own assets, plus the bundled library when
+   the course-creator bundle is installed.
 3. **Go online** — find a reusable source and record its URL, licence and
    retrieval date. Verify the terms before publication.
 4. **Generate or draw it** — only when it cannot be found online, or when it must
    be original or animated. Prefer an editable SVG or diagram; use AI image
-   generation last, and label generated art as generated.
+   generation last, and **label generated art as generated**.
 
 Never leave a gap because an object was missing. Go online, then generate.
 
@@ -32,24 +39,46 @@ imitation.
 
 ## 2. Record and place
 
-Copy selected media into the course `assets/` folder so notes, Slidev, PDF and
+Copy selected media into the project's assets folder so notes, slides, PDFs and
 video all use the same portable file. Add a record to `assets/manifest.json`:
 
-- source, original bundled path or URL
+- source — original bundled path, URL, or "generated"
 - known use terms, or a pending-verification note
-- concept IDs it supports
+- the concepts or sections it supports
 - caption and alt text
 - retrieval date for anything downloaded
 
-Do not claim a blanket licence for the bundled collection. Verify a selected
-logo or icon's origin and allowed public use when publishing, and record
-`license: null` with a verification note when unknown. Respect trademark names.
+Do not claim a blanket licence for a shared collection. Verify a selected logo or
+icon's origin and allowed public use when publishing, and record `license: null`
+with a verification note when unknown. Respect trademark names.
 
 ## 3. Check the result
 
 Inspect the visual at its intended size and against its intended background.
-Confirm contrast, legibility of any label, and that the alt text describes what
-a sighted reader would get from the image.
+Confirm contrast, legibility of any label, and that the alt text describes what a
+sighted reader would get from the image.
 
 {{ref:brand}} governs imagery style: photographic, illustrated, ui-only or mixed,
 plus icon and illustration rules. Follow it when one exists.
+
+{{mode:bundle}}
+## Course integration
+
+Read the {{doc:bundled-assets.md|bundled asset guide}} and the visual-sourcing
+section of the {{doc:visual-media.md|media workflow}}. Inspect the 580 bundled
+SVGs before going online — they cover most icons, logos and technology marks.
+
+Copy each selected file into the course `assets/` folder and reference that
+course-local copy from lesson notes, Slidev, PDFs and video, so exported material
+still works if the skill is moved or uninstalled. Record the bundled path, the
+local copy, concept IDs, caption and alt text in the course `assets/manifest.json`.
+{{/mode}}
+
+{{mode:standalone}}
+## Standalone output
+
+Use the project's `assets/` folder when one exists, otherwise the directory the
+requester names, and keep the manifest beside the files. If a `course-plan.json`
+is present and the requester points at a mapped lesson, record the asset against
+that lesson's artifacts as well.
+{{/mode}}

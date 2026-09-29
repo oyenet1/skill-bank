@@ -22,10 +22,12 @@ modules:
 capabilities:
 
   map:
+    standalone: curriculum-map
     bundle: course-creator-map
     modules: [intake]
 
   assets:
+    standalone: visual-assets
     bundle: course-creator-assets
     modules: [intake, brand, objects]
 
