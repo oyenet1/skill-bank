@@ -8,5 +8,5 @@ course-creator/tools/kokoro/models/*.bin
 course-creator/tools/kokoro/__pycache__/
 course-creator/tools/pockettts/.venv/
 course-creator/tools/pockettts/__pycache__/
-course-tts/tools/kokoro/models/*.onnx
-course-tts/tools/kokoro/models/*.bin
+voice-narration/tools/kokoro/models/*.onnx
+voice-narration/tools/kokoro/models/*.bin

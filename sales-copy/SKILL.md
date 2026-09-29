@@ -1,5 +1,5 @@
 ---
-name: course-marketing
+name: sales-copy
 description: Write honest, attention-grabbing marketing copy and scripts for selling a course or skill, including hooks, listings, landing pages, posts, emails, and short video ads. Use for promotional requests, not ordinary lesson writing.
 ---
 
@@ -13,6 +13,6 @@ For selling beginner programming skills, speak plainly about the first useful ac
 
 Write several hook options when requested, and make each one concrete enough to test. Match a CTA to a real destination such as a syllabus, sample lesson, waitlist, or enrollment page. Verify price, dates, seat limits, certificates, support, job outcomes, testimonials, and guarantees before using them. Do not invent figures, reviews, urgency, or learner success. Use local context and payment language naturally when relevant.
 
-A copy script may stand alone. If the teacher also requests slides, TTS, or video, pass the chosen script and stable beat IDs to those skills; do not produce extra formats by default. For a screenshot-based product launch ad in Remotion, use `product-launch-remotion` when installed. For video production, use the installed mandatory video entrypoint and relevant video skill, write a per-video `style.md`, and show real course material as proof. Review mobile caption legibility and keep one CTA visible at the end.
+A copy script may stand alone. If the teacher also requests slides, TTS, or video, pass the chosen script and stable beat IDs to those skills; do not produce extra formats by default. For a screenshot-based product launch ad in Remotion, use `product-launch-video` when installed. For video production, use the installed mandatory video entrypoint and relevant video skill, write a per-video `style.md`, and show real course material as proof. Review mobile caption legibility and keep one CTA visible at the end.
 
 The source patterns were adapted from the LodgeStatus marketing Markdown collection: buyer specificity, question/promise/story hooks, problem-to-proof sequencing, human presentation, honest evidence, and a single action. This entry point works from a brief alone; when the course-creator bundle is also available, its marketing copy reference provides more examples.

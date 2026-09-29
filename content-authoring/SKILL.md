@@ -1,5 +1,5 @@
 ---
-name: course-text
+name: content-authoring
 description: "Write or revise the written part of a course: maps, chapters, lessons, notes, projects, exercises, assignments, indexes, schedules, and text PDF sources. Use when the teacher wants text learning materials without media production."
 ---
 

@@ -1,5 +1,5 @@
 ---
-name: course-slides
+name: slide-decks
 description: Create or revise an editable Slidev teaching deck, storyboard, or slide handout PDF for one lesson or concept. Use for slide output whether or not a full course or video exists.
 ---
 

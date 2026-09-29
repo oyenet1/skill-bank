@@ -1,5 +1,5 @@
 ---
-name: course-creator-slides
+name: course-creator-slide-decks
 description: Build or revise one editable Slidev lesson deck, storyboard, or slide PDF within the course-creator bundle.
 ---
 

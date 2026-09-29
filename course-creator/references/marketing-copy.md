@@ -36,7 +36,7 @@ For a Nigerian audience, use familiar contexts and clear local payment language 
 
 Keep promotional artifacts separate from lesson artifacts in a `marketing/` folder when there is a course root. Register them in course-level `artifacts` when they belong to the whole course, or a lesson's `artifacts` when they sell that lesson. A copy brief or script may be produced alone; slides, TTS, and video are separate requested outputs and can use that script as an input. Record those real dependencies in `artifactSources`, using `node-id.artifactName` for an input owned by another node.
 
-For a motion-led launch ad based on product screenshots, use the independent `product-launch-remotion` skill when available, or the course bundle's [product launch handoff](product-launch.md). Inspect the real screens and product information before adapting this copy into a demo story.
+For a motion-led launch ad based on product screenshots, use the independent `product-launch-video` skill when available, or the course bundle's [product launch handoff](product-launch.md). Inspect the real screens and product information before adapting this copy into a demo story.
 
 ## Source notes
 

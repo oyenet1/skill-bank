@@ -8,7 +8,7 @@ metadata:
 
 # Course Creator
 
-Help a teacher build one useful part of a course at a time. A course is **sections → chapters → lessons → concepts**. Each later concept depends only on knowledge already taught or introduced immediately before its use. Preserve the teacher's choices about audience, subject, delivery, materials, and which asset to make next. This parent skill contains the focused subskills below; read the relevant subskill for each requested output. Top-level `course-text`, `course-slides`, `course-video`, `course-tts`, `course-marketing`, and `product-launch-remotion` remain independent entry points when installed separately.
+Help a teacher build one useful part of a course at a time. A course is **sections → chapters → lessons → concepts**. Each later concept depends only on knowledge already taught or introduced immediately before its use. Preserve the teacher's choices about audience, subject, delivery, materials, and which asset to make next. This parent skill contains the focused subskills below; read the relevant subskill for each requested output. Top-level `content-authoring`, `slide-decks`, `explainer-video`, `voice-narration`, `sales-copy`, and `product-launch-video` remain independent entry points when installed separately.
 
 ## Choose one action
 
@@ -17,13 +17,13 @@ Identify the requested action and target before generating anything. Ask only fo
 | Request | Result | Subskill to read |
 |---|---|---|
 | Plan or reorder a course | `course-plan.json` plus a readable table of contents, prerequisites, and proposed projects | [course map](subskills/course-creator-map/SKILL.md) |
-| Develop a chapter, lesson, concept, project, notes, exercises, assignment, index, schedule, or text PDF | Write only the selected teaching content or asset | [course text](subskills/course-creator-text/SKILL.md) |
+| Develop a chapter, lesson, concept, project, notes, exercises, assignment, index, schedule, or text PDF | Write only the selected teaching content or asset | [content authoring](subskills/course-creator-content-authoring/SKILL.md) |
 | Source or create a visual | Resolve a relevant teaching image or icon and record provenance and alt text | [course assets](subskills/course-creator-assets/SKILL.md) |
-| Create a Slidev deck or slide PDF | Create the selected lesson deck or export it | [course slides](subskills/course-creator-slides/SKILL.md) |
-| Generate speech from text | Produce only the requested script and Kokoro WAV narration | [course TTS](subskills/course-creator-tts/SKILL.md) |
-| Create an educational video or CapCut handoff | Produce the selected lesson video artifacts and editing directions | [course video](subskills/course-creator-video/SKILL.md) |
-| Sell a course or skill | Write only the requested hook, listing, page, post, email, or promotional script | [course marketing](subskills/course-creator-marketing/SKILL.md) |
-| Launch a product with a Remotion ad or screenshot demo | Build a source-grounded product video from real screens and product information | [product launch](subskills/course-creator-product-launch/SKILL.md) |
+| Create a Slidev deck or slide PDF | Create the selected lesson deck or export it | [slide decks](subskills/course-creator-slide-decks/SKILL.md) |
+| Generate speech from text | Produce only the requested script and Kokoro WAV narration | [voice narration](subskills/course-creator-voice-narration/SKILL.md) |
+| Create an educational video or CapCut handoff | Produce the selected lesson video artifacts and editing directions | [explainer video](subskills/course-creator-explainer-video/SKILL.md) |
+| Sell a course or skill | Write only the requested hook, listing, page, post, email, or promotional script | [sales copy](subskills/course-creator-sales-copy/SKILL.md) |
+| Launch a product with a Remotion ad or screenshot demo | Build a source-grounded product video from real screens and product information | [product launch](subskills/course-creator-product-launch-video/SKILL.md) |
 
 If a request names several outputs, read only the relevant subskills and perform those actions in dependency order using shared IDs, text, and assets. Each subskill also works alone from a suitable supplied brief or existing artifact: a narration script need not wait for slides, and slides need not wait for a video. Register actual outputs in the map; mark affected downstream outputs as needing refresh after a source change unless the teacher requested regeneration. Nested subskills are instructions carried inside this parent package and are selected through this table; the separate top-level skills support direct installation and invocation.
 

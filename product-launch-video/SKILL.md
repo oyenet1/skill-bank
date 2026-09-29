@@ -1,5 +1,5 @@
 ---
-name: product-launch-remotion
+name: product-launch-video
 description: Create a motion-led product launch ad or screenshot-based product demo in Remotion from supplied screenshots, product details, a website, or a repository. Use when the requested deliverable is a promotional product video.
 ---
 

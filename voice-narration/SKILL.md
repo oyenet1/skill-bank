@@ -1,5 +1,5 @@
 ---
-name: course-tts
+name: voice-narration
 description: Create optional course narration from an existing or newly requested script using Kokoro TTS. Use when a teacher requests synthetic speech, with or without slides or video.
 ---
 

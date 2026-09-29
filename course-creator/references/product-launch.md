@@ -1,6 +1,6 @@
 # Product Launch Video Handoff
 
-Use this for a course, skill, or other product launch video when the requested renderer is Remotion. The independent `product-launch-remotion` skill owns the full screenshot-to-video workflow when installed; this reference keeps the course bundle able to coordinate it.
+Use this for a course, skill, or other product launch video when the requested renderer is Remotion. The independent `product-launch-video` skill owns the full screenshot-to-video workflow when installed; this reference keeps the course bundle able to coordinate it.
 
 Accept screenshots alone, or combine them with a product URL, repository, course map, sample lesson, founder footage, or supplied narration. Inspect screenshots and read available product information. Record what each screenshot actually shows and which claims it supports. Do not infer a successful click, automatic process, or customer result from a static screen. A screenshot-based demo may pan, zoom, and highlight real UI; use a real recording or matching before/after screenshots to show a completed interaction.
 

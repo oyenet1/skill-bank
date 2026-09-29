@@ -1,5 +1,5 @@
 ---
-name: course-creator-tts
+name: course-creator-voice-narration
 description: Produce optional Kokoro WAV narration from a teacher script or selected course lesson within the course-creator bundle.
 ---
 

@@ -1,5 +1,5 @@
 ---
-name: course-creator-text
+name: course-creator-content-authoring
 description: Write one requested chapter, lesson, concept, notes file, PDF source, project brief, exercise, assignment, or other written course asset inside the course-creator bundle.
 ---
 
