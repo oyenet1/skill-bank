@@ -106,6 +106,7 @@ Skills are generated. The source of truth is [`skills-src/`](./skills-src/); the
 | `skills-src/<capability>/skill.md` | one capability — frontmatter for both targets, shared craft, `{{mode:…}}` blocks for target-specific text |
 | `skills-src/_shared/` | the intake modules: `intake`, `brand`, `video`, `voice`, `preflight`, `objects` |
 | `skills-src/_shared/prompts/<category>/` | script and storyboard patterns, one file per pattern |
+| `skills-src/_shared/library/<name>/` | full-text source material shipped verbatim to the capabilities that declare `library:` |
 | `skills-src/<capability>/files/` | extra files a target ships (e.g. the product launch workflow) |
 
 One capability emits two install targets: the `course-creator` bundle subskill

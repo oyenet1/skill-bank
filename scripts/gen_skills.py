@@ -134,6 +134,12 @@ def build() -> dict[Path, str]:
                 out[dest / Path(rel).relative_to("files")] = resolve_tokens(
                     s.read_text(), mode, caps, modules, depth=1
                 )
+            # Libraries ship verbatim -- they are source text, not templates.
+            for name in spec.get("library", []):
+                for p in sorted((shared / "library" / name).rglob("*")):
+                    if p.is_file():
+                        rel = p.relative_to(shared / "library" / name)
+                        out[dest / "references" / "library" / name / rel] = p.read_text()
     return out
 
 

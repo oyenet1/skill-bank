@@ -189,6 +189,24 @@ class HookCover(unittest.TestCase):
         self.assertIn("Hook cover:", text)
 
 
+class SourceLibrary(unittest.TestCase):
+    """The marketing library ships verbatim with marketing-copy only."""
+
+    def test_marketing_copy_ships_the_library(self):
+        spec = gen_skills.load_manifest()["capabilities"]["marketing-copy"]
+        self.assertIn("marketing", spec.get("library", []))
+        for target in ("marketing-copy", "course-creator/subskills/course-creator-marketing-copy"):
+            lib = REPO / target / "references" / "library" / "marketing"
+            self.assertTrue(lib.is_dir(), target)
+            self.assertGreaterEqual(len(list(lib.glob("*.md"))), 7, target)
+            self.assertTrue((lib / "README.md").exists(), f"{target}: missing index")
+
+    def test_no_other_skill_ships_the_library(self):
+        for cap, spec in gen_skills.load_manifest()["capabilities"].items():
+            if cap != "marketing-copy":
+                self.assertFalse(spec.get("library"), cap)
+
+
 class CheckMode(unittest.TestCase):
     def test_check_passes_when_output_is_current(self):
         self.assertEqual(subprocess.run([sys.executable, GEN, "--check"]).returncode, 0)
