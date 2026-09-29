@@ -1,0 +1,62 @@
+# Single source of truth for every skill target.
+# scripts/gen_skills.py reads this and emits:
+#   bundle      -> course-creator/subskills/<bundle>/SKILL.md
+#   standalone  -> <standalone>/SKILL.md
+# plus the declared shared modules into each target's references/.
+
+shared_dir: _shared
+
+# Shared modules are emitted as references/<file> into every target that lists them.
+modules:
+  intake: intake.md
+  brand: brand.md
+  video: video.md
+  voice: voice.md
+  preflight: preflight.md
+  objects: objects.md
+  slidev: slidev.md
+  code: code.md
+
+# prompts/ is copied as references/prompts/ for capabilities that list "prompts".
+
+capabilities:
+
+  map:
+    bundle: course-creator-map
+    modules: [intake]
+
+  assets:
+    bundle: course-creator-assets
+    modules: [intake, brand, objects]
+
+  content-authoring:
+    standalone: content-authoring
+    bundle: course-creator-content-authoring
+    modules: [intake, brand, code]
+
+  slide-decks:
+    standalone: slide-decks
+    bundle: course-creator-slide-decks
+    modules: [intake, brand, objects, preflight, slidev, code]
+
+  explainer-video:
+    standalone: explainer-video
+    bundle: course-creator-explainer-video
+    modules: [intake, brand, video, voice, preflight, objects, slidev, code, prompts]
+
+  voice-narration:
+    standalone: voice-narration
+    bundle: course-creator-voice-narration
+    modules: [intake, brand, voice, preflight]
+
+  sales-copy:
+    standalone: sales-copy
+    bundle: course-creator-sales-copy
+    modules: [intake, brand]
+
+  product-launch-video:
+    standalone: product-launch-video
+    bundle: course-creator-product-launch-video
+    modules: [intake, brand, video, voice, preflight, objects, slidev, code, prompts]
+    ships:
+      - files/references/workflow.md

@@ -1,18 +1,52 @@
 ---
 name: sales-copy
-description: Write honest, attention-grabbing marketing copy and scripts for selling a course or skill, including hooks, listings, landing pages, posts, emails, and short video ads. Use for promotional requests, not ordinary lesson writing.
+description: Write honest, attention-grabbing sales copy for a course, skill, product or service — hooks, listings, landing pages, posts, emails and promotional scripts. Verifies offer details before using them and never invents figures, reviews or urgency. Use for promotional requests, not ordinary writing.
 ---
 
-# Course Marketing
+# Sales Copy
 
-Identify the buyer, learner, level, problem, desired capability, available proof, offer, destination, and channel. Use the real course map, sample lesson, and projects when present; also work from a standalone teacher brief. Write only the requested marketing asset. Keep promotional files in `marketing/` when a course folder exists.
+Identify the buyer, the learner, their level, their actual struggle, the desired
+capability, the proof available, the offer, the destination and the channel.
+Write only the requested asset.
 
-Lead with a specific learner situation and an attainable result. Choose a question, useful promise, brief story, or respectful current-to-improved-workflow comparison as the hook. Then show the problem, its consequence, a real lesson or project demonstration, the outcome learners can reasonably expect, and one clear next step. Give useful information before asking for the sale when the audience is still exploring the topic.
+## 1. Intake
 
-For selling beginner programming skills, speak plainly about the first useful action: recognizing a file, making a web page, explaining a command, or completing a small project. A parent may need confidence that a child can begin from zero; an adult learner may need to see the prerequisite path and practical work. Use the teacher's actual story and voice. A dramatized learner story must be labelled as an example.
+Read [intake](references/intake.md). Resolve tone, person and vocabulary from [brand](references/brand.md) —
+including the `words we never use` list. Ask what changes the deliverable: who
+the buyer is, the one action you want them to take, the real destination for that
+action, and which proof you can actually cite. Batch the rest.
 
-Write several hook options when requested, and make each one concrete enough to test. Match a CTA to a real destination such as a syllabus, sample lesson, waitlist, or enrollment page. Verify price, dates, seat limits, certificates, support, job outcomes, testimonials, and guarantees before using them. Do not invent figures, reviews, urgency, or learner success. Use local context and payment language naturally when relevant.
+## 2. Shape the piece
 
-A copy script may stand alone. If the teacher also requests slides, TTS, or video, pass the chosen script and stable beat IDs to those skills; do not produce extra formats by default. For a screenshot-based product launch ad in Remotion, use `product-launch-video` when installed. For video production, use the installed mandatory video entrypoint and relevant video skill, write a per-video `style.md`, and show real course material as proof. Review mobile caption legibility and keep one CTA visible at the end.
+Lead with a specific situation and an attainable result. Choose a question, a
+useful promise, a short story, or a respectful current-to-improved comparison as
+the hook. Then show the problem, its consequence, a real demonstration or sample,
+the outcome the reader can reasonably expect, and **one clear next step**. Give
+useful information before asking for the sale when the audience is still
+exploring.
 
-The source patterns were adapted from the LodgeStatus marketing Markdown collection: buyer specificity, question/promise/story hooks, problem-to-proof sequencing, human presentation, honest evidence, and a single action. This entry point works from a brief alone; when the course-creator bundle is also available, its marketing copy reference provides more examples.
+Write several hook options when asked, each concrete enough to test. Match the
+CTA to a real destination — a syllabus, sample lesson, waitlist or enrolment
+page.
+
+## 3. Verify before you claim
+
+Confirm price, dates, seat limits, certificates, support, job outcomes,
+testimonials and guarantees before using them. **Do not invent figures, reviews,
+urgency or learner success.** A dramatized success story must be labelled as an
+example. Use the requester's real story and voice. For beginner-facing material,
+speak plainly about the first useful action rather than aspirational outcomes.
+
+## 4. Hand off
+
+A copy script stands alone. If the requester also wants slides, narration or
+video, pass the chosen script and stable beat IDs to those skills and do not
+produce extra formats by default. For video production, use
+`explainer-video`, write a per-video `style.md`, and show real material
+as proof. Review mobile caption legibility and keep one CTA visible at the end.
+
+## Standalone output
+
+Keep promotional files in a `marketing/` folder when one exists, otherwise where
+the requester names. If a `course-plan.json` is present, register the output at
+the course or lesson level as appropriate.

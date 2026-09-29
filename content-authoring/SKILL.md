@@ -1,14 +1,58 @@
 ---
 name: content-authoring
-description: "Write or revise the written part of a course: maps, chapters, lessons, notes, projects, exercises, assignments, indexes, schedules, and text PDF sources. Use when the teacher wants text learning materials without media production."
+description: Write or revise any requested written material — lessons, notes, guides, chapters, project briefs, exercises, assignments, indexes, schedules, docs, or PDF sources. Works from any brief or existing files and keeps answer keys separate from the material people read. Use for written output without media production.
 ---
 
-# Course Text
+# Content Authoring
 
-Work on the exact written asset the teacher requests. Accept a standalone brief or an existing `course-plan.json`. For a mapped course, use stable section, chapter, lesson, concept, and project IDs and store the output under the matching ID. Register only files that exist in that node's `artifacts` map; preserve teacher edits and validate the map with `course-creator/scripts/validate_course.py` when the coordinating skill is available.
+Work on the exact written asset the requester asks for. Accept a brief or
+existing files. Produce only what was requested — not an adjacent chapter, not
+an exercise bank nobody asked for.
 
-For a new course, map **sections → chapters → lessons → concepts** in prerequisite order before writing full lessons. A chapter ends with a small project; a section ends with a larger project, with at least three chapter projects before the first larger project. Start at the learner's actual level. Beginner programming may need computer hardware, software, operating systems, and files before code.
+## 1. Intake
 
-For a selected concept, teach with a relatable example or teacher-supplied story, then What, Why, Where, When, How, a visual explanation in words or a still diagram, a practical demonstration, and a learner check. Explain new terms before the learner must use them. Write only requested notes, exercises, assignments, project prompts, index, schedule, or PDF. Exercises are optional and have no fixed count. Keep answers separate from learner materials.
+Read [intake](references/intake.md). Resolve tone and vocabulary from [brand](references/brand.md) when a
+`brand.md` exists. Ask only what changes the deliverable: audience level, target
+length, what to cover and what to leave out, and whether answers or keys are
+needed. Batch the rest.
 
-When an output derives from another registered file, record `artifactSources`, such as `"notesPdf": ["notes"]`. On a source edit, list affected outputs in `staleArtifacts` until refreshed. Text material must remain understandable without slides, audio, or video. Use an appropriate still image or icon when it helps; if `course-creator` is installed, inspect its bundled assets and copy selected files into the course before using them in notes or PDFs. Its written-course, teaching-content, teaching-assets, projects, and technical references provide richer guidance; this skill works from the teacher brief without them.
+## 2. Structure before prose
+
+For new material, map **sections → chapters → concepts** in prerequisite order
+before writing full content. Each concept depends only on knowledge already
+taught or introduced immediately before its use. Where the material teaches, a
+chapter ends with a small practical project and a section ends with a larger one,
+with at least three chapter projects before the first larger one.
+
+Start at the reader's actual level. A true beginner may need hardware, files and
+terminology before code; an experienced reader may begin later. For material that
+is reference rather than instruction, structure by lookup need instead — group by
+task, not by narrative.
+
+## 3. Develop each unit
+
+When the material teaches, use: relatable example or supplied story → **What** →
+**Why** → **Where** → **When** → **How** → visual explanation → practical
+demonstration → a short check. The *How* must show an actual action or process.
+
+When the material documents or explains rather than teaches, lead with the task
+or the answer, then the reasoning, then the edge cases. Explain a new term before
+the reader must use it. Use an appropriate still image or icon where it helps.
+
+Ground factual content in supplied material first, then authoritative sources.
+Record source links where used. Never invent a source or page URL.
+
+## 4. Keep it separable
+
+Written material must stay understandable without slides, audio or video. Keep
+answer keys and solutions separate from the material people read. When an output
+derives from another file, record `artifactSources` such as
+`"notesPdf": ["notes"]`, and list affected outputs in `staleArtifacts` until
+refreshed. Preserve the requester's edits.
+
+## Standalone output
+
+If a `course-plan.json` is present and the requester names a lesson, use stable
+IDs, store output under the matching ID and register real artifacts; validate
+with `course-creator/scripts/validate_course.py` when that bundle is installed.
+Otherwise write to the directory the requester names.

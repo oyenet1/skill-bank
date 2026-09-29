@@ -4,6 +4,7 @@ Text, slides, TTS audio, and video can each be requested alone or combined. Use 
 
 ## Inputs and output
 
+- **Resolve the voice before generating.** Ask language first (it constrains everything after), then accent — American or British — only when the language is English, then female, male, or the teacher's own recording. A supplied voice recording is used as the timing master and is never synthesised. When `brand.md` exists, its `Voice and tone` → `Preferred TTS voice` supplies the default. Name the chosen voice in the brief so the result is reproducible.
 - Accept a teacher-supplied plain-text script, or write a short narration script from the selected lesson or concept when asked. Keep the script as editable UTF-8 text and check names, technical terms, and pronunciation before synthesis.
 - If a course exists, store script and WAV under `lessons/{lesson-id}/audio/`; for a standalone request, use the teacher's chosen output folder. Register course files as `narrationText` and `narrationAudio` artifacts in `course-plan.json`, with `artifactSources.narrationAudio` set to `["narrationText"]`. If the script changes, mark `narrationAudio` stale; mark a video stale too when it actually uses that audio.
 - Prefer one file per storyboard beat or short scene when precise timing or later edits matter. Whole-lesson narration is acceptable when the teacher wants a single track. Keep the same beat IDs in the script list, Slidev storyboard, Remotion scene, and CapCut guide.

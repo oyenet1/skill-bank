@@ -1,15 +1,20 @@
-"""Kokoro TTS audio generator for course lessons (CPU, offline).
+"""Kokoro TTS audio generator for course-creator (CPU, offline).
 
 Usage:
-  python generate.py --text "Hello class" --out /path/to/lesson.wav
-  python generate.py --text-file lesson.txt --voice af_sky --out lesson.wav --speed 1.0
+  python generate.py --text "Hello class" --out /path/to/lesson.mp3
+  python generate.py --text-file lesson.txt --voice af_sky --out lesson.mp3 --speed 1.0
+
+Output is MP3 when --out ends with .mp3 (requires ffmpeg), otherwise WAV.
 
 Needs model files in --models-dir (see download_models.sh):
   kokoro-v1.0.onnx + voices-v1.0.bin
 """
 import argparse
 import os
+import shutil
+import subprocess
 import sys
+import tempfile
 
 try:
     import espeakng_loader  # noqa: F401  (bundled libespeak, for machines without apt espeak-ng)
@@ -28,7 +33,7 @@ def parse_args(argv=None):
     src = p.add_mutually_exclusive_group(required=True)
     src.add_argument("--text", help="Text to narrate (quote it).")
     src.add_argument("--text-file", help="Path to a .txt/.md file to narrate.")
-    p.add_argument("--out", required=True, help="Output .wav path.")
+    p.add_argument("--out", required=True, help="Output path: .mp3 (default) or .wav.")
     p.add_argument("--voice", default=DEFAULT_VOICE, help=f"Voice id (default: {DEFAULT_VOICE}).")
     p.add_argument("--speed", type=float, default=1.0, help="Speech speed (default: 1.0).")
     p.add_argument("--lang", default=DEFAULT_LANG, help=f"Lang tag (default: {DEFAULT_LANG}).")
@@ -59,8 +64,26 @@ def main(argv=None):
 
     out = os.path.abspath(args.out)
     os.makedirs(os.path.dirname(out) or ".", exist_ok=True)
-    sf.write(out, samples, sample_rate)
-    print(f"wrote {out} ({len(samples) / sample_rate:.1f}s, {sample_rate}Hz, voice={args.voice})")
+    duration = len(samples) / sample_rate
+    if out.lower().endswith(".mp3"):
+        ffmpeg = shutil.which("ffmpeg")
+        if not ffmpeg:
+            print("error: ffmpeg not found, needed for .mp3 output", file=sys.stderr)
+            return 1
+        with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
+            tmp_wav = tmp.name
+        try:
+            sf.write(tmp_wav, samples, sample_rate)
+            subprocess.run(
+                [ffmpeg, "-y", "-v", "error", "-i", tmp_wav,
+                 "-codec:a", "libmp3lame", "-q:a", "3", out],
+                check=True,
+            )
+        finally:
+            os.unlink(tmp_wav)
+    else:
+        sf.write(out, samples, sample_rate)
+    print(f"wrote {out} ({duration:.1f}s, {sample_rate}Hz, voice={args.voice})")
     return 0
 
 

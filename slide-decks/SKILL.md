@@ -1,14 +1,87 @@
 ---
 name: slide-decks
-description: Create or revise an editable Slidev teaching deck, storyboard, or slide handout PDF for one lesson or concept. Use for slide output whether or not a full course or video exists.
+description: Create or revise an editable Slidev deck, storyboard, or slide handout PDF for any topic or lesson. Applies brand palette and typography, uses appropriate animation and objects, and keeps a readable final state for export. Use for slide output whether or not a full course or video exists.
 ---
 
-# Course Slides
+# Slide Decks
 
-Accept a lesson, concept brief, teacher story, or existing course map. Produce only the requested Slidev deck, storyboard, or slide PDF. A deck does not require written notes or a video. When a course exists, use stable lesson and concept IDs, save the deck under `lessons/{lesson-id}/slides/`, and register produced files in that lesson's `artifacts` map.
+Accept a topic brief, a lesson, a concept, a story, or existing course files.
+Produce only the requested deck, storyboard or slide PDF. A deck does not require
+written notes or a video.
 
-Show a relatable example, then What, Why, Where, When, How, a visual explanation, a demonstration, and a learner check. Make each reveal explain one causal step and leave a readable final state. Record storyboard beats with stable ID, concept ID, slide, visible content, asset IDs, caption, estimated duration, and effect ID. Keep the meaning clear in a static PDF.
+## 1. Intake
 
-Inspect supplied/course images first. When the `course-creator` bundle is present, search its `assets/` folders for a matching image or icon and inspect it. Include useful local visuals in the deck, copying selected files into the course folder so the deck and export remain portable. Then consider reusable web sources with usage terms and credit, generated art, or an editable SVG/diagram if needed. Record provenance and alt text; verify unknown public reuse terms before publication. Use the teacher's visual identity if supplied. Check current Slidev documentation for syntax and export commands. Export a PDF only when requested, and inspect the pages afterward.
+Read [intake](references/intake.md). Resolve palette, type and imagery from [brand](references/brand.md).
+Ask what changes the deliverable: topic, audience level, roughly how many slides,
+what the audience must be able to do afterwards, and whether a PDF handout is
+wanted. Batch the rest.
 
-Record actual dependencies in `artifactSources`, such as `"slidePdf": ["slides"]`; mark downstream outputs stale after source changes. The deck and storyboard may be passed to a video workflow later, but neither is produced as a side effect.
+## 2. Structure
+
+A relatable example first, then **What / Why / Where / When / How**, a visual
+explanation, a demonstration, and a learner check. Each reveal explains one
+causal step and leaves a readable final state. Record storyboard beats with a
+stable ID, the concept ID, the slide, visible content, asset IDs, caption,
+estimated duration and effect ID.
+
+## 3. Visuals
+
+Inspect supplied and project-local images first, then the asset bank. If it is not
+there, **go online** for a reusable source and record its URL, licence and
+retrieval date. Only when it cannot be found online, generate or draw it — prefer
+an editable SVG diagram, and label generated art as generated. Draw from
+[objects](references/objects.md) before hand-building a layout. Include useful local visuals in the
+deck and copy selected files into the project folder so the deck and its export
+stay portable. Record provenance and alt text, and verify unknown public reuse
+terms before publication.
+
+## 4. Diagrams
+
+When the content is structure rather than narrative — architecture, request
+paths, sequences, entities, state, schedule — draw it with a Mermaid block
+instead of describing it. Slidev renders ` ```mermaid ` natively; style it from
+the brand palette with `defineMermaidSetup` in `setup/mermaid.ts`
+(`theme: 'base'` plus `themeVariables`). Pick the diagram kind from the table in
+[objects](references/objects.md).
+
+Show the whole diagram first, then `v-click` one node or edge at a time as the
+narration reaches it, colouring the active element with the brand accent and
+dimming the rest. Label edges that have names. Keep node labels to 2–4 words and
+put detail beside the diagram. For architecture, draw the real components and
+boundaries — never invent a component that is not in the system.
+
+## 5. Animation
+
+Use Slidev's real primitives — `v-click` (`.up`, `.fade-in`, `.fade.right.scale`),
+`v-motion` for continuous movement, `v-mark` to annotate a phrase, and named
+`transition` frontmatter — rather than hand-rolled keyframes. The full rack of
+layouts, built-in components, code highlighting, diagrams, UnoCSS, global layers
+and presenter features is in [slidev](references/slidev.md): use what exists before building a
+component. Keep the meaning clear in a static PDF — an exported handout must
+still work with every reveal already open.
+
+## 6. Edit and verify through the MCP server
+
+The Slidev MCP server is always enabled — see [slidev](references/slidev.md) and [preflight](references/preflight.md).
+List the slides to confirm numbering, edit through `slidev-update-slide`,
+`slidev-insert-slide`, `slidev-move-slide` and `slidev-remove-slide` rather than
+rewriting the file, then `slidev-goto-slide` and inspect the rendered slide at
+delivery size. A structured edit still needs a visual check.
+
+Check current Slidev documentation for syntax and export commands. Export a PDF
+only when requested, then inspect the pages afterwards.
+
+## 7. Code on slides
+
+When a deck contains code, it must be lint-clean and actually run — see
+[code](references/code.md). Lint it before it goes into the deck. Use Shiki highlighting and
+step highlighting: `{1|3|all}` magic-move to show a change between two states, or
+`{monaco}` when the viewer should be able to edit it. Keep lines short enough to
+read at the delivery size.
+
+## Standalone output
+
+If a `course-plan.json` is present and the requester names a lesson, save under
+`lessons/{lesson-id}/slides/` and register the deck, storyboard and PDF as
+separate artifacts with real dependencies. Otherwise use the directory the
+requester names. A deck may stand alone and does not trigger video production.

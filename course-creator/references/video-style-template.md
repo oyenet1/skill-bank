@@ -1,9 +1,21 @@
 # Video `style.md` Template
 
-Use this as the shape of each requested video's `style.md`. Replace every placeholder with a real decision before production. The course-level `style.md` supplies defaults; copy the resolved values into the video file and state lesson-specific changes.
+Use this as the shape of each requested video's `style.md`. Replace every placeholder with a real decision before production. Resolve identity from `brand.md` when it exists: copy the resolved values into the video file and state only the lesson-specific changes. Without a `brand.md`, record the values as `unbranded` defaults.
 
 ```markdown
 # Style: {lesson or concept title}
+
+## Delivery
+- Category: {motion-graphic | explainer-lesson | screencast-demo | footage-overlay | launch-ad | slideshow-montage}
+- Platform: {YouTube | TikTok | Reels | LinkedIn | X | Facebook | website | presentation}
+- Aspect ratio: {16:9 | 9:16 | 1:1 | 4:5}
+- Master resolution: {e.g. 3840×2160}
+- Delivery resolution: {e.g. 1920×1080} — floor is 1080p
+- Frame rate: {24 | 30 | 60}
+- Renderer: {Slidev → ffmpeg | Remotion | both | CapCut handoff}
+- Audio mode: {silent | voiceover | music | full}
+- Ending: {main CTA + destination | logo sting | takeaway recap | QR | contact | next video}
+- Watermark: {none | text | logo | both} · {opacity % if any} · {position}
 
 ## Teaching intent
 - Audience and prior knowledge: {who this is for}
@@ -12,14 +24,15 @@ Use this as the shape of each requested video's `style.md`. Replace every placeh
 - Tone and pace: {concrete words, for example patient, playful, measured}
 
 ## Visual identity
-| Token | Value | Use |
-|---|---|---|
-| Background | {hex} | {where} |
-| Primary text | {hex} | {where} |
-| Accent | {hex} | {what it highlights} |
-| Display font | {family, weight, size} | {titles} |
-| Body font | {family, weight, size} | {explanations} |
-| Caption font | {family, weight, size} | {captions} |
+<!-- Copy from brand.md. State only the deltas. -->
+| Token | Value | Use | Source |
+|---|---|---|---|
+| Background | {hex} | {where} | {brand.md | default} |
+| Primary text | {hex} | {where} | |
+| Accent | {hex} | {what it highlights} | |
+| Display font | {family, weight, size} | {titles} | |
+| Body font | {family, weight, size} | {explanations} | |
+| Caption font | {family, weight, size} | {captions} | |
 
 ## Frame system
 - Canvas and frame rate: {width × height, fps}
@@ -35,8 +48,10 @@ Use this as the shape of each requested video's `style.md`. Replace every placeh
 
 ## Sound and captions
 - Narration source: {teacher video, teacher audio, text-only, requested TTS}
-- Caption appearance and placement: {style and safe area}
-- Music and sound cues: {if requested, with levels and purpose}
+- Voice: {language · accent · female/male/custom · named Kokoro voice}
+- SFX palette: {typing | click | alert | success | whoosh | pop | shutter | hover | ambient — which are used where}
+- Music and sound cues: {if requested, with levels and purpose; duck 12–18 LUFS under speech}
+- Caption appearance and placement: {style and safe area; mandatory when audio mode is silent}
 - Timing master and sync points: {media source and scene/caption cues}
 
 ## Accessibility and review

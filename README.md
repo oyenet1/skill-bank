@@ -89,6 +89,56 @@ npx skills add oyenet1/agent-skills@product-launch-video -g
 npx skills add oyenet1/agent-skills --all
 ```
 
+## Editing Skills
+
+Skills are generated. The source of truth is [`skills-src/`](./skills-src/); the
+`course-creator/subskills/` folders and the top-level skills are build output.
+**Do not edit generated folders by hand** — the next build overwrites them.
+
+| Path | What it holds |
+|---|---|
+| `skills-src/manifest.yaml` | which capabilities exist, their names, and which shared modules each ships |
+| `skills-src/<capability>/skill.md` | one capability — frontmatter for both targets, shared craft, `{{mode:…}}` blocks for target-specific text |
+| `skills-src/_shared/` | the intake modules: `intake`, `brand`, `video`, `voice`, `preflight`, `objects` |
+| `skills-src/_shared/prompts/<category>/` | script and storyboard patterns, one file per pattern |
+| `skills-src/<capability>/files/` | extra files a target ships (e.g. the product launch workflow) |
+
+One capability emits two install targets: the `course-creator` bundle subskill
+(`course-creator-<id>`) and the standalone skill (`<id>`). Tokens in a
+`skill.md` resolve per target — `{{ref:brand}}` links the shared module,
+`{{doc:narration.md}}` links a `course-creator` reference, `{{sibling:voice-narration}}`
+links another capability, and `{{asset:tools/kokoro/README.md}}` resolves a
+shipped path at the right depth.
+
+```bash
+# regenerate every target (requires pyyaml)
+python scripts/gen_skills.py
+
+# verify committed output matches the source — run before committing
+python scripts/gen_skills.py --check
+
+# behaviour tests
+cd scripts && python -m unittest
+```
+
+The tool trees follow the same rule: `course-creator/tools/kokoro/` is canonical
+and `voice-narration/tools/kokoro/` is generated from it, so the standalone
+install works alone.
+
+## Intake
+
+Every producing skill runs the same intake protocol before it makes anything.
+See [`skills-src/_shared/intake.md`](./skills-src/_shared/intake.md): present
+inputs are used, inferable inputs get a stated default recorded with a reason,
+and missing inputs that would change the deliverable are asked in **one batched
+block with options and a recommended pick**. Brand values and evidence are never
+invented.
+
+Brand identity lives in a `brand.md` that skills read and write — colour, type,
+tone, vertical, claims and accessibility all inherit from it, and each per-video
+`style.md` records only its deltas. A local project can be read with
+`python scripts/extract_brand.py <path>`; secrets and dotfiles are never read.
+
 ## License
 
 MIT — see [LICENSE](./LICENSE).
