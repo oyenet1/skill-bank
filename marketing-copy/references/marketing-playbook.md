@@ -156,7 +156,7 @@ Every one of these is a claim. If the deadline is not real, do not print it.
 1. **What is the offer**, and why can it not be compared to anything else?
 2. **Who is the reader**, what do they already believe, and what is the one action?
 3. **Which Value Equation term** does this piece move — and is the move perceived?
-4. **Which hook** fits their awareness stage (see `SKILL.md` §2)?
+4. **Which hook** fits their awareness stage (see `SKILL.md` §3)?
 5. **What proof actually exists** — a real screen, sample, number or story?
 6. **Does it need a story**, and which of the seven stages is missing?
 7. **Is the price framing honest**, and does the offer itself do the selling?
