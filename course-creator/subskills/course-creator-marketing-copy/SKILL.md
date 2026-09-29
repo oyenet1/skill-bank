@@ -72,13 +72,19 @@ plainly about the first useful action rather than aspirational outcomes.
 Where a claim carries weight, show the evidence on screen or in the copy — a real
 screenshot, a real sample, a real number with its source.
 
-## 5. Use the source library
+## 5. Use the playbook, then the source library
 
-`references/library/marketing/` holds full-text source books — Hormozi on offers
+**Read `references/marketing-playbook.md` first.** It is the operating summary of
+every source, organised as offer → value equation → enhancers → price → leads →
+story → psychology → trust, with a pre-writing checklist at the end. Use it to
+shape the offer, angle, story and price before writing a word.
+
+It is a distillation in its own words, with attribution. The library beneath it
+is for depth only:
+
+`references/library/marketing/` holds the full-text sources — Hormozi on offers
 and lead generation, Akin Alabi on selling in Nigeria, Paul Smith on selling with
 story, Brian Tracy on selling psychology. The folder's `README.md` is the index.
-
-Use it as a source of **principles**, never as text to reproduce:
 
 - **Search, do not read.** Search the library for the concept you need — offer,
   guarantee, lead magnet, objection, scarcity, story structure — and read only the
@@ -91,8 +97,8 @@ Use it as a source of **principles**, never as text to reproduce:
   credit it in the copy only if the requester wants it.
 - **Adapt for context.** Nigeria-specific tactics apply where the audience and
   market actually match; do not transplant them where they do not.
-- The library is reference material, not a licence. Do not reproduce its text in
-  published output.
+- The playbook and the library are reference material, not a licence. Do not
+  reproduce their text in published output.
 
 ## 6. Hand off
 

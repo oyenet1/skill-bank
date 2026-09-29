@@ -206,6 +206,26 @@ class SourceLibrary(unittest.TestCase):
             if cap != "marketing-copy":
                 self.assertFalse(spec.get("library"), cap)
 
+    def test_marketing_copy_ships_the_playbook(self):
+        for target in ("marketing-copy", "course-creator/subskills/course-creator-marketing-copy"):
+            book = REPO / target / "references" / "marketing-playbook.md"
+            self.assertTrue(book.exists(), target)
+            text = book.read_text().lower()
+            for section in ("value equation", "core four", "story", "checklist", "sources"):
+                self.assertIn(section, text, f"{target}: playbook missing {section}")
+            # The playbook is a distillation, not a copy of the sources.
+            self.assertLess(len(book.read_text()), 20_000, target)
+
+    def test_skill_points_at_the_playbook_before_the_library(self):
+        for target in ("marketing-copy", "course-creator/subskills/course-creator-marketing-copy"):
+            text = (REPO / target / "SKILL.md").read_text()
+            self.assertIn("marketing-playbook.md", text, target)
+            self.assertLess(
+                text.index("marketing-playbook.md"),
+                text.index("library/marketing"),
+                f"{target}: playbook must be the first stop",
+            )
+
 
 class CheckMode(unittest.TestCase):
     def test_check_passes_when_output_is_current(self):

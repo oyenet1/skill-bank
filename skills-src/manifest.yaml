@@ -55,6 +55,8 @@ capabilities:
     standalone: marketing-copy
     bundle: course-creator-marketing-copy
     modules: [intake, brand]
+    ships:
+      - files/references/marketing-playbook.md
     library: [marketing]
 
   product-launch-video:
