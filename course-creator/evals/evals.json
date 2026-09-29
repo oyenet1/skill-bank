@@ -78,6 +78,12 @@
       "prompt": "Launch my coding course as a product. I supplied screenshots of the course page, one sample lesson, and a learner project, plus a URL with product details. Create a Remotion motion ad that shows the real screens. Do not invent enrollment claims or use TTS unless I ask.",
       "expected_output": "Reads the supplied product source and screenshots, writes a claim-grounded brief, storyboard, and per-video style.md, creates editable Remotion source and MP4 when rendering works, records course-level artifact dependencies, and keeps unshown interactions out of the demo.",
       "files": []
+    },
+    {
+      "id": 14,
+      "prompt": "Only the course-creator parent skill is installed. Create the file extensions lesson, its Slidev deck using a bundled icon, and a Kokoro WAV for my supplied narration script. Do not create a video.",
+      "expected_output": "Routes to the bundled text, slides, assets, and TTS subskills without relying on separately installed sibling skills; creates only the requested outputs and records their actual dependencies.",
+      "files": []
     }
   ]
 }

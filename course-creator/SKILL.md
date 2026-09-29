@@ -1,34 +1,31 @@
 ---
 name: course-creator
-description: Plan, teach, revise, and publish parts of a dependency-ordered course. Use for course maps, chapters, lessons, concept explanations, projects, instructor assets, Slidev lessons, and educational video handoffs. Works for any subject, with a programming profile for technical courses.
+description: Plan and produce parts of a course through bundled subskills for curriculum maps, lessons, assets, Slidev, Remotion, Kokoro narration, marketing, and screenshot-based product launch ads. Use for teaching or selling a course, with a programming profile for technical subjects.
 metadata:
-  version: 2.0.0
+  version: 2.1.0
   author: Bowofade Oyerinde (@oyenet1) - Bonifade Technologies
 ---
 
 # Course Creator
 
-Help a teacher build one useful part of a course at a time. A course is **sections → chapters → lessons → concepts**. Each later concept depends only on knowledge already taught or introduced immediately before its use. Preserve the teacher's choices about audience, subject, delivery, materials, and which asset to make next. This skill coordinates multiple outputs; the sibling `course-text`, `course-slides`, `course-video`, `course-tts`, and `course-marketing` skills are independent entry points when installed.
+Help a teacher build one useful part of a course at a time. A course is **sections → chapters → lessons → concepts**. Each later concept depends only on knowledge already taught or introduced immediately before its use. Preserve the teacher's choices about audience, subject, delivery, materials, and which asset to make next. This parent skill contains the focused subskills below; read the relevant subskill for each requested output. Top-level `course-text`, `course-slides`, `course-video`, `course-tts`, `course-marketing`, and `product-launch-remotion` remain independent entry points when installed separately.
 
 ## Choose one action
 
 Identify the requested action and target before generating anything. Ask only for missing information that changes that action; use existing course files when present. Do not generate unrelated chapters, exercises, PDFs, or videos as a side effect.
 
-| Request | Result | Read |
+| Request | Result | Subskill to read |
 |---|---|---|
-| Plan a course | `course-plan.json` plus a readable table of contents with all sections, chapters, lessons, concepts, prerequisites, and proposed projects | [course blueprint](references/course-blueprint.md) |
-| Reorder or revise the map | Update targeted nodes, numbering, prerequisites, links, and affected artifact references | [course blueprint](references/course-blueprint.md) |
-| Develop a chapter, lesson, or concept | Write only the selected teaching content and its directly affected navigation | [teaching content](references/teaching-content.md), [written course production](references/text-course-production.md) |
-| Create notes, a page, exercises, assignment, quiz, exam, rubric, index, schedule, or handout | Write only the requested teaching asset | [teaching assets](references/teaching-assets.md), [written course production](references/text-course-production.md) |
-| Select or develop a project | Develop one teacher-selected project and its needed concept lessons | [projects](references/projects.md) |
-| Source or create a visual | Resolve one teaching visual and record its provenance and accessible description | [visual and media workflow](references/visual-media.md) |
-| Create a Slidev deck or slide PDF | Create the selected lesson deck or export it | [visual and media workflow](references/visual-media.md) |
-| Generate speech from text | Produce only the requested script and Kokoro WAV narration | [narration](references/narration.md) |
-| Create a lesson video or CapCut handoff | Produce the selected video artifacts and editing directions | [visual and media workflow](references/visual-media.md) |
-| Sell a course or skill | Write only the requested hook, listing, page, post, email, or promotional script | [marketing copy](references/marketing-copy.md) |
-| Launch a product with a Remotion ad or screenshot demo | Build a source-grounded product video from real screens and product information | [product launch handoff](references/product-launch.md), [marketing copy](references/marketing-copy.md) |
+| Plan or reorder a course | `course-plan.json` plus a readable table of contents, prerequisites, and proposed projects | [course map](subskills/course-creator-map/SKILL.md) |
+| Develop a chapter, lesson, concept, project, notes, exercises, assignment, index, schedule, or text PDF | Write only the selected teaching content or asset | [course text](subskills/course-creator-text/SKILL.md) |
+| Source or create a visual | Resolve a relevant teaching image or icon and record provenance and alt text | [course assets](subskills/course-creator-assets/SKILL.md) |
+| Create a Slidev deck or slide PDF | Create the selected lesson deck or export it | [course slides](subskills/course-creator-slides/SKILL.md) |
+| Generate speech from text | Produce only the requested script and Kokoro WAV narration | [course TTS](subskills/course-creator-tts/SKILL.md) |
+| Create an educational video or CapCut handoff | Produce the selected lesson video artifacts and editing directions | [course video](subskills/course-creator-video/SKILL.md) |
+| Sell a course or skill | Write only the requested hook, listing, page, post, email, or promotional script | [course marketing](subskills/course-creator-marketing/SKILL.md) |
+| Launch a product with a Remotion ad or screenshot demo | Build a source-grounded product video from real screens and product information | [product launch](subskills/course-creator-product-launch/SKILL.md) |
 
-If a request names several outputs, perform only those selected actions in dependency order and reuse their shared IDs, text, and assets. Each action must also work alone from a suitable supplied brief or existing artifact: a narration script need not wait for slides, and slides need not wait for a video. Register actual outputs in the map; mark affected downstream outputs as needing refresh after a source change unless the teacher requested regeneration.
+If a request names several outputs, read only the relevant subskills and perform those actions in dependency order using shared IDs, text, and assets. Each subskill also works alone from a suitable supplied brief or existing artifact: a narration script need not wait for slides, and slides need not wait for a video. Register actual outputs in the map; mark affected downstream outputs as needing refresh after a source change unless the teacher requested regeneration. Nested subskills are instructions carried inside this parent package and are selected through this table; the separate top-level skills support direct installation and invocation.
 
 For programming courses, also read [technical profile](references/technical-profile.md). Read [tech mapping](references/tech-mapping.md) only for the relevant track or stack. The [technical terms](references/technical-terms.md) and preserved [roadmap notes](references/pdf-derived-roadmap-notes.md) are optional text references, not checklists to teach in full. For nontechnical subjects, use appropriate authoritative sources rather than technology roadmaps.
 

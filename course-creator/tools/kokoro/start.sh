@@ -29,15 +29,15 @@ run_gen() { "$VENV/bin/python" "$HERE/generate.py" --models-dir "$HERE/models" "
 
 if [ "${1:-}" = "--sample" ]; then
   mkdir -p "$AUDIO_DIR"
-  run_gen --text "Hello! This is Kokoro running locally for your course creator. Audio narration is ready." --out "$AUDIO_DIR/kokoro_sample.wav"
+  run_gen --text "Hello! This is Kokoro running locally for your course creator. Audio narration is ready." --out "$AUDIO_DIR/kokoro_sample.mp3"
   exit 0
 fi
 
 if [ $# -eq 0 ]; then
   echo "Kokoro ready. Generate audio with:"
-  echo "  $VENV/bin/python $HERE/generate.py --text \"Hello class\" --out $AUDIO_DIR/lesson.wav"
-  echo "  ./start.sh --text \"Hello class\" --out ../../assets/audio/lesson.wav --voice af_sky"
-  echo "  ./start.sh --sample   # regenerate the demo wav"
+  echo "  $VENV/bin/python $HERE/generate.py --text \"Hello class\" --out $AUDIO_DIR/lesson.mp3"
+  echo "  ./start.sh --text \"Hello class\" --out ../../assets/audio/lesson.mp3 --voice af_sky"
+  echo "  ./start.sh --sample   # regenerate the demo mp3"
   "$VENV/bin/python" "$HERE/generate.py" --help
   exit 0
 fi

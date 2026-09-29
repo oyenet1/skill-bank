@@ -4,24 +4,25 @@
 ```bash
 cd course-creator/tools/kokoro
 ./start.sh --sample
-# sample -> ../../assets/audio/kokoro_sample.wav
-./start.sh --text "Welcome to chapter one" --out ../../assets/audio/ch1-intro.wav --voice af_bella
-./start.sh --text-file lesson.txt --out ../../assets/audio/lesson.wav --voice af_sky --speed 1.0
+# sample -> ../../assets/audio/kokoro_sample.mp3
+./start.sh --text "Welcome to chapter one" --out ../../assets/audio/ch1-intro.mp3 --voice af_bella
+./start.sh --text-file lesson.txt --out ../../assets/audio/lesson.mp3 --voice af_sky --speed 1.0
 ```
 `start.sh` creates `.venv` (Python 3.12 via uv), installs `requirements.txt`,
 downloads models (~350MB, once) into `models/`, then runs `generate.py`.
 
 Direct use without the wrapper:
 ```bash
-.venv/bin/python generate.py --text "Hi" --out ../../assets/audio/hi.wav
+.venv/bin/python generate.py --text "Hi" --out ../../assets/audio/hi.mp3
 ```
+Output is MP3 by default (use `.wav` only if you need uncompressed).
 
 ## Option B — docker
 ```bash
 cd course-creator/tools/kokoro
 docker compose build
-docker compose run --rm kokoro --text "Welcome to chapter one" --out /audio/ch1-intro.wav --voice af_bella
-docker compose run --rm kokoro --text-file /audio/lesson.txt --out /audio/lesson.wav
+docker compose run --rm kokoro --text "Welcome to chapter one" --out /audio/ch1-intro.mp3 --voice af_bella
+docker compose run --rm kokoro --text-file /audio/lesson.txt --out /audio/lesson.mp3
 ```
 `models/` is bind-mounted, so native and docker share the same download.
 Image has system espeak-ng, so no extra setup.
