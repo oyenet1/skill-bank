@@ -127,6 +127,9 @@ Record the choice in `style.md` → `## Delivery` as `Watermark: none` or
 | `launch-ad` | product, problem, evidence, CTA | duration · offer details | 30s |
 | `slideshow-montage` | images | tempo · captions · duration | 30s |
 
+Every category also needs a **hook line** for the cover — see §11. Ask for it with
+the rest; if the request already carries one, use it.
+
 ## 8. Production order
 
 1. Resolve `brand.md` ([brand](brand.md)).
@@ -134,11 +137,12 @@ Record the choice in `style.md` → `## Delivery` as `Watermark: none` or
 3. Check the toolchain ([preflight](preflight.md)).
 4. Pick 2–3 prompt patterns for `category × vertical` from `references/prompts/`.
 5. Write `style.md`, then `script.md`, then `storyboard.md`.
-6. Start the voice track immediately and let it generate **in the background**
+6. Write the hook cover first — it is the frame the rest of the video must earn.
+7. Start the voice track immediately and let it generate **in the background**
    while the visuals are authored — it is the timing master, so its beat lengths
    drive the scene durations.
-7. Build the scenes (Slidev for motion graphics, Remotion for product demo).
-8. Layer sound, then render, then inspect.
+8. Build the scenes (Slidev for motion graphics, Remotion for product demo).
+9. Layer sound, then render, then inspect.
 
 ## 9. Motion graphics — build in Slidev
 
@@ -193,7 +197,34 @@ Sound is a first-class layer, not an afterthought. Plan it in `style.md` under
 - A `silent` video needs no SFX and no music; its captions carry the meaning.
 - Check the result when muted: the picture must still communicate.
 
-## 11. Screen conventions
+## 11. Hook cover — every video opens on one
+
+**Every video opens on a hook cover.** No exceptions, for any category. It is a
+single designed frame that carries the hook and tells the viewer why to keep
+watching — the first frame, the cover art, and the thumbnail are the same frame,
+so design it as all three at once.
+
+| Rule | Why |
+|---|---|
+| **One idea: the hook phrase, plus at most one supporting line** | a cover with a title, a subtitle and a logo competes with itself and reads as nothing |
+| **Phrase it as payoff or tension, not as a topic** | "Ship in an afternoon, not a sprint" beats "Introduction to deployment" |
+| **Legible at thumbnail size** | at 9:16 and 1:1 it is usually seen far smaller than the frame — check the hook still reads at ~20% |
+| **Hold 1.5–3 s, then move** | a cover that lingers reads as a stall; a cover that flashes is missed |
+| **Brand mark is a corner element, never the hero** | a logo-only cover says nothing |
+| **Say the hook in the narration too** | if there is audio, the first spoken sentence is the cover line |
+| **Promise only what the video pays off** | an unkept cover loses the viewer at the second beat |
+
+Every category opens this way — including a **silent** or music-only video, where
+the cover carries the meaning on its own. The `slideshow-montage` opening image
+and the `footage-overlay` title card are hook covers too: give them a hook line
+rather than just a title.
+
+**The first beat of every pattern in the bundled prompt set is the hook cover.**
+Treat it as mandatory even when a pattern does not spell it out.
+
+Record the chosen cover line in `style.md` → `## Delivery` as `Hook cover:`.
+
+## 12. Screen conventions
 
 **Hook highlighting.** When a hook or key phrase appears on screen — as headline,
 explanation or subtitle — highlight it as it is spoken or read: word-by-word
@@ -213,7 +244,7 @@ when the concept is contextual and the main visual cannot change.
 **Still readable when muted.** On-screen text must be sufficient on its own:
 never rely on narration alone to deliver the point.
 
-## 12. Product demos — follow how people actually learn
+## 13. Product demos — follow how people actually learn
 
 A demo is a lesson, not a feature tour. These rules are not stylistic; each one
 exists because viewers abandon or misremember demos that break it.

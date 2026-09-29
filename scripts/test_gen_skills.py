@@ -171,6 +171,24 @@ class IntakeCoverage(unittest.TestCase):
         )
 
 
+class HookCover(unittest.TestCase):
+    """Every video opens on a hook cover. This is an invariant, not a default."""
+
+    def test_video_module_defines_it(self):
+        text = (SRC / "_shared" / "video.md").read_text().lower()
+        self.assertIn("hook cover", text)
+        self.assertIn("every video opens", text)
+
+    def test_video_skills_require_it(self):
+        for path in ("explainer-video/SKILL.md", "product-launch-video/SKILL.md"):
+            text = (REPO / path).read_text().lower()
+            self.assertIn("hook cover", text, path)
+
+    def test_style_template_records_it(self):
+        text = (REPO / "course-creator" / "references" / "video-style-template.md").read_text()
+        self.assertIn("Hook cover:", text)
+
+
 class CheckMode(unittest.TestCase):
     def test_check_passes_when_output_is_current(self):
         self.assertEqual(subprocess.run([sys.executable, GEN, "--check"]).returncode, 0)

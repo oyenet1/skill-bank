@@ -15,6 +15,7 @@ Use this as the shape of each requested video's `style.md`. Replace every placeh
 - Renderer: {Slidev → ffmpeg | Remotion | both | CapCut handoff}
 - Audio mode: {silent | voiceover | music | full}
 - Ending: {main CTA + destination | logo sting | takeaway recap | QR | contact | next video}
+- Hook cover: {the hook phrase, phrased as payoff or tension — the first frame, cover and thumbnail}
 - Watermark: {none | text | logo | both} · {opacity % if any} · {position}
 
 ## Teaching intent
@@ -39,7 +40,8 @@ Use this as the shape of each requested video's `style.md`. Replace every placeh
 - Safe areas and minimum text size: {values}
 - Standard layouts: {full visual, teacher inset, teacher beside visual, full-screen teacher}
 - Image treatment and diagram rules: {crop, border, label, source-credit placement}
-- Representative frames: {links or descriptions for opening, explanation, demo, final takeaway}
+- Representative frames: {links or descriptions for the hook cover, explanation, demo, final takeaway}
+- Hook cover rules: {one idea · legible at ~20% size · hold 1.5–3s · brand mark in a corner, not the hero}
 
 ## Effects bible
 | Effect ID | Teaching purpose | Applies to | Entrance | Hold/change | Exit | Duration/easing | CapCut equivalent |

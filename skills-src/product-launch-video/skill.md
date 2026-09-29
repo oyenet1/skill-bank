@@ -64,7 +64,12 @@ walkthrough when the screenshots need careful explanation.
 
 Write `script.md` and `storyboard.md` with stable beat IDs. Each beat records
 narration or on-screen copy, exact screenshot or recording source, highlighted UI
-region, visible claim, motion direction, duration and transition. If an apparent
+region, visible claim, motion direction, duration and transition.
+
+**Beat 1 is a hook cover** — a single designed frame carrying the hook phrase as
+payoff or tension, legible at thumbnail size and held 1.5–3 seconds. It is the
+first frame, cover and thumbnail at once. See {{ref:video}} §11 and record the
+cover line in `style.md`. If an apparent
 interaction is essential, use a real screen recording or matching before/after
 screenshots. A cursor may guide attention on a still but cannot imply an
 unobserved click result.

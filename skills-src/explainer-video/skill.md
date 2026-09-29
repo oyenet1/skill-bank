@@ -58,6 +58,12 @@ hold, exit, duration, easing and use conditions. Then `script.md`, then
 `storyboard.md` with stable beat IDs — each beat records narration or on-screen
 copy, visual source, motion direction, duration and transition.
 
+**Every video opens on a hook cover** — see {{ref:video}} §11. Beat 1 is a single
+designed frame carrying the hook phrase as payoff or tension, legible at thumbnail
+size and held 1.5–3 seconds. It is the first frame, the cover and the thumbnail at
+once, so write it deliberately rather than letting the first scene double as it.
+Record the cover line in `style.md`.
+
 Resolve `## Delivery` in `style.md` from §2 of {{ref:video}}: category, platform,
 aspect, master resolution, delivery resolution and fps. **Export floor is 1080p;
 render a 4K master whenever the platform accepts it and downscale for delivery.**
