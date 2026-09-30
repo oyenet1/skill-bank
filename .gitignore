@@ -6,6 +6,8 @@
 **/tools/avatar/.tooling/
 __pycache__/
 *.pyc
+.firecrawl/
+videos/
 course-creator/tools/kokoro/.venv/
 course-creator/tools/kokoro/models/*.onnx
 course-creator/tools/kokoro/models/*.bin

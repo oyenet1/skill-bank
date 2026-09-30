@@ -6,6 +6,7 @@ import importlib.util
 import json
 import sys
 import tempfile
+import threading
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -108,6 +109,47 @@ class PlanBuilding(unittest.TestCase):
         self.assertFalse(result["ok"])
         self.assertIn("install_sibling_skill.py", result["prompt"])
         self.assertIn("bundled sibling snapshot", result["reason"])
+
+
+class ParallelSetup(unittest.TestCase):
+    def test_independent_branches_overlap_but_shared_routes_and_skill_copies_stay_serial(self):
+        barrier = threading.Barrier(4, timeout=3)
+        completed = set()
+        lock = threading.Lock()
+        steps = [{'kind': kind, 'name': str(index)} for index, kind in enumerate(
+            ['runtime', 'runtime', 'voice', 'transcription', 'skill', 'skill'])]
+        first = {'runtime': '0', 'voice': '2', 'transcription': '3', 'skill': '4'}
+        def run(step, cancel):
+            if step['name'] == first[step['kind']]:
+                barrier.wait()
+            else:
+                with lock:
+                    self.assertIn(first[step['kind']], completed)
+            with lock:
+                completed.add(step['name'])
+            return {'name': step['name'], 'ok': True}
+        with mock.patch.object(bootstrap, 'run_step', side_effect=run):
+            results = bootstrap.run_steps(steps)
+        self.assertEqual([result['name'] for result in results], [str(i) for i in range(6)])
+
+    def test_failed_worker_cannot_report_success_and_other_branches_complete(self):
+        def run(step, cancel):
+            return {'name': step['name'], 'ok': step['kind'] != 'voice'}
+        steps = [{'kind': kind, 'name': kind} for kind in ['runtime', 'voice', 'transcription']]
+        with mock.patch.object(bootstrap, 'run_step', side_effect=run):
+            results = bootstrap.run_steps(steps)
+        self.assertEqual([result['ok'] for result in results], [True, False, True])
+
+    def test_cancellation_terminates_active_child(self):
+        cancel = threading.Event()
+        timer = threading.Timer(0.25, cancel.set)
+        timer.start()
+        try:
+            with self.assertRaises(InterruptedError):
+                bootstrap.run_step({'kind': 'runtime', 'name': 'cancel fixture',
+                    'command': [sys.executable, '-c', 'import time; time.sleep(30)']}, cancel)
+        finally:
+            timer.cancel()
 
 
 class WindowsLaunchers(unittest.TestCase):

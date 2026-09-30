@@ -121,10 +121,16 @@ def render(skill_dir: Path, mode: str, fm: dict, body: str, caps: dict, modules:
         if mode_name == mode:
             body = body.rstrip("\n") + "\n\n" + block.strip("\n") + "\n"
     body = resolve_tokens(body, mode, caps, modules)
+    # Descriptions may contain YAML punctuation (for example "videos: kinetic").
+    # Serialize instead of interpolating plain scalars so skill discovery can
+    # parse every generated target, including descriptions with colons/quotes.
+    frontmatter = yaml.safe_dump(
+        {"name": head["name"], "description": head["description"].strip()},
+        sort_keys=False, allow_unicode=True, width=100000,
+    )
     return (
         "---\n"
-        f"name: {head['name']}\n"
-        f"description: {head['description'].strip()}\n"
+        f"{frontmatter}"
         "---\n\n"
         f"{body.lstrip(chr(10))}"
     )

@@ -204,7 +204,7 @@ diff --git a/src-tauri/resources/video-tools/bootstrap.py b/src-tauri/resources/
 new file mode 100644
 --- /dev/null
 +++ b/src-tauri/resources/video-tools/bootstrap.py
-@@ -0,0 +1,297 @@
+@@ -0,0 +1,338 @@
 +#!/usr/bin/env python3
 +"""First-use bootstrap for a video skill on Windows, macOS or Linux.
 +
@@ -226,6 +226,7 @@ new file mode 100644
 +from __future__ import annotations
 +
 +import argparse
++from concurrent.futures import ThreadPoolExecutor
 +import json
 +import os
 +from pathlib import Path
@@ -358,7 +359,7 @@ new file mode 100644
 +    return answer in ("", "y", "yes")
 +
 +
-+def run_step(step: dict[str, object]) -> dict[str, object]:
++def run_step(step: dict[str, object], cancel: threading.Event | None = None) -> dict[str, object]:
 +    kind, name = step["kind"], step["name"]
 +    command = list(step["command"])  # type: ignore[arg-type]
 +    if kind == "skill" and not step.get("available"):
@@ -366,6 +367,8 @@ new file mode 100644
 +        return {"kind": kind, "name": name, "ok": False, "prompt": " ".join(command),
 +                "reason": "The installed skill is missing its bundled sibling snapshot; reinstall the complete skill"}
 +    progress(kind, f"Preparing {name}")
++    if cancel is not None and cancel.is_set():
++        return {"kind": kind, "name": name, "ok": False, "cancelled": True}
 +    try:
 +        process = subprocess.Popen(windows_argv(command), stdout=subprocess.PIPE, stderr=subprocess.PIPE,
 +                                   text=True, encoding="utf-8", errors="replace",
@@ -387,6 +390,8 @@ new file mode 100644
 +    stdout = ""; stderr = ""; remaining = 2; reported = time.monotonic()
 +    try:
 +        while remaining or process.poll() is None:
++            if cancel is not None and cancel.is_set():
++                raise InterruptedError("Setup cancelled")
 +            try:
 +                source, line = events.get(timeout=0.5)
 +                if line is None:
@@ -440,6 +445,42 @@ new file mode 100644
 +    return {"kind": kind, "name": name, "ok": True, "result": payload}
 +
 +
++def run_steps(steps: list[dict[str, object]]) -> list[dict[str, object]]:
++    """Overlap independent runtimes, keeping shared renderer routes and sibling copies serial.
++
++    Narration and transcription own separate environments/model directories.
++    Renderer routes share Node/media/profile directories, and sibling installers
++    traverse overlapping cyclic graphs, so each of those branches stays serial.
++    """
++    indexed = list(enumerate(steps))
++    branches = [
++        [(index, step) for index, step in indexed if step["kind"] == kind]
++        for kind in ("runtime", "transcription", "voice", "skill")
++    ]
++    cancel = threading.Event()
++    results: dict[int, dict[str, object]] = {}
++
++    def branch(items):
++        completed = []
++        for index, step in items:
++            if cancel.is_set():
++                break
++            completed.append((index, run_step(step, cancel)))
++        return completed
++
++    with ThreadPoolExecutor(max_workers=4) as pool:
++        pending = [pool.submit(branch, items) for items in branches if items]
++        try:
++            for future in pending:
++                results.update(future.result())
++        except BaseException:
++            # Worker threads cannot receive SIGTERM/KeyboardInterrupt directly.
++            # Wake them so run_step terminates every active child process tree.
++            cancel.set()
++            raise
++    return [results[index] for index, _ in indexed]
++
++
 +def main() -> int:
 +    parser = argparse.ArgumentParser(description=__doc__)
 +    parser.add_argument("--check", action="store_true", help="Report the plan and install nothing")
@@ -485,7 +526,7 @@ new file mode 100644
 +        print(json.dumps({**base, "ready": False, "cancelled": True}, indent=2))
 +        return 1
 +
-+    results = [run_step(step) for step in steps]
++    results = run_steps(steps)
 +    failed = [r for r in results if not r["ok"]]
 +    prompts = [r["prompt"] for r in failed if r.get("prompt")]
 +    ready = not failed
@@ -1102,3 +1143,325 @@ new file mode 100644
 +    }
 +  }
 +}
+diff --git a/src-tauri/src/video_runtime.rs b/src-tauri/src/video_runtime.rs
+--- a/src-tauri/src/video_runtime.rs
++++ b/src-tauri/src/video_runtime.rs
+@@ -471,6 +471,51 @@
+         .and_then(|output| String::from_utf8(output.stdout).ok())
+         .and_then(|stdout| stdout.lines().last().map(str::to_owned))
+         .is_some_and(|path| Path::new(path.trim()).is_file())
++}
++
++fn remotion_browser_ready(profile: &Path, node: &Path) -> bool {
++    let mut command = Command::new(node);
++    command.current_dir(profile).args([
++        "-e",
++        "const {ensureBrowser}=require('@remotion/renderer');ensureBrowser({logLevel:'error',onBrowserDownload:()=>{throw Error('browser missing')}}).then(()=>process.stdout.write('ready')).catch(()=>process.exit(1))",
++    ]);
++    tool_environment(&mut command, node);
++    command.output().is_ok_and(|output| {
++        output.status.success() && String::from_utf8_lossy(&output.stdout).trim() == "ready"
++    })
++}
++
++/// Bound independent installs; join every worker before reporting failure or readiness.
++fn run_setup_tasks<T: Send>(
++    tasks: Vec<Box<dyn FnOnce() -> Result<T, String> + Send + '_>>,
++) -> Result<Vec<T>, String> {
++    let mut pending = tasks.into_iter();
++    let mut results = Vec::new();
++    let mut errors = Vec::new();
++    loop {
++        let batch: Vec<_> = pending.by_ref().take(4).collect();
++        if batch.is_empty() {
++            break;
++        }
++        thread::scope(|scope| {
++            let workers: Vec<_> = batch.into_iter().map(|task| scope.spawn(task)).collect();
++            for worker in workers {
++                match worker.join() {
++                    Ok(Ok(result)) => results.push(result),
++                    Ok(Err(error)) => errors.push(error),
++                    Err(_) => errors.push("Video setup worker panicked".into()),
++                }
++            }
++        });
++        if !errors.is_empty() {
++            break;
++        }
++    }
++    if errors.is_empty() {
++        Ok(results)
++    } else {
++        Err(errors.join("; "))
++    }
+ }
+ 
+ fn ensure_profile(
+@@ -532,8 +577,8 @@
+             return Err("Slidev browser did not verify".into());
+         }
+     }
+-    if name == "remotion" {
+-        progress(reporter, "browser", "Verifying Remotion browser");
++    if name == "remotion" && !remotion_browser_ready(&profile, node) {
++        progress(reporter, "browser", "Installing Remotion browser");
+         run_tool(
+             &binary,
+             &["browser", "ensure"],
+@@ -543,6 +588,9 @@
+             reporter,
+             state,
+         )?;
++        if !remotion_browser_ready(&profile, node) {
++            return Err("Remotion browser did not verify".into());
++        }
+         fs::write(profile.join(".browser-ready"), "verified\n").map_err(|e| e.to_string())?;
+     }
+     if name == "hyperframes" && !hyperframes_browser_ready(&profile, &binary, node) {
+@@ -560,43 +608,26 @@
+             return Err("HyperFrames browser did not verify".into());
+         }
+     }
++    progress(reporter, name, format!("{name} packages and browser ready"));
+     Ok(binary)
+ }
+ 
+-fn setup(
+-    app: &AppHandle,
+-    route: String,
++fn ensure_media(
++    data_dir: &Path,
+     reporter: &Reporter<'_>,
+     state: &RuntimeState,
+-) -> Result<RuntimeResult, String> {
+-    let manifest = requirements()?;
+-    let profiles = manifest
+-        .routes
+-        .get(&route)
+-        .ok_or("Unknown video runtime route")?;
+-    let minimum = version_tuple(&manifest.minimum_node).ok_or("Invalid minimum Node version")?;
+-    let data_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
+-    let runtime = data_dir.join("video-runtime");
+-    fs::create_dir_all(&runtime).map_err(|e| e.to_string())?;
+-    let (node, npm) = resolve_node(&runtime, minimum, reporter, state)?;
+-    let mut paths = BTreeMap::from([
+-        ("node".into(), node.to_string_lossy().into_owned()),
+-        ("npm".into(), npm.to_string_lossy().into_owned()),
+-    ]);
+-    for name in profiles {
+-        check_cancel(state)?;
+-        let spec = manifest
+-            .profiles
+-            .get(name)
+-            .ok_or_else(|| format!("Missing {name} profile"))?;
+-        let binary = ensure_profile(name, spec, &runtime, &node, &npm, reporter, state)?;
+-        paths.insert(name.clone(), binary.to_string_lossy().into_owned());
+-    }
+-    if crate::ffmpeg::find(&data_dir).is_none() || crate::ffmpeg::find_ffprobe(&data_dir).is_none()
+-    {
++) -> Result<Vec<(String, String)>, String> {
++    check_cancel(state)?;
++    let media_ready = || {
++        crate::ffmpeg::find(data_dir)
++            .is_some_and(|(path, _)| crate::ffmpeg::version_of(&path).is_some())
++            && crate::ffmpeg::find_ffprobe(data_dir)
++                .is_some_and(|(path, _)| crate::ffmpeg::version_of(&path).is_some())
++    };
++    if !media_ready() {
+         check_cancel(state)?;
+         progress(reporter, "media", "Installing FFmpeg and FFprobe");
+-        crate::ffmpeg::install(&data_dir, |update| {
++        crate::ffmpeg::install(data_dir, |update| {
+             let (message, downloaded_bytes, total_bytes) = match update {
+                 crate::ffmpeg::FfmpegProgress::Starting => ("Starting FFmpeg download", None, None),
+                 crate::ffmpeg::FfmpegProgress::Downloading {
+@@ -619,14 +650,67 @@
+         })?;
+         check_cancel(state)?;
+     }
+-    let ffmpeg = crate::ffmpeg::find(&data_dir)
++    check_cancel(state)?;
++    if !media_ready() {
++        return Err("FFmpeg or FFprobe failed verification after setup".into());
++    }
++    let ffmpeg = crate::ffmpeg::find(data_dir)
+         .ok_or("FFmpeg is missing after setup")?
+         .0;
+-    let ffprobe = crate::ffmpeg::find_ffprobe(&data_dir)
++    let ffprobe = crate::ffmpeg::find_ffprobe(data_dir)
+         .ok_or("FFprobe is missing after setup")?
+         .0;
+-    paths.insert("ffmpeg".into(), ffmpeg.to_string_lossy().into_owned());
+-    paths.insert("ffprobe".into(), ffprobe.to_string_lossy().into_owned());
++    Ok(vec![
++        ("ffmpeg".into(), ffmpeg.to_string_lossy().into_owned()),
++        ("ffprobe".into(), ffprobe.to_string_lossy().into_owned()),
++    ])
++}
++
++fn setup(
++    app: &AppHandle,
++    route: String,
++    reporter: &Reporter<'_>,
++    state: &RuntimeState,
++) -> Result<RuntimeResult, String> {
++    let manifest = requirements()?;
++    let profiles = manifest
++        .routes
++        .get(&route)
++        .ok_or("Unknown video runtime route")?;
++    let minimum = version_tuple(&manifest.minimum_node).ok_or("Invalid minimum Node version")?;
++    let data_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
++    let runtime = data_dir.join("video-runtime");
++    fs::create_dir_all(&runtime).map_err(|e| e.to_string())?;
++    let (node, npm) = resolve_node(&runtime, minimum, reporter, state)?;
++    let mut paths = BTreeMap::from([
++        ("node".into(), node.to_string_lossy().into_owned()),
++        ("npm".into(), npm.to_string_lossy().into_owned()),
++    ]);
++    // Node is the shared prerequisite. Each renderer then owns a separate
++    // profile/browser cache, and FFmpeg owns its own download directory.
++    let mut tasks: Vec<Box<dyn FnOnce() -> Result<Vec<(String, String)>, String> + Send + '_>> =
++        Vec::new();
++    let mut seen = std::collections::BTreeSet::new();
++    for name in profiles {
++        if !seen.insert(name) {
++            continue;
++        }
++        let spec = manifest
++            .profiles
++            .get(name)
++            .ok_or_else(|| format!("Missing {name} profile"))?;
++        let (runtime, node, npm) = (&runtime, &node, &npm);
++        tasks.push(Box::new(move || {
++            check_cancel(state)?;
++            let binary = ensure_profile(name, spec, runtime, node, npm, reporter, state)?;
++            Ok(vec![(name.clone(), binary.to_string_lossy().into_owned())])
++        }));
++    }
++    tasks.push(Box::new(|| ensure_media(&data_dir, reporter, state)));
++    for installed in run_setup_tasks(tasks)? {
++        paths.extend(installed);
++    }
++    check_cancel(state)?;
+     progress(reporter, "complete", "Video runtime ready");
+     Ok(RuntimeResult {
+         ready: true,
+@@ -672,6 +756,116 @@
+ #[cfg(test)]
+ mod tests {
+     use super::*;
++
++    #[test]
++    fn setup_workers_overlap_and_preserve_results() {
++        let barrier = std::sync::Arc::new(std::sync::Barrier::new(4));
++        let tasks = (0usize..4)
++            .map(|id| {
++                let barrier = barrier.clone();
++                Box::new(move || {
++                    barrier.wait();
++                    Ok(id)
++                }) as Box<dyn FnOnce() -> Result<usize, String> + Send>
++            })
++            .collect();
++        assert_eq!(run_setup_tasks(tasks).unwrap(), vec![0, 1, 2, 3]);
++    }
++
++    #[test]
++    fn setup_failure_joins_siblings_and_does_not_start_later_batches() {
++        let finished = std::sync::atomic::AtomicUsize::new(0);
++        let tasks = (0usize..5)
++            .map(|id| {
++                let finished = &finished;
++                Box::new(move || {
++                    finished.fetch_add(1, Ordering::SeqCst);
++                    if id == 0 {
++                        Err("fixture failure".into())
++                    } else {
++                        Ok(id)
++                    }
++                }) as Box<dyn FnOnce() -> Result<usize, String> + Send + '_>
++            })
++            .collect();
++        assert_eq!(run_setup_tasks(tasks).unwrap_err(), "fixture failure");
++        assert_eq!(finished.load(Ordering::SeqCst), 4);
++    }
++
++    #[cfg(unix)]
++    #[test]
++    fn ready_remotion_skips_install_and_missing_browser_is_repaired() {
++        use std::os::unix::fs::PermissionsExt;
++        let Some(node) = crate::ffmpeg::which("node") else {
++            return;
++        };
++        let directory = std::env::temp_dir().join(format!(
++            "video-runtime-reuse-{}-{}",
++            std::process::id(),
++            SystemTime::now()
++                .duration_since(UNIX_EPOCH)
++                .unwrap()
++                .as_nanos()
++        ));
++        let profile = directory.join("remotion");
++        let binary = profile.join("node_modules/.bin/remotion");
++        let renderer = profile.join("node_modules/@remotion/renderer");
++        fs::create_dir_all(binary.parent().unwrap()).unwrap();
++        fs::create_dir_all(&renderer).unwrap();
++        fs::write(renderer.join("index.js"), "exports.ensureBrowser=async(o)=>{if(!require('fs').existsSync('browser-fixture'))o.onBrowserDownload();}").unwrap();
++        fs::write(&binary, "#!/usr/bin/env node\nif(process.argv[2]==='browser'){require('fs').writeFileSync('browser-fixture','ready');require('fs').appendFileSync('install-count','1');}").unwrap();
++        fs::set_permissions(&binary, fs::Permissions::from_mode(0o755)).unwrap();
++        let spec = Profile {
++            packages: BTreeMap::from([("remotion".into(), "fixture".into())]),
++            binary: "remotion".into(),
++        };
++        fs::write(profile.join("package.json"), serde_json::to_vec(&json!({"private":true,"name":"skill-bank-remotion","version":"1.0.0","dependencies":spec.packages})).unwrap()).unwrap();
++        fs::write(profile.join("browser-fixture"), "ready").unwrap();
++        let state = RuntimeState::default();
++        let reporter = |_event| {};
++        let missing_npm = directory.join("npm-must-not-run");
++        ensure_profile(
++            "remotion",
++            &spec,
++            &directory,
++            &node,
++            &missing_npm,
++            &reporter,
++            &state,
++        )
++        .unwrap();
++        assert!(!profile.join("install-count").exists());
++        fs::remove_file(profile.join("browser-fixture")).unwrap();
++        ensure_profile(
++            "remotion",
++            &spec,
++            &directory,
++            &node,
++            &missing_npm,
++            &reporter,
++            &state,
++        )
++        .unwrap();
++        assert_eq!(
++            fs::read_to_string(profile.join("install-count")).unwrap(),
++            "1"
++        );
++        ensure_profile(
++            "remotion",
++            &spec,
++            &directory,
++            &node,
++            &missing_npm,
++            &reporter,
++            &state,
++        )
++        .unwrap();
++        assert_eq!(
++            fs::read_to_string(profile.join("install-count")).unwrap(),
++            "1"
++        );
++        fs::remove_dir_all(directory).unwrap();
++    }
+ 
+     #[test]
+     fn manifest_routes_have_known_profiles() {

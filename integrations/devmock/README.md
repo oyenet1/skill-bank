@@ -6,6 +6,26 @@ assets, narration, and selected skill route to the bundled Python runner. The
 Tauri host installs or reuses a private Python runtime and routes progress and
 cancellation. Runtime files, projects, downloads, and logs live in app data.
 
+## Parallel dependency setup
+
+**Prepare tools** resolves and verifies Node/npm first. Renderer profiles and
+FFmpeg/FFprobe then install concurrently, with at most four workers. Each profile
+prepares its packages before its browser, and duplicate profiles are visited
+once. Existing ready packages and browsers are reused; missing browsers are
+repaired and verified, including Remotion's Chrome Headless Shell. Media binaries
+must execute successfully before setup reports ready.
+
+Progress events from workers share the existing setup channel. All active
+workers finish before the app reports failure or readiness. Renderer workers
+share the existing cancellation flag; the native FFmpeg downloader retains its
+existing behavior of returning from the download before cancellation completes.
+No new package dependency was added for scheduling.
+
+Standalone skills separately use their shared parallel bootstrap: renderer,
+transcription, narration and sibling-copy branches overlap, while operations
+that share renderer directories or overlapping sibling graphs stay sequential.
+See the repository README for dependency layers and exact manifest/lock paths.
+
 Spoken audio is transcribed from the final media. `VideoCaptionEditor.vue`
 previews that MP4 and lets users review cue text and timing before saving SRT,
 VTT, JSON, and the reviewed transcript. Caption edits are checked against the

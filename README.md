@@ -143,6 +143,58 @@ npx skills add oyenet1/skill-bank --list
 npx skills list -g
 ```
 
+### Complete installable skill catalog
+
+All thirteen top-level skills can be installed independently. Use
+`npx skills add oyenet1/skill-bank --skill NAME -g -a codex` with any name below.
+Omit `-a codex` to choose another supported agent.
+
+| Skill name | Direct associated skills installed on first use |
+|---|---|
+| `spec-driven-development` | None |
+| `curriculum-map` | None |
+| `content-authoring` | None |
+| `marketing-copy` | None |
+| `visual-assets` | None |
+| `voice-narration` | `explainer-video`, `product-launch-video` |
+| `slide-decks` | `visual-assets`, `explainer-video` |
+| `explainer-video` | `voice-narration`, `product-launch-video`, `slide-decks`, `visual-assets` |
+| `motion-graphics-video` | `voice-narration`, `visual-assets` |
+| `product-launch-video` | `explainer-video`, `voice-narration` |
+| `talking-head-video` | `avatar-video`, `explainer-video`, `product-launch-video` |
+| `avatar-video` | `talking-head-video`, `voice-narration` |
+| `course-creator` | All eleven course subskills already bundled; no separate sibling copies |
+
+The associated graph is resolved recursively, including dependencies of
+dependencies. `npx skills add` itself copies only the selected skill; its
+first-use launcher installs the associated graph and prepares runtimes.
+
+Install every top-level skill for Codex in one command:
+
+```bash
+npx skills add oyenet1/skill-bank --skill '*' -g -a codex -y
+```
+
+The CLI supports many agents, but some do not support global installation.
+Selecting an agent explicitly avoids unrelated agent-specific installation
+errors. Older generated YAML descriptions containing unquoted colons caused
+the CLI to skip `motion-graphics-video` and `avatar-video` and report only eleven
+skills. The generator now serializes valid YAML and checks every target.
+
+For a fresh isolated installation audit with per-stage timing, run:
+
+```bash
+python3 scripts/smoke_install_video_skill.py
+# Discovery/copy only, without runtime downloads:
+python3 scripts/smoke_install_video_skill.py --files-only
+```
+
+The script writes logs and `report.json` under a new temporary sandbox. It
+measures skill copying, first-use setup, cached setup and read-only verification.
+Installed skills, npm/UV/browser caches and downloaded models stay isolated;
+compatible host Node/npm, Python, UV and FFmpeg may be reused. Use `--source PATH`
+to test a local checkout or `--sandbox-dir EMPTY_DIR` to retain a chosen location.
+
 ### Prepare the runtime on first use
 
 `npx skills add` copies files and has no setup hook. Each runtime skill now
@@ -232,6 +284,85 @@ The launcher runs `tools/bootstrap.py`, which reads the shipped
    `visual-assets`. No npx or Git is needed for these sibling installations;
    existing skills and user edits are preserved.
 
+### Dependency order, parallel setup, and reuse
+
+Setup respects prerequisites while overlapping independent work. The desktop
+app's **Prepare tools** action resolves Node once, then runs renderer profiles
+and FFmpeg/FFprobe setup concurrently, with at most four workers. Each renderer
+installs its packages before preparing its browser. Duplicate profile names are
+handled once. The app joins all active workers before reporting success or
+failure; only a completely verified setup reports ready.
+
+Standalone setup and `scripts/install_video_skill.py` use the same bootstrap.
+It runs up to four independent branches concurrently: video tools, speech
+recognition, Kokoro narration, and associated skill copies. Renderer routes
+within the video-tools branch remain sequential because they share Node and
+media directories. Sibling copies remain sequential because their cyclic
+dependency graphs overlap. Associated skill files are copied recursively;
+their own runtimes are prepared when those skills are first used.
+
+The dependency layers, from prerequisites to consumers, are:
+
+1. **Host and download utilities:** Windows/macOS/Linux on x64 or ARM64,
+   writable user data, internet for first downloads, and enough disk space.
+   Launchers reuse Python 3.10+ or prepare private Python. Without Python,
+   Unix setup uses curl/wget, archive extraction and SHA-256 utilities;
+   Windows uses PowerShell. Linux browser system libraries must already be
+   available; setup does not invoke a distribution package manager.
+2. **Runtime managers:** Node.js 22.12.0 or newer with npm for rendering;
+   private UV and Python 3.12 environments for narration and transcription.
+   Compatible existing runtimes are reused.
+3. **Media tools:** FFmpeg and FFprobe. Standalone setup uses working system
+   binaries or `ffmpeg-static` and `@derhuerst/ffprobe-static`; the desktop app
+   uses its existing native media installer and platform archives.
+4. **Renderers and their browsers:** Slidev uses `@slidev/cli`,
+   `@slidev/theme-default`, `playwright-chromium` and Chromium; Remotion uses
+   `@remotion/cli`, `remotion`, `react`, `react-dom` and Chrome Headless Shell;
+   HyperFrames uses `hyperframes`, `gsap` and its managed browser. Each engine
+   also installs its npm dependencies recursively.
+5. **Narration:** Kokoro uses `kokoro-onnx`, `soundfile`, `espeakng-loader`,
+   `misaki` and `imageio-ffmpeg`. Its locked indirect dependencies include
+   `addict`, `attrs`, `cffi`, `cloudpickle`, `dlinfo`, `flatbuffers`, `joblib`,
+   `numpy`, `onnxruntime`, `packaging`, `phonemizer`, `protobuf`, `pycparser`,
+   `regex` and `typing-extensions`. The two model files,
+   `kokoro-v1.0.onnx` and `voices-v1.0.bin`, total approximately 354 MB.
+6. **Transcription:** `faster-whisper`, `ctranslate2`, PyAV (`av`), their
+   recursively resolved Python dependencies, and the `small.en` speech model.
+   `small` is the multilingual option; older macOS has an alternative PyAV pin.
+7. **Skills:** `visual-assets` has no associated skills.
+   `explainer-video`, `product-launch-video`, `voice-narration` and
+   `slide-decks` form a connected group that also installs `visual-assets`.
+   `motion-graphics-video` brings in that group through its narration/asset
+   associations. `talking-head-video` and `avatar-video` install each other
+   and that group. Cycles are visited once and existing skills are preserved.
+   `course-creator` already contains all eleven course subskills, so it does
+   not install separate sibling copies.
+8. **Optional features:** Local avatars require compatible accelerator hardware,
+   backend-specific Python/PyTorch packages and model downloads; ordinary setup
+   does not install these models. Hosted avatars require HeyGen credentials.
+   Generated scene images require an OpenAI credential and quota. Docker and
+   Pocket TTS are optional alternatives, not default bootstrap dependencies.
+
+Exact direct versions live in
+[`runtime_requirements.json`](skills-src/_shared/tools/runtime_requirements.json).
+The complete Kokoro package versions/hashes live in
+[`requirements.lock`](course-creator/tools/kokoro/requirements.lock), and avatar
+package/model requirements live in
+[`avatar_models.json`](skills-src/_shared/tools/avatar_models.json).
+Renderer and transcription transitive versions are resolved at installation;
+there is no single checked-in lock covering all platforms and features.
+
+Repeated setup verifies and reuses ready packages, browsers, model files and
+environments rather than downloading them again. Missing or failed components
+are retried. Browser readiness checks inspect the actual browser, not a stale
+marker file. The installer also reuses an existing skill directory containing
+`SKILL.md`; it preserves user edits and refuses incomplete directories or
+symlink destinations. `--resume` remains available after a failed install.
+`--check` stays read-only. Cancellation stops active bootstrap child process
+trees; native renderer workers share the app's cancel flag. The native FFmpeg
+download keeps its existing cancellation granularity: setup waits for that
+download to return before finishing cancellation.
+
 Use `--check` to report the plan and install nothing, `--yes` to run without an
 interactive prompt, `--no-skills` to prepare runtimes only, and `--target DIR`
 to name the skills directory. Unsupported OS/architecture combinations report
@@ -271,19 +402,19 @@ Unsupported CPU/OS combinations report the missing runtime instead of
 silently choosing a binary for another platform.
 
 This copies the generated skill, installs its video runtime, and prepares local
-Kokoro narration. It also accepts `slide-decks`, `talking-head-video`,
-`avatar-video`, `voice-narration`, and `course-creator`. Use a fresh destination;
-the installer refuses to replace an existing skill directory. If setup fails
+Kokoro narration and speech recognition where required. It also accepts
+`motion-graphics-video`, `slide-decks`, `talking-head-video`,
+`avatar-video`, `voice-narration`, and `course-creator`. Existing valid skill
+directories are reused without overwriting their files. If setup fails
 after the files are copied, rerun the same command with `--resume` to retry the
 missing prerequisites.
-For `avatar-video`, it also checks the hosted HeyGen CLI and authentication.
-That provider step requires a user account; the local script, voice, and
-storyboard fallback remains available if it is not ready.
+For `avatar-video`, it checks local capabilities without downloading models and
+lets the provider dispatcher prefer a verified local backend or the editable
+script, voice and storyboard fallback when no hosted provider is available.
 
-`install_video_skill.py` prepares the runtime for the one skill you name. The
-associated skills are offered by the first-use bootstrap instead, so an install
-made any way — the installer, `npx skills add`, or a manual copy — can complete
-its own setup.
+`install_video_skill.py` invokes the same parallel bootstrap as first-use setup,
+including indirect associated skill copies. Installations made through
+`npx skills add` or a manual copy complete that setup on first use.
 
 Skills are generated. The source of truth is [`skills-src/`](./skills-src/); the
 `course-creator/subskills/` folders and the top-level skills are build output.

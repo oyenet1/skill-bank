@@ -1,6 +1,6 @@
 ---
 name: motion-graphics-video
-description: Generate editable motion graphics videos: kinetic typography, animated diagrams, charts, process flows, logo reveals, titles and visual concept explanations. Use for animation-led videos from a brief or script, with optional narration.
+description: 'Generate editable motion graphics videos: kinetic typography, animated diagrams, charts, process flows, logo reveals, titles and visual concept explanations. Use for animation-led videos from a brief or script, with optional narration.'
 ---
 
 # Motion Graphics Video

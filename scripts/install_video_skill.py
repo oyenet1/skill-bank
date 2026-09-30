@@ -9,7 +9,6 @@ The target is the directory that contains installed skill directories.
 from __future__ import annotations
 
 import argparse
-import json
 from pathlib import Path
 import platform
 import shutil
@@ -21,13 +20,14 @@ REPO = Path(__file__).resolve().parents[1]
 ROUTES = {
     "slide-decks": ["slide-decks"],
     "explainer-video": ["explainer-video"],
+    "motion-graphics-video": ["explainer-video"],
     "product-launch-video": ["product-launch-video"],
     "talking-head-video": ["talking-head-video"],
     "avatar-video": ["avatar-video"],
     "voice-narration": [],
     "course-creator": ["explainer-video"],
 }
-VOICE_SKILLS = {"explainer-video", "product-launch-video", "talking-head-video", "avatar-video", "voice-narration", "course-creator"}
+VOICE_SKILLS = {"explainer-video", "motion-graphics-video", "product-launch-video", "talking-head-video", "avatar-video", "voice-narration", "course-creator"}
 
 
 def check_avatar_provider() -> None:
@@ -55,41 +55,19 @@ def install(skill: str, target: Path, runtime_dir: Path | None = None, resume: b
     if resume:
         if destination.is_symlink() or not (destination / "SKILL.md").is_file():
             raise RuntimeError(f"No installed skill to resume at: {destination}")
+    elif destination.exists() or destination.is_symlink():
+        if destination.is_symlink() or not (destination / "SKILL.md").is_file():
+            raise RuntimeError(f"Destination already exists without a reusable skill: {destination}; no files were overwritten")
+        print(f"Reusing installed skill at {destination}", flush=True)
     else:
-        if destination.exists():
-            raise RuntimeError(f"Destination already exists: {destination}; use --resume after a setup failure")
         destination.parent.mkdir(parents=True, exist_ok=True)
         shutil.copytree(source, destination, ignore=shutil.ignore_patterns(".venv", "models", "node_modules", "__pycache__", "*.pyc"))
-    for route in ROUTES[skill]:
-        tool = (
-            destination / "subskills/course-creator-explainer-video/tools/ensure_video_runtime.py"
-            if skill == "course-creator"
-            else destination / "tools/ensure_video_runtime.py"
-        )
-        command = [sys.executable, str(tool), route]
-        if runtime_dir:
-            command.extend(["--runtime-dir", str(runtime_dir)])
-        print(f"Preparing {route} runtime...", flush=True)
-        subprocess.run(command, check=True)
-    if ROUTES[skill] and skill != "slide-decks":
-        asr_tool = (destination / "subskills/course-creator-explainer-video/tools/ensure_python_runtime.py"
-                    if skill == "course-creator" else destination / "tools/ensure_python_runtime.py")
-        command = [sys.executable, str(asr_tool), "--prepare-transcription"]
-        if runtime_dir:
-            command.extend(["--runtime-dir", str(runtime_dir)])
-        print("Preparing local speech recognition...", flush=True)
-        subprocess.run(command, check=True)
-    if skill in VOICE_SKILLS:
-        tool = destination / "tools/kokoro/start.py"
-        print("Preparing local narration...", flush=True)
-        subprocess.run([sys.executable, str(tool)], check=True)
-    dependencies = destination / "tools/dependencies.json"
-    if dependencies.is_file():
-        spec = json.loads(dependencies.read_text(encoding="utf-8"))
-        for sibling in spec.get("associated", []):
-            print(f"Preparing associated skill {sibling}...", flush=True)
-            subprocess.run([sys.executable, str(destination / "tools/install_sibling_skill.py"),
-                            sibling, "--target", str(destination.parent)], check=True)
+    command = [sys.executable, str(destination / "tools/bootstrap.py"),
+               "--yes", "--target", str(destination.parent)]
+    if runtime_dir:
+        command.extend(["--runtime-dir", str(runtime_dir)])
+    print(f"Preparing {skill} dependencies in parallel...", flush=True)
+    subprocess.run(command, check=True)
     if skill == "avatar-video":
         # Presenter backends are optional. Capability detection never installs
         # models; local narration above makes the editable fallback usable.

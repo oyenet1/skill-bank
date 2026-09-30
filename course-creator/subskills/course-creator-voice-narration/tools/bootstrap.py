@@ -19,6 +19,7 @@ This tool never modifies PATH, shell profiles, or global packages.
 from __future__ import annotations
 
 import argparse
+from concurrent.futures import ThreadPoolExecutor
 import json
 import os
 from pathlib import Path
@@ -151,7 +152,7 @@ def confirm(steps: list[dict[str, object]]) -> bool:
     return answer in ("", "y", "yes")
 
 
-def run_step(step: dict[str, object]) -> dict[str, object]:
+def run_step(step: dict[str, object], cancel: threading.Event | None = None) -> dict[str, object]:
     kind, name = step["kind"], step["name"]
     command = list(step["command"])  # type: ignore[arg-type]
     if kind == "skill" and not step.get("available"):
@@ -159,6 +160,8 @@ def run_step(step: dict[str, object]) -> dict[str, object]:
         return {"kind": kind, "name": name, "ok": False, "prompt": " ".join(command),
                 "reason": "The installed skill is missing its bundled sibling snapshot; reinstall the complete skill"}
     progress(kind, f"Preparing {name}")
+    if cancel is not None and cancel.is_set():
+        return {"kind": kind, "name": name, "ok": False, "cancelled": True}
     try:
         process = subprocess.Popen(windows_argv(command), stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                    text=True, encoding="utf-8", errors="replace",
@@ -180,6 +183,8 @@ def run_step(step: dict[str, object]) -> dict[str, object]:
     stdout = ""; stderr = ""; remaining = 2; reported = time.monotonic()
     try:
         while remaining or process.poll() is None:
+            if cancel is not None and cancel.is_set():
+                raise InterruptedError("Setup cancelled")
             try:
                 source, line = events.get(timeout=0.5)
                 if line is None:
@@ -233,6 +238,42 @@ def run_step(step: dict[str, object]) -> dict[str, object]:
     return {"kind": kind, "name": name, "ok": True, "result": payload}
 
 
+def run_steps(steps: list[dict[str, object]]) -> list[dict[str, object]]:
+    """Overlap independent runtimes, keeping shared renderer routes and sibling copies serial.
+
+    Narration and transcription own separate environments/model directories.
+    Renderer routes share Node/media/profile directories, and sibling installers
+    traverse overlapping cyclic graphs, so each of those branches stays serial.
+    """
+    indexed = list(enumerate(steps))
+    branches = [
+        [(index, step) for index, step in indexed if step["kind"] == kind]
+        for kind in ("runtime", "transcription", "voice", "skill")
+    ]
+    cancel = threading.Event()
+    results: dict[int, dict[str, object]] = {}
+
+    def branch(items):
+        completed = []
+        for index, step in items:
+            if cancel.is_set():
+                break
+            completed.append((index, run_step(step, cancel)))
+        return completed
+
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        pending = [pool.submit(branch, items) for items in branches if items]
+        try:
+            for future in pending:
+                results.update(future.result())
+        except BaseException:
+            # Worker threads cannot receive SIGTERM/KeyboardInterrupt directly.
+            # Wake them so run_step terminates every active child process tree.
+            cancel.set()
+            raise
+    return [results[index] for index, _ in indexed]
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--check", action="store_true", help="Report the plan and install nothing")
@@ -278,7 +319,7 @@ def main() -> int:
         print(json.dumps({**base, "ready": False, "cancelled": True}, indent=2))
         return 1
 
-    results = [run_step(step) for step in steps]
+    results = run_steps(steps)
     failed = [r for r in results if not r["ok"]]
     prompts = [r["prompt"] for r in failed if r.get("prompt")]
     ready = not failed

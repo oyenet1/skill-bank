@@ -54,6 +54,24 @@ class LinksResolve(unittest.TestCase):
 
 
 class Frontmatter(unittest.TestCase):
+    def test_every_generated_skill_frontmatter_round_trips_for_discovery(self):
+        for path, content in generated().items():
+            if path.name != 'SKILL.md':
+                continue
+            with self.subTest(skill=path):
+                header = gen_skills.yaml.safe_load(content.split('---', 2)[1])
+                self.assertIsInstance(header['name'], str)
+                self.assertIsInstance(header['description'], str)
+                self.assertTrue(header['description'].strip())
+
+    def test_motion_graphics_and_avatar_colons_are_preserved_as_description_text(self):
+        output = generated()
+        for name, phrase in [('motion-graphics-video', 'videos: kinetic'),
+                             ('avatar-video', 'camera: an AI avatar')]:
+            header = gen_skills.yaml.safe_load(output[REPO / name / 'SKILL.md'].split('---', 2)[1])
+            self.assertEqual(header['name'], name)
+            self.assertIn(phrase, header['description'])
+
     def test_standalone_and_bundle_differ(self):
         for cap, spec in gen_skills.load_manifest()["capabilities"].items():
             fm, _ = gen_skills.parse_skill(SRC / cap / "skill.md")

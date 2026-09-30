@@ -1,6 +1,6 @@
 ---
 name: avatar-video
-description: Generate a presenter video from a script when there is no camera: an AI avatar reads it, a still photo is animated into a lip-synced talking clip, or an existing clip is translated and dubbed. Uses a verified local photo presenter or an authenticated HeyGen provider with an editable fallback, captions the result locally, and delivers the video, the audio and the voiceover text.
+description: 'Generate a presenter video from a script when there is no camera: an AI avatar reads it, a still photo is animated into a lip-synced talking clip, or an existing clip is translated and dubbed. Uses a verified local photo presenter or an authenticated HeyGen provider with an editable fallback, captions the result locally, and delivers the video, the audio and the voiceover text.'
 ---
 
 # Avatar Video
