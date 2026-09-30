@@ -244,3 +244,8 @@ For a product launch ad or a screenshot-based product demo, use the
 {{sibling:product-launch-video}} skill when it is installed — this skill handles
 explainer and lesson video.
 {{/mode}}
+
+## Optional generated illustrations
+
+Read {{ref:generated-assets}} when generating supporting scene images. Keep the
+verified image and its provider/model/prompt metadata with the editable project.

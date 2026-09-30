@@ -69,6 +69,72 @@ class DesktopVideoJobTests(unittest.TestCase):
             self.assertTrue((job.parent / "inputs/narration-0001.wav").is_file())
             self.assertFalse((root / "escape.wav").exists())
 
+    def test_generated_image_provenance_is_preserved_without_unknown_secret_fields(self):
+        import hashlib
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            payload = self.payload(root)
+            data = (root / "card.png").read_bytes()
+            provenance = {"provider": "openai", "model": "gpt-image-2", "prompt": "Supporting illustration", "size": "1536x1024", "quality": "medium", "createdAt": "2026-09-30", "sha256": hashlib.sha256(data).hexdigest(), "termsUrl": "https://openai.com/policies/terms-of-use/", "sourceType": "generated", "apiKey": "not-for-export"}
+            payload["request"]["sourceAssets"] = [{"name": "generated.png", "mime": "image/png", "dataBase64": base64.b64encode(data).decode(), "provenance": provenance}]
+            payload["request"]["scenes"][0]["sourceAssetIndex"] = 0
+            source = root / "form.json"; source.write_text(json.dumps(payload))
+            result = DESKTOP.run_desktop_job(source, root / "job")
+            self.assertTrue(result["assetReviewRequired"])
+            final = Path(result["directory"])
+            manifest = json.loads((final / "manifest.json").read_text())
+            record = manifest["assetSources"][0]
+            self.assertEqual(record["provenance"]["sha256"], hashlib.sha256(data).hexdigest())
+            self.assertTrue((final / record["file"]).is_file())
+            self.assertNotIn("not-for-export", (final / "source/desktop/desktop.json").read_text())
+            self.assertNotIn("apiKey", record["provenance"])
+            payload["request"]["sourceAssets"][0]["provenance"]["sha256"] = "wrong"
+            source.write_text(json.dumps(payload))
+            with self.assertRaisesRegex(ValueError, "does not match"):
+                DESKTOP.prepare_request(source, root / "bad-job")
+
+    def test_authored_sources_keep_real_assets_and_measured_narration(self):
+        for renderer in ("hyperframes", "remotion", "slidev"):
+            with self.subTest(renderer=renderer), tempfile.TemporaryDirectory() as temp:
+                root = Path(temp)
+                payload = self.payload(root)
+                request = payload["request"]
+                request["renderer"] = renderer
+                request.update(headlineFont="Outfit", bodyFont="Inter")
+                request["title"] = '</script><script>unexpected()</script> {{ unsafe }}'
+                image_bytes = (root / "card.png").read_bytes()
+                request["sourceAssets"] = [{"name": "real screenshot.png", "mime": "image/png",
+                                            "dataBase64": base64.b64encode(image_bytes).decode()}]
+                scene = request["scenes"][0]
+                scene["sourceAssetIndex"] = 0
+                scene["visual"] = '<img onerror="unexpected()"> {{ unsafe }}'
+                scene["screenText"] = '<img onerror="unexpected()"> {{ unsafe }}'
+                wav = root / "narration.wav"
+                subprocess.run(["ffmpeg", "-v", "error", "-f", "lavfi", "-i", "sine=frequency=440:duration=0.73", str(wav)], check=True)
+                scene["audioSource"] = {"name": "narration.wav", "mime": "audio/wav", "dataBase64": base64.b64encode(wav.read_bytes()).decode()}
+                source = root / "form.json"
+                source.write_text(json.dumps(payload))
+                job = DESKTOP.prepare_request(source, root / "job")
+                config = json.loads(job.read_text())
+                checked = DESKTOP.run_job.__globals__["request_config"](job)
+                self.assertEqual(checked["renderer"], "storyboard")
+                self.assertEqual(config["authoringRenderer"], renderer)
+                contract = job.parent / config["source"]
+                spec = json.loads(contract.read_text())
+                entry = spec["scenes"][0]
+                self.assertGreaterEqual(entry["duration_sec"], 0.73)
+                self.assertLess(entry["duration_sec"], 0.73 + 1 / request["fps"])
+                folder = contract.parent / entry["folder"]
+                self.assertEqual((folder / "public/media.png").read_bytes(), image_bytes)
+                self.assertEqual((job.parent / "inputs/narration-0001.wav").read_bytes(), wav.read_bytes())
+                authored = (folder / entry["entry"]).read_text()
+                self.assertNotIn('<script>unexpected()', authored)
+                self.assertNotIn('<img onerror=', authored)
+                self.assertTrue((folder / "scene.json").is_file())
+                fonts = json.loads((folder / "scene.json").read_text())
+                self.assertEqual(fonts["headlineFont"], "Outfit")
+                self.assertEqual(fonts["bodyFont"], "Inter")
+
     def test_rejects_two_narration_sources(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)

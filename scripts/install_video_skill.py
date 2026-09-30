@@ -9,6 +9,7 @@ The target is the directory that contains installed skill directories.
 from __future__ import annotations
 
 import argparse
+import json
 from pathlib import Path
 import platform
 import shutil
@@ -70,12 +71,25 @@ def install(skill: str, target: Path, runtime_dir: Path | None = None, resume: b
             command.extend(["--runtime-dir", str(runtime_dir)])
         print(f"Preparing {route} runtime...", flush=True)
         subprocess.run(command, check=True)
+    if ROUTES[skill] and skill != "slide-decks":
+        asr_tool = (destination / "subskills/course-creator-explainer-video/tools/ensure_python_runtime.py"
+                    if skill == "course-creator" else destination / "tools/ensure_python_runtime.py")
+        command = [sys.executable, str(asr_tool), "--prepare-transcription"]
+        if runtime_dir:
+            command.extend(["--runtime-dir", str(runtime_dir)])
+        print("Preparing local speech recognition...", flush=True)
+        subprocess.run(command, check=True)
     if skill in VOICE_SKILLS:
         tool = destination / "tools/kokoro/start.py"
         print("Preparing local narration...", flush=True)
         subprocess.run([sys.executable, str(tool)], check=True)
     if skill == "avatar-video":
-        check_avatar_provider()
+        # Presenter backends are optional. Capability detection never installs
+        # models; local narration above makes the editable fallback usable.
+        subprocess.run([sys.executable, str(destination / "tools/avatar_ensure.py"), "avatar-video", "--check"], check=True)
+        # The dispatcher chooses a verified local installation before checking
+        # hosted authentication. Installation never implies model consent.
+        subprocess.run([sys.executable, str(destination / "tools/avatar_provider.py")], check=True)
     print(f"Installed {skill} at {destination}", flush=True)
     return destination
 

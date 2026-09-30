@@ -50,6 +50,15 @@ sighted reader would get from the image.
 [brand](references/brand.md) governs imagery style: photographic, illustrated, ui-only or mixed,
 plus icon and illustration rules. Follow it when one exists.
 
+
+
+
+
+## Optional generated illustrations
+
+Read [generated-assets](references/generated-assets.md) when generating supporting scene images. Keep the
+verified image and its provider/model/prompt metadata with the editable project.
+
 ## Standalone output
 
 Use the project's `assets/` folder when one exists, otherwise the directory the

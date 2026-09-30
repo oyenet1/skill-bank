@@ -111,6 +111,15 @@ Per [video](references/video.md) §14: the **video** (MP4, master rendered then 
 platform, resolutions, the caption/overlay style used, the output paths, and
 every limitation — including any trim or reframing made to fit the platform.
 
+
+
+
+
+## Optional generated illustrations
+
+Read [generated-assets](references/generated-assets.md) when generating supporting scene images. Keep the
+verified image and its provider/model/prompt metadata with the editable project.
+
 ## Standalone output
 
 Keep the project in a named `videos/{clip-slug}/` folder, or the location the

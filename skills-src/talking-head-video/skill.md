@@ -140,3 +140,8 @@ requester chose. Preserve the original clip separately from any trimmed working
 copy so edits stay reversible. Hand off `<name>.mp4`, `<name>.mp3`, the transcript
 and the caption files together.
 {{/mode}}
+
+## Optional generated illustrations
+
+Read {{ref:generated-assets}} when generating supporting scene images. Keep the
+verified image and its provider/model/prompt metadata with the editable project.

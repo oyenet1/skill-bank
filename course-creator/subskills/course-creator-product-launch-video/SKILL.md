@@ -172,6 +172,11 @@ together so later edits can be made selectively.
 
 
 
+## Optional generated illustrations
+
+Read [generated-assets](references/generated-assets.md) when generating supporting scene images. Keep the
+verified image and its provider/model/prompt metadata with the editable project.
+
 ## Course integration
 
 Read the [screenshot-to-video workflow](../../references/product-launch.md) plus the

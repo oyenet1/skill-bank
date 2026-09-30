@@ -201,6 +201,11 @@ limitation or unverified claim you left out.
 
 
 
+## Optional generated illustrations
+
+Read [generated-assets](references/generated-assets.md) when generating supporting scene images. Keep the
+verified image and its provider/model/prompt metadata with the editable project.
+
 ## Course integration
 
 Read the [video style template](../../references/video-style-template.md) and the

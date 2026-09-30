@@ -1,57 +1,90 @@
-# Video Studio job runner handoff
+# Video Studio desktop integration
 
-`docs/patches/devmock-video-job.patch` connects the existing desktop form to
-the shared video job tools. It bundles the Python tools as Tauri resources,
-adds a Rust host command, and sends the existing scene cards, uploaded footage,
-and local/uploaded narration through `run_desktop_video_job.py`.
+The video job runner is now connected to the writable `devmock` checkout in
+`/home/fade/Projects/js/devmock`. Video Studio sends its storyboard, uploaded
+assets, narration, and selected skill route to the bundled Python runner. The
+Tauri host installs or reuses a private Python runtime and routes progress and
+cancellation. Runtime files, projects, downloads, and logs live in app data.
 
-The host reuses `uv` when available or installs it privately using the official
-installer. `uv run --no-project --python 3.12` prepares Python without requiring
-a system Python installation. Downloads, caches, projects, and logs live in
-Tauri app data, including when resources are inside an AppImage. Windows uses
-PowerShell and cancels the process tree; Unix uses process groups and gives the
-Python runner time to stop its renderer. The Python environment uses UTF-8.
+Spoken audio is transcribed from the final media. `VideoCaptionEditor.vue`
+previews that MP4 and lets users review cue text and timing before saving SRT,
+VTT, JSON, and the reviewed transcript. Caption edits are checked against the
+video and caption hashes before they are committed. The asset protocol is
+scoped to project files under app data.
 
-The frontend receives progress through a Tauri channel and reports MP4, final
-audio, captions, and transcript paths after the runner verifies them. Spoken
-audio uses final-media local ASR and returns a caption review flag. Silent
-scenes keep the storyboard cues. Original uploads and form metadata are kept
-under `source/desktop/` beside the portable delivery project.
-
-## Prepare and apply source changes
-
-From skill-bank, regenerate the patch against the current app:
+`docs/patches/devmock-video-job.patch` exports the complete current source
+integration, including the caption editor, renderer manifest, and Windows
+launcher fixes. Regenerate it from the integrated app checkout with:
 
 ```sh
-python3 scripts/prepare_devmock_video_patch.py --app /path/to/devmock
-git -C /path/to/devmock apply --check /path/to/skill-bank/docs/patches/devmock-video-job.patch
+python3 scripts/prepare_devmock_video_patch.py --app /path/to/devmock --from-worktree
 ```
 
-When that checkout is writable, apply the reviewed patch there:
+The patch is relative to that app repository's Git HEAD. It passes a reverse
+apply check against the current integrated checkout; this confirms the patch
+matches the exported files and does not establish runtime correctness.
 
-```sh
-git -C /path/to/devmock apply /path/to/skill-bank/docs/patches/devmock-video-job.patch
-```
+## Authored visual workflows
 
-The separate `devmock-hyperframes-runtime.patch` adds HyperFrames to the
-existing manual **Prepare tools** command. The job patch uses the bundled
-shared runtime manifest for its own automatic setup. Both patches apply to the
-current checkout; neither has been applied to the read-only sibling app here.
+The form offers HyperFrames HTML, Remotion React, Slidev slides, and the original
+scene-card route through a searchable `USelectMenu`. Each authored scene keeps
+its editable source, local uploaded assets, frame-based timing, and renderer
+package requirements. Scene timing expands to measured narration length. The
+final assembler retains the original narration or footage audio once and
+writes the script, storyboard, MP4, MP3 when audio exists, SRT, and VTT.
 
-## Verification and remaining work
+The storyboard now has an **On-screen text** field. Visual direction remains
+production metadata. Selected brand fonts are downloaded from pinned, integrity-checked Fontsource
+packages and preserved with their licences in the editable source. Slidev is hidden when footage is
+uploaded because its PNG exporter produces still slides.
 
-The desktop import tests encode and probe a real scene project, reject duplicate
-narration sources, preserve uploaded bytes without using uploaded names as
-paths, and check resume identity and preservation of reviewed style. Source
-checks include `git apply --check`, Rust formatting, and Vue type checking in
-an isolated app copy. The latter reports no errors in the patched files;
-eight existing diagnostics remain in StoryboardTimeline, TextBlockControls,
-ChromaPanel, and JobProgress.
+## Verification and limits
 
-The Rust host has not been compiled or run: the user requested source work
-without an app build. Windows and macOS execution, managed Python first-use
-downloads, and live ASR still need platform verification. The patch connects
-the existing scene/card/footage route. It does not yet author and run Slidev,
-Remotion, or HyperFrames source from the form, expose the runner's resume
-control, or provide an in-app caption editor. These remain part of the full
-desktop workflow objective.
+Real generated-source renders succeeded locally for HyperFrames, Remotion,
+and Slidev. A two-scene HyperFrames render retained both uploaded narration and
+footage audio. A separate spoken sample completed managed Python/package/model setup and
+recognition from the final rendered MP4, producing word timing and JSON/SRT/VTT
+with a review flag. This short English sample does not establish accuracy for
+other languages, speakers, or long recordings. Source type checking
+passed, and focused Python tests exercise source generation, upload preservation,
+caption handoff, and resume behavior.
+
+No app build was run. Caption editor use inside the desktop host, native macOS and Windows
+execution, provider-backed asset
+and avatar generation, and packaging still need verification or integration.
+The prepared source patch reflects the latest app files.
+
+## Local presenter implementation
+
+The talking-head panel now includes a searchable backend menu, an explicit
+licence/download consent checkbox, install/cancel/retry progress, portrait upload
+and image-rights confirmation. The hardware check uses existing Python or a native
+read-only fallback; clean hosts can prepare private Python after model consent.
+Both avatar commands share the existing video-operation cancellation guard.
+
+Bundled tools implement verified resumable downloads, pinned private environments,
+MPS inference smoke gating, offline photo inference, provider dispatch, and
+presenter pre-generation through the existing scene renderer. Failed inference
+retains real script, narration WAV/MP3, storyboard, logs and staging. The final
+project includes original inputs and presenter provenance.
+
+SadTalker remains disabled due to Basel Face Model licensing. This host has no
+supported accelerator, so live GPU inference and native UI execution still need
+Windows/Linux NVIDIA and macOS Apple Silicon verification. No app build was run.
+See `docs/video-desktop-integration.md` for commands and the PRD deviation.
+
+## Generated scene images
+
+`VideoAssetPanel` exposes optional OpenAI image generation. The host command
+`video_skill_generate_image` prepares private Python, runs the shared adapter,
+relays progress and returns image data/public provenance. Verified images are
+cached for retry, and keys never enter project files. Scene sources retain their
+metadata and require image/rights review separately from subtitle approval.
+The integration patch includes its frontend regression tests. Provider tests use
+stubbed responses; no paid request or app build was run.
+
+The exported patch keeps the checkout's existing native audio/speech module and
+matching Cargo configuration because the current host registers those commands.
+It does not remove that work. Default patch preparation now verifies the complete
+canonical patch against the destination, avoiding the obsolete initial template
+that omitted later commands and UI features.

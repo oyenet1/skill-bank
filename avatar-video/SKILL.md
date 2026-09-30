@@ -1,6 +1,6 @@
 ---
 name: avatar-video
-description: Generate a presenter video from a script when there is no camera: an AI avatar reads it, a still photo is animated into a lip-synced talking clip, or an existing clip is translated and dubbed. Uses the HeyGen provider with a stated offline fallback, captions the result locally, and delivers the video, the audio and the voiceover text.
+description: Generate a presenter video from a script when there is no camera: an AI avatar reads it, a still photo is animated into a lip-synced talking clip, or an existing clip is translated and dubbed. Uses a verified local photo presenter or an authenticated HeyGen provider with an editable fallback, captions the result locally, and delivers the video, the audio and the voiceover text.
 ---
 
 # Avatar Video
@@ -14,11 +14,12 @@ to supply.
 | `photo` | a still photo of a person is animated into a lip-synced talking clip |
 | `dub` | an existing clip is translated and lip-synced into another language |
 
-This is the **one skill in the set that depends on a hosted provider** — HeyGen —
-for the presenter itself. Transcription, captioning and packaging stay local.
-Be honest about the dependency: if the provider is unavailable or
-unauthenticated, deliver the script, the voice and the storyboard, and say what
-is blocked. **Never fabricate a presenter video.**
+Photo mode supports a verified local backend on compatible NVIDIA or Apple
+Silicon hardware. Avatar and dubbing modes use authenticated HeyGen. Automatic
+selection prefers an installed compatible local photo backend, then HeyGen,
+then an editable script, local narration and storyboard fallback. Never claim
+that fallback assets are a presenter video. An explicit provider choice fails
+clearly when unavailable instead of silently changing providers.
 
 To package footage the requester already has, use `talking-head-video`
 instead — that path is local end to end.
@@ -43,14 +44,38 @@ then settle these in order:
 6. **Ending** — a closing card or the presenter's own sign-off. Only add a CTA
    the request asked for.
 
-## 2. Preflight — provider auth gate
+## 2. Preflight — hardware, consent and provider
 
 Read [preflight](references/preflight.md).
+
+- Run `python3 tools/avatar_probe.py` (`py -3 tools/avatar_probe.py` on Windows)
+  before choosing a local presenter. This is a read-only, network-free hardware
+  check. It reports accelerator, measured memory, eligibility, and compatible
+  backend metadata. CUDA needs 6 GiB VRAM; Apple Silicon needs 24 GiB unified
+  memory. AMD/ROCm, CPU and unsupported architectures retain the voice/script
+  fallback. Hardware eligibility alone does not mean a backend is installed.
+- Run `python3 tools/avatar_ensure.py avatar-video --check`. It reports installed
+  backends and consent offers without creating environments or downloading
+  models. Show the selected model's licence, component licences, download size,
+  disk allowance and expected runtime band before asking for acceptance.
+- Only after explicit model consent, run
+  `python3 tools/avatar_ensure.py avatar-video --backend <id> --accept --consent-token <displayed-token>`.
+  The private runtime uses `SKILL_BANK_AVATAR_HOME` or the platform's user-data
+  `skill-bank/avatar` folder. Verified downloads resume from `.part` files.
+  MPS requires an actual three-second inference check before readiness.
+  Use `--allow-restricted` only when the requester explicitly opts into the
+  displayed restrictions. SadTalker is disabled because its bundled Basel
+  Face Model data is not licensed for general commercial use/distribution.
+- Resolve `python3 tools/avatar_provider.py --mode photo` (use the actual mode).
+  `--provider local|heygen` or `SKILL_BANK_AVATAR_PROVIDER` overrides automatic
+  selection. Local never requires HeyGen authentication; hosted never requires
+  local models. Keep script, verified Kokoro WAV/MP3 and storyboard when no
+  presenter is available, identifying the blocked step and retry command.
 
 - Run `python3 tools/ensure_video_runtime.py avatar-video` from this skill
   directory for the local packaging toolchain (HyperFrames, FFmpeg) — the
   captioning and render of the result.
-- Check the **provider**: the HeyGen CLI must be installed and authenticated.
+- For a resolved **HeyGen provider**, check authentication: the HeyGen CLI must be installed and authenticated.
   Run its status command, then `heygen auth login --oauth` to sign in when it is
   not. OAuth rides the free-usage allowance; an API key bills API credits.
   Report the status **verbatim** before spending anything.
@@ -73,12 +98,32 @@ align to the spoken audio, not to an estimate.
 
 Resolve the voice through [voice](references/voice.md). Generate and verify the local WAV (and
 its MP3) before generating the presenter, so a provider failure still leaves a
-usable audio deliverable. Identify names and technical terms that the synthetic
+usable audio deliverable. If presenter generation is blocked, package those
+real assets with `python3 tools/avatar_provider.py --deliver-fallback fallback
+--script script.md --audio narration.wav`; inspect its verified artifact paths
+and clearly state the blocked presenter step. Identify names and technical terms that the synthetic
 voice mispronounces and fix them in the script.
 
 ## 4. Generate the presenter
 
-Drive the HeyGen CLI for the chosen mode. Discovery is read-only and needs no
+For a resolved local photo backend, confirm image rights and generate using
+its private inference environment:
+
+```bash
+python3 tools/avatar_generate.py --backend musetalk-15 --mode photo \
+  --image portrait.png --audio narration.wav --out presenter --rights-confirmed
+```
+
+Use the selected backend ID, not an assumed default. This command installs
+nothing, runs inference offline, verifies video and narration duration, and
+returns the actual MP4 plus manifest. Failures retain logs and staging without
+publishing a partial final MP4. Local `avatar` and `dub` return explicit
+unsupported responses. Keep clips around 30 seconds; split longer narration
+into scenes. Resolution and accelerator tier dominate memory and runtime.
+Pass generated clips into the normal video job as footage, keeping original
+narration separate so it is mixed exactly once.
+
+For a resolved hosted provider, drive the HeyGen CLI for the chosen mode. Discovery is read-only and needs no
 spend; confirm the avatar and voice before creating:
 
 ```bash
@@ -134,6 +179,15 @@ reproduced, and the caption files.
 
 Report the mode, provider status, platform, resolutions, avatar and voice used,
 output paths, and any unverified claim or provider limitation.
+
+
+
+
+
+## Optional generated illustrations
+
+Read [generated-assets](references/generated-assets.md) when generating supporting scene images. Keep the
+verified image and its provider/model/prompt metadata with the editable project.
 
 ## Standalone output
 

@@ -20,7 +20,7 @@ import sys
 import tempfile
 
 from assemble_video import assemble, progress
-from ensure_video_runtime import default_runtime_dir, setup
+from ensure_video_runtime import default_runtime_dir, setup, tool_command
 
 
 FRAME = re.compile(r"^(\d+)-(\d+)\.png$")
@@ -60,7 +60,7 @@ def render(deck: Path, timing: Path, out_dir: Path, runtime_dir: Path) -> dict:
                    "--output", str(frames_dir), "--timeout", "60000"]
         progress("visuals", "Exporting Slidev click states")
         with export_log.open("w", encoding="utf-8") as log:
-            result = subprocess.run(command, cwd=deck.parent, env=env, stdout=log, stderr=subprocess.STDOUT)
+            result = subprocess.run(tool_command(command, Path(paths["node"])), cwd=deck.parent, env=env, stdout=log, stderr=subprocess.STDOUT)
         if result.returncode:
             detail = export_log.read_text(encoding="utf-8", errors="replace")[-2500:]
             raise RuntimeError(f"Slidev export failed ({result.returncode}); see {export_log}: {detail}")

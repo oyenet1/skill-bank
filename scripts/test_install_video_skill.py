@@ -10,6 +10,23 @@ from scripts.install_video_skill import REPO, ROUTES, VOICE_SKILLS, check_avatar
 
 
 class InstallVideoSkillTests(unittest.TestCase):
+    def test_avatar_install_keeps_fallback_when_hosted_provider_is_missing(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            source = root / "source/avatar-video"
+            (source / "tools/kokoro").mkdir(parents=True)
+            (source / "SKILL.md").write_text("---\nname: avatar-video\n---\n")
+            for name in ("ensure_video_runtime.py", "ensure_python_runtime.py", "avatar_ensure.py", "avatar_provider.py", "kokoro/start.py"):
+                (source / "tools" / name).write_text("# test fixture\n")
+            with mock.patch("scripts.install_video_skill.REPO", root / "source"), mock.patch("scripts.install_video_skill.subprocess.run") as run, mock.patch("scripts.install_video_skill.check_avatar_provider", side_effect=AssertionError("Installer must let the dispatcher prefer local or fallback")):
+                result = install("avatar-video", root / "installed")
+            self.assertTrue((result / "SKILL.md").is_file())
+            self.assertEqual(Path(run.call_args.args[0][1]).name, "avatar_provider.py")
+            self.assertEqual(run.call_count, 5)
+            self.assertEqual(Path(run.call_args_list[-2].args[0][1]).name, "avatar_ensure.py")
+            self.assertIn("--check", run.call_args_list[-2].args[0])
+            self.assertNotIn("--accept", str(run.call_args_list))
+
     def test_avatar_provider_must_be_installed_and_authenticated(self):
         with mock.patch("scripts.install_video_skill.platform.system", return_value="Linux"), mock.patch(
             "scripts.install_video_skill.shutil.which", return_value=None
@@ -41,6 +58,8 @@ class InstallVideoSkillTests(unittest.TestCase):
                 runtime_tool = (source / "subskills/course-creator-explainer-video/tools/ensure_video_runtime.py"
                                 if skill == "course-creator" else source / "tools/ensure_video_runtime.py")
                 self.assertTrue(runtime_tool.is_file(), skill)
+                if skill != "slide-decks":
+                    self.assertTrue(runtime_tool.with_name("ensure_python_runtime.py").is_file(), skill)
 
     def test_resume_after_runtime_failure(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -49,18 +68,20 @@ class InstallVideoSkillTests(unittest.TestCase):
             (source / "tools/kokoro").mkdir(parents=True)
             (source / "SKILL.md").write_text("---\nname: explainer-video\n---\n")
             (source / "tools/ensure_video_runtime.py").write_text("# installer test\n")
+            (source / "tools/ensure_python_runtime.py").write_text("# installer test\n")
             (source / "tools/kokoro/start.py").write_text("# installer test\n")
             target = root / "installed"
             with mock.patch("scripts.install_video_skill.REPO", root / "source"), mock.patch(
                 "scripts.install_video_skill.subprocess.run",
-                side_effect=[subprocess.CalledProcessError(1, "setup"), None, None],
+                side_effect=[subprocess.CalledProcessError(1, "setup"), None, None, None],
             ) as run:
                 with self.assertRaises(subprocess.CalledProcessError):
                     install("explainer-video", target)
                 self.assertTrue((target / "explainer-video/SKILL.md").is_file())
                 installed = install("explainer-video", target, resume=True)
                 self.assertEqual(installed, target / "explainer-video")
-                self.assertEqual(run.call_count, 3)
+                self.assertEqual(run.call_count, 4)
+                self.assertIn("--prepare-transcription", run.call_args_list[-2].args[0])
                 self.assertEqual(Path(run.call_args_list[-1].args[0][1]).name, "start.py")
 
     def test_resume_requires_existing_skill(self):

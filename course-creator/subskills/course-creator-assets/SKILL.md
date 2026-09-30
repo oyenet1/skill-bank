@@ -54,6 +54,11 @@ plus icon and illustration rules. Follow it when one exists.
 
 
 
+## Optional generated illustrations
+
+Read [generated-assets](references/generated-assets.md) when generating supporting scene images. Keep the
+verified image and its provider/model/prompt metadata with the editable project.
+
 ## Course integration
 
 Read the [bundled asset guide](../../references/bundled-assets.md) and the visual-sourcing

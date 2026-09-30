@@ -15,6 +15,7 @@ global npm packages or the user's shell profile.
 | `explainer-video` | Node · Slidev · Remotion · HyperFrames · Chromium · FFmpeg | `python3 tools/ensure_video_runtime.py explainer-video` |
 | `product-launch-video` | Node · Remotion · HyperFrames · Chromium · FFmpeg | `python3 tools/ensure_video_runtime.py product-launch-video` |
 | `content-authoring`, `marketing-copy` | none | — |
+| Generated scene illustration | Python 3.10+ · OpenAI image API key/model access | Read the generated-assets reference; desktop prepares private Python on first use. |
 | Brand extraction from a URL | web fetch tooling | the environment's web fetch capability |
 | asset/object downloads | network | reachable asset source |
 
@@ -33,6 +34,23 @@ For local narration in a standalone video skill, run its
 In the course bundle use `course-creator/tools/kokoro/start.py`. The
 voice-narration skill has the same setup path. On Unix, `start.sh` remains a
 terminal convenience wrapper.
+
+## Local speech recognition
+
+For captioned video, run `python3 tools/ensure_python_runtime.py
+--prepare-transcription` (use `py -3` on Windows). This prepares a private
+Python environment, pinned speech packages and the English model. Pass
+`--model small` for multilingual speech. The video installer prepares this
+step automatically; final-media transcription also prepares it on first use.
+
+`tools/transcribe_captions.py` reuses installed native Whisper when available,
+or selects managed CPU speech recognition without a compiler. Use
+`--engine faster-whisper` to choose the managed backend explicitly. Unknown
+languages use a multilingual model; English-only models reject non-English
+language requests. The decoder version is pinned, with an older compatible
+wheel selected on macOS before version 14. First use needs network access and
+space for model downloads. Recognition emits progress and keeps its log.
+Review the generated word timing and caption text before delivery.
 
 ## Report shape
 

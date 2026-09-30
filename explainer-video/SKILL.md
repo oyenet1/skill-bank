@@ -197,6 +197,15 @@ State the category, platform, resolutions, renderer, the three outputs (MP4,
 MP3 and SRT/TXT), their paths, the voice and SFX used, and every render
 limitation or unverified claim you left out.
 
+
+
+
+
+## Optional generated illustrations
+
+Read [generated-assets](references/generated-assets.md) when generating supporting scene images. Keep the
+verified image and its provider/model/prompt metadata with the editable project.
+
 ## Standalone output
 
 Work from the brief and whatever assets exist. If a `course-plan.json` is

@@ -32,6 +32,7 @@ RENDER_SCRIPTS = {
     "remotion": "render_remotion_video.py",
     "hyperframes": "render_hyperframes_video.py",
     "scenes": "assemble_video.py",
+    "storyboard": "render_desktop_sources.py",
 }
 ACTIVE_CHILD: subprocess.Popen | None = None
 
@@ -54,8 +55,9 @@ def request_config(path: Path) -> dict:
     route = config.get("route")
     if renderer not in RENDER_SCRIPTS or route not in MANIFEST["routes"]:
         raise ValueError("Video job has an unknown renderer or route")
-    if renderer != "scenes" and renderer not in MANIFEST["routes"][route]:
-        raise ValueError(f"Renderer {renderer} is unavailable for route {route}")
+    selected = config.get("authoringRenderer") if renderer == "storyboard" else renderer
+    if renderer != "scenes" and selected not in MANIFEST["routes"][route]:
+        raise ValueError(f"Renderer {selected} is unavailable for route {route}")
     if config.get("captions", "auto") not in ("auto", "plan", "transcribe"):
         raise ValueError("captions must be auto, plan or transcribe")
     base = path.parent
@@ -67,6 +69,10 @@ def request_config(path: Path) -> dict:
         config["source"] = source_path(base, config.get("source"), "source")
         if not config["source"].is_file():
             raise ValueError(f"Renderer source is missing: {config['source']}")
+    if renderer == "storyboard":
+        authored = json.loads(config["source"].read_text(encoding="utf-8"))
+        if not isinstance(authored, dict) or authored.get("renderer") != selected:
+            raise ValueError("Authoring source renderer does not match the requested workflow")
     for key in ("projectRoot", "props", "variables", "runtimeDir"):
         if config.get(key):
             config[key] = source_path(base, config[key], key)
@@ -82,6 +88,13 @@ def state_path(output: Path) -> Path:
 def write_state(project_path: Path, **state: object) -> None:
     target = state_path(project_path)
     target.parent.mkdir(parents=True, exist_ok=True)
+    if target.is_file() and "avatar" not in state:
+        try:
+            original = json.loads(target.read_text(encoding="utf-8"))
+            if original.get("avatar"):
+                state["avatar"] = original["avatar"]
+        except (OSError, ValueError):
+            pass
     temporary = target.with_suffix(target.suffix + ".tmp")
     temporary.write_text(json.dumps(state, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     temporary.replace(target)
@@ -199,7 +212,7 @@ def render_command(config: dict, work: Path, runtime_dir: Path) -> list[str]:
     if renderer == "scenes":
         ffmpeg, ffprobe = media_paths(runtime_dir)
         command.extend([str(config["timing"]), "--ffmpeg", str(ffmpeg), "--ffprobe", str(ffprobe)])
-    elif renderer == "slidev":
+    elif renderer in ("slidev", "storyboard"):
         command.extend([str(config["source"]), str(config["timing"]), "--runtime-dir", str(runtime_dir)])
     elif renderer == "remotion":
         command.extend([str(config["source"]), config["compositionId"], str(config["timing"]),
@@ -268,6 +281,12 @@ def run_job(request: Path, resume: bool = False) -> dict:
     write_state(output, status="running", phase="validate", request=str(request), requestSha256=request_hash,
                 output=str(output), startedAt=started)
     try:
+        avatar_records = []
+        if config.get("avatar") and not output.exists():
+            from prepare_avatar_job import prepare
+            avatar_records = prepare(request, config)
+            write_state(output, status="running", phase="avatar", request=str(request), requestSha256=request_hash,
+                        output=str(output), startedAt=started, avatar=avatar_records)
         progress("validate", "Video request validated", renderer=config["renderer"])
         if output.exists():
             _, ffprobe = media_paths(runtime_dir)
@@ -301,6 +320,8 @@ def run_job(request: Path, resume: bool = False) -> dict:
         manifest = output / "manifest.json"
         data = json.loads(manifest.read_text(encoding="utf-8"))
         shutil.copy2(request, output / "request.json")
+        if avatar_records:
+            data["avatar"] = avatar_records
         data.update(jobRoute=config["route"], captionSource="local-asr" if review_required else "plan",
                     reviewRequired=review_required, request="request.json")
         manifest.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")

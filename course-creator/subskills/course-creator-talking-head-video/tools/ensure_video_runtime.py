@@ -23,6 +23,7 @@ import tempfile
 import time
 import urllib.error
 import urllib.request
+from network_tls import tls_context
 import zipfile
 
 
@@ -78,11 +79,34 @@ def media_version(binary: Path | str) -> str | None:
         return None
 
 
+def tool_command(command: list[str | Path], node: Path) -> list[str]:
+    """Resolve npm batch wrappers to Node entry points without invoking a shell."""
+    args = [str(value) for value in command]
+    binary = Path(args[0])
+    if platform.system() != "Windows" or binary.suffix.lower() != ".cmd":
+        return args
+    name = binary.stem
+    packages = {"slidev": "@slidev/cli", "remotion": "@remotion/cli",
+                "hyperframes": "hyperframes", "playwright": "playwright-chromium"}
+    if name == "npm":
+        package = binary.parent / "node_modules/npm"
+    elif name in packages:
+        package = binary.parent.parent / packages[name]
+    else:
+        raise RuntimeError(f"Unsupported Windows video tool: {name}")
+    metadata = json.loads((package / "package.json").read_text(encoding="utf-8"))
+    declared = metadata.get("bin")
+    entry = declared if isinstance(declared, str) else declared.get(name) if isinstance(declared, dict) else None
+    if not isinstance(entry, str) or not (package / entry).is_file():
+        raise RuntimeError(f"Missing {name} JavaScript entry point")
+    return [str(node), str(package / entry), *args[1:]]
+
+
 def cli_ready(binary: Path, ready_args: list[str], node: Path, profile: Path) -> bool:
     try:
-        arguments = [str(binary), *ready_args]
+        arguments = tool_command([binary, *ready_args], node)
         return subprocess.run(arguments, cwd=profile, capture_output=True, text=True, timeout=30, env=environment(node)).returncode == 0
-    except (OSError, subprocess.TimeoutExpired):
+    except (OSError, ValueError, RuntimeError, subprocess.TimeoutExpired):
         return False
 
 
@@ -123,13 +147,13 @@ def extract_node_archive(archive: Path, destination: Path) -> None:
 
 def fetch_json(url: str) -> object:
     request = urllib.request.Request(url, headers={"User-Agent": "skill-bank-runtime/1"})
-    with urllib.request.urlopen(request, timeout=30) as response:
+    with urllib.request.urlopen(request, timeout=30, context=tls_context()) as response:
         return json.load(response)
 
 
 def fetch_text(url: str) -> str:
     request = urllib.request.Request(url, headers={"User-Agent": "skill-bank-runtime/1"})
-    with urllib.request.urlopen(request, timeout=30) as response:
+    with urllib.request.urlopen(request, timeout=30, context=tls_context()) as response:
         return response.read().decode("utf-8")
 
 
@@ -137,7 +161,7 @@ def download_verified(url: str, target: Path, sha256: str) -> None:
     request = urllib.request.Request(url, headers={"User-Agent": "skill-bank-runtime/1"})
     digest = hashlib.sha256()
     received = 0
-    with urllib.request.urlopen(request, timeout=60) as response, target.open("wb") as output:
+    with urllib.request.urlopen(request, timeout=60, context=tls_context()) as response, target.open("wb") as output:
         total = int(response.headers.get("Content-Length") or 0)
         while chunk := response.read(1024 * 1024):
             output.write(chunk)
@@ -215,7 +239,7 @@ def environment(node: Path) -> dict[str, str]:
 
 
 def run(command: list[str | Path], node: Path, *, cwd: Path | None = None) -> str:
-    args = [str(piece) for piece in command]
+    args = tool_command(command, node)
     progress("command", "Running " + " ".join(args[:3]))
     started = time.monotonic()
     process = subprocess.Popen(args, cwd=cwd, env=environment(node), text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -314,11 +338,11 @@ def renderer_browser_ready(name: str, binary: Path, node: Path, profile: Path) -
                                     capture_output=True, text=True, timeout=30)
             return result.returncode == 0 and result.stdout.strip() == "ready"
         if name == "hyperframes":
-            result = subprocess.run([str(binary), "browser", "path"], cwd=profile, env=environment(node),
+            result = subprocess.run(tool_command([binary, "browser", "path"], node), cwd=profile, env=environment(node),
                                     capture_output=True, text=True, timeout=30)
             path = result.stdout.strip().splitlines()[-1] if result.stdout.strip() else ""
             return result.returncode == 0 and bool(path) and Path(path).is_file()
-    except (OSError, subprocess.TimeoutExpired):
+    except (OSError, ValueError, RuntimeError, subprocess.TimeoutExpired):
         return False
     raise ValueError(f"Unknown renderer browser: {name}")
 

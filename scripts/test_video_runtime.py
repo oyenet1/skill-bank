@@ -1,6 +1,8 @@
 """Focused checks for the shared video runtime installer."""
 
 import importlib.util
+import json
+import shutil
 from pathlib import Path
 import tarfile
 import tempfile
@@ -19,6 +21,28 @@ class VideoRuntimeTests(unittest.TestCase):
         self.assertEqual(runtime.platform_archive("v24.1.0", "Linux", "x86_64"), "node-v24.1.0-linux-x64.tar.xz")
         self.assertEqual(runtime.platform_archive("v24.1.0", "Darwin", "arm64"), "node-v24.1.0-darwin-arm64.tar.xz")
         self.assertEqual(runtime.platform_archive("v24.1.0", "Windows", "AMD64"), "node-v24.1.0-win-x64.zip")
+
+    def test_windows_npm_tools_preserve_paths_and_arguments_without_shell(self):
+        node = shutil.which("node")
+        if not node:
+            self.skipTest("Node is needed to exercise the JavaScript launcher")
+        with tempfile.TemporaryDirectory(prefix="video runtime & space ") as scratch:
+            root = Path(scratch)
+            modules = root / "node_modules"
+            entries = {"npm": root / "node_modules/npm", "slidev": modules / "@slidev/cli",
+                       "remotion": modules / "@remotion/cli", "hyperframes": modules / "hyperframes",
+                       "playwright": modules / "playwright-chromium"}
+            payload = 'caption & title; $(echo unexpected) "quoted"'
+            for name, package in entries.items():
+                package.mkdir(parents=True, exist_ok=True)
+                (package / "cli.js").write_text("console.log(JSON.stringify(process.argv.slice(2)))")
+                (package / "package.json").write_text(json.dumps({"bin": {name: "cli.js"}}))
+                binary = root / "npm.cmd" if name == "npm" else modules / ".bin" / f"{name}.cmd"
+                binary.parent.mkdir(parents=True, exist_ok=True)
+                binary.write_text("This batch wrapper must never execute")
+                with self.subTest(tool=name), mock.patch.object(runtime.platform, "system", return_value="Windows"), mock.patch.object(runtime, "progress"):
+                    output = runtime.run([binary, "render", payload], Path(node), cwd=root)
+                    self.assertEqual(json.loads(output), ["render", payload])
 
     def test_version_comparison(self):
         self.assertLess(runtime.parse_version("v22.11.0"), runtime.parse_version(runtime.MANIFEST["minimumNode"]))

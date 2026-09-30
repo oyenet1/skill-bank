@@ -31,6 +31,19 @@ class TranscriptGroupingTests(unittest.TestCase):
 
 @unittest.skipUnless(shutil.which("ffmpeg") and shutil.which("ffprobe"), "FFmpeg required")
 class TranscriptionBridgeTests(unittest.TestCase):
+    def test_explicit_managed_engine_remains_selected_with_native_installed(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            worker = root / "fake_worker.py"
+            worker.write_text("import json, pathlib\n"
+                              "path=pathlib.Path(__file__).with_name('transcript.json')\n"
+                              "path.write_text('[]')\n"
+                              "print(json.dumps({'ok':True,'transcriptPath':str(path)}))\n")
+            with mock.patch.object(BRIDGE, "native_whisper_available", return_value=True), mock.patch.object(BRIDGE, "isolated_command", return_value=([sys.executable, str(worker)], None)) as prepare:
+                transcript = BRIDGE.run_transcriber(Path("managed"), root / "speech.wav", root, root / "log", "small.en", "en", runtime_dir=root / "runtime")
+            prepare.assert_called_once()
+            self.assertEqual(transcript, root / "transcript.json")
+
     def test_final_media_produces_reviewable_caption_files(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
@@ -49,7 +62,7 @@ class TranscriptionBridgeTests(unittest.TestCase):
                                 "print(json.dumps({'ok':True,'transcriptPath':str(path)}))\n")
             fake_cli.chmod(0o755)
             ready = {"ready": True, "paths": {"hyperframes": str(fake_cli), "ffprobe": shutil.which("ffprobe")}}
-            with mock.patch.object(BRIDGE, "setup", return_value=ready):
+            with mock.patch.object(BRIDGE, "setup", return_value=ready), mock.patch.object(BRIDGE, "native_whisper_available", return_value=True):
                 result = BRIDGE.transcribe(media, root / "out", root / "runtime", None, "en")
             self.assertTrue(result["reviewRequired"])
             self.assertEqual(result["cueCount"], 2)
@@ -57,6 +70,23 @@ class TranscriptionBridgeTests(unittest.TestCase):
             self.assertEqual(captions["source"], "local-asr")
             self.assertIn("Hello world.", (root / "out/captions.srt").read_text())
             self.assertIn("WEBVTT", (root / "out/captions.vtt").read_text())
+
+    def test_managed_fallback_does_not_require_node_or_native_toolchain(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            media = root / "speech.wav"
+            subprocess.run(["ffmpeg", "-v", "error", "-f", "lavfi", "-i", "sine=frequency=440:duration=2", str(media)], check=True)
+            transcript = root / "words.json"
+            transcript.write_text(json.dumps([{"text": "Bonjour", "start": .1, "end": .5}]))
+            with mock.patch.object(BRIDGE, "native_whisper_available", return_value=False), mock.patch.object(BRIDGE, "setup") as renderer_setup, mock.patch.object(BRIDGE, "run_transcriber", return_value=transcript) as recognize:
+                result = BRIDGE.transcribe(media, root / "out", root / "runtime", None, None)
+            self.assertTrue(result["ready"])
+            renderer_setup.assert_not_called()
+            self.assertEqual(recognize.call_args.args[4], "small")
+            self.assertEqual(recognize.call_args.args[-1], root / "runtime")
+            captions = json.loads((root / "out/captions.json").read_text())
+            self.assertEqual(captions["engine"], "faster-whisper")
+            self.assertIn("Bonjour", (root / "out/captions.srt").read_text())
 
     def test_non_english_rejects_english_only_model(self):
         with tempfile.TemporaryDirectory() as temp:

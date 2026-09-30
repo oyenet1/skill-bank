@@ -35,8 +35,10 @@ def validate(data):
         start, end, words = cue.get("start"), cue.get("end"), cue.get("text")
         if any(isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) for value in (start, end)):
             raise ValueError(f"cue {index} needs finite numeric start and end")
-        if start < previous_end - 0.0005 or end <= start:
+        if start < 0 or start < previous_end - 0.0005 or end <= start:
             raise ValueError(f"cue {index} overlaps the previous cue or has invalid timing")
+        if round(end * 1000) <= round(start * 1000):
+            raise ValueError(f"cue {index} is shorter than subtitle timestamp precision")
         if end > duration + 0.0005:
             raise ValueError(f"cue {index} ends after duration_sec")
         if not isinstance(words, str) or not words.strip():

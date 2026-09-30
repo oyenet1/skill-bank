@@ -107,7 +107,10 @@ def build() -> dict[Path, str]:
     caps = man["capabilities"]
     modules = man["modules"]
     shared = SRC / man["shared_dir"]
-    out: dict[Path, str] = {}
+    out: dict[Path, str] = {
+        REPO / "course-creator/tools/kokoro/network_tls.py":
+            (shared / "tools/network_tls.py").read_text(),
+    }
 
     for cap_id, spec in caps.items():
         skill_dir = SRC / cap_id
@@ -168,7 +171,7 @@ def sync_tools() -> list[Path]:
 def check_tools() -> list[str]:
     bad = []
     for src_rel, dest_rel in TOOL_COPIES:
-        for name in ("generate.py", "start.py", "start.sh", "ensure_uv.sh", "download_models.sh", "README.md", "requirements.txt"):
+        for name in ("network_tls.py", "generate.py", "start.py", "start.sh", "ensure_uv.sh", "download_models.sh", "README.md", "requirements.txt"):
             s, d = REPO / src_rel / name, REPO / dest_rel / name
             if not d.exists():
                 bad.append(f"missing   {dest_rel}/{name}")

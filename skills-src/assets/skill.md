@@ -82,3 +82,8 @@ requester names, and keep the manifest beside the files. If a `course-plan.json`
 is present and the requester points at a mapped lesson, record the asset against
 that lesson's artifacts as well.
 {{/mode}}
+
+## Optional generated illustrations
+
+Read {{ref:generated-assets}} when generating supporting scene images. Keep the
+verified image and its provider/model/prompt metadata with the editable project.

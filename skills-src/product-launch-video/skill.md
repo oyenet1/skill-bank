@@ -204,3 +204,8 @@ requester chose. Preserve original screenshots separately from redacted or
 cropped working copies so edits remain reversible. Read the sibling
 [workflow](references/workflow.md) for the full production sequence.
 {{/mode}}
+
+## Optional generated illustrations
+
+Read {{ref:generated-assets}} when generating supporting scene images. Keep the
+verified image and its provider/model/prompt metadata with the editable project.

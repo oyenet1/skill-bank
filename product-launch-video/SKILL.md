@@ -168,6 +168,15 @@ Keep `product-brief.md`, `script.md`, `storyboard.md`, `style.md`,
 and voiceover text, the renderer's editable source project and the rendered MP4
 together so later edits can be made selectively.
 
+
+
+
+
+## Optional generated illustrations
+
+Read [generated-assets](references/generated-assets.md) when generating supporting scene images. Keep the
+verified image and its provider/model/prompt metadata with the editable project.
+
 ## Standalone output
 
 Keep the project in a named `videos/{product-slug}/` folder, or the location the

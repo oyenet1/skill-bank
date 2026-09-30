@@ -7,91 +7,71 @@ Usage: python3 scripts/prepare_devmock_video_patch.py --app /path/to/devmock
 import argparse
 import difflib
 import json
+import shutil
+import subprocess
 from pathlib import Path
 
 
 REPO = Path(__file__).resolve().parents[1]
 
 
-def replace_once(content: str, before: str, after: str, path: str) -> str:
-    if content.count(before) != 1:
-        raise ValueError(f"Cannot patch {path}: expected one matching source block")
-    return content.replace(before, after, 1)
-
-
 def prepare(app: Path, output: Path) -> None:
-    edits = {}
-    path = "src-tauri/src/lib.rs"
-    content = (app / path).read_text(encoding="utf-8")
-    content = replace_once(content, "mod video_runtime;", "mod video_runtime;\nmod video_skill_job;", path)
-    content = replace_once(content, ".manage(video_runtime::RuntimeState::default())", ".manage(video_runtime::RuntimeState::default())\n        .manage(video_skill_job::SkillJobState::default())", path)
-    content = replace_once(content, "            video_runtime::video_runtime_cancel,", "            video_runtime::video_runtime_cancel,\n            video_skill_job::video_skill_render,\n            video_skill_job::video_skill_cancel,", path)
-    edits[path] = content
+    """Reuse the verified complete patch instead of obsolete source templates."""
+    canonical = REPO / "docs/patches/devmock-video-job.patch"
+    if not canonical.is_file():
+        raise ValueError("Export an integrated app with --from-worktree before preparing this patch")
+    forward = subprocess.run(["git", "-C", str(app), "apply", "--check", str(canonical)], capture_output=True, text=True)
+    reverse = subprocess.run(["git", "-C", str(app), "apply", "--reverse", "--check", str(canonical)], capture_output=True, text=True) if forward.returncode else None
+    if forward.returncode and (reverse is None or reverse.returncode):
+        raise ValueError("This app baseline differs from the prepared integration. Export the current integrated checkout with --from-worktree; the app was not changed")
+    if output != canonical:
+        output.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(canonical, output)
+    print(f"Prepared verified integration at {output}; app checkout was read only")
 
-    path = "src-tauri/Cargo.toml"
-    content = (app / path).read_text(encoding="utf-8")
-    if "[target.'cfg(unix)'.dependencies]" in content:
-        raise ValueError("The app's Unix dependency section changed; review before adding libc")
-    edits[path] = content.rstrip() + "\n\n[target.'cfg(unix)'.dependencies]\nlibc = \"0.2\"\n"
 
-    path = "src-tauri/Cargo.lock"
-    content = (app / path).read_text(encoding="utf-8")
-    start = content.index('name = "progravity"\n')
-    end = content.index("\n[[package]]", start)
-    block = replace_once(content[start:end], ' "hound",\n', ' "hound",\n "libc",\n', path)
-    edits[path] = content[:start] + block + content[end:]
-
-    path = "src-tauri/tauri.conf.json"
-    config = json.loads((app / path).read_text(encoding="utf-8"))
-    config["bundle"]["resources"]["resources/video-tools/"] = "video-tools/"
-    edits[path] = json.dumps(config, indent=2) + "\n"
-
-    path = "src/engine/videoProject.ts"
-    content = (app / path).read_text(encoding="utf-8")
-    content = replace_once(content, "  sizeBytes: number;\n", "  sizeBytes: number;\n  reviewRequired: boolean;\n  mixedAudio: string | null;\n  transcript: string | null;\n", path)
-    content = replace_once(content, "  fps: number;\n", "  fps: number;\n  jobRoute?: 'explainer-video' | 'product-launch-video' | 'talking-head-video';\n", path)
-    content = replace_once(content, "  const channel = new Channel<VideoProjectProgress>();", "  if (cancelled.value) throw new Error('Video job cancelled');\n  const channel = new Channel<VideoProjectProgress>();", path)
-    content = replace_once(content, "  channel.onmessage = (value) => onProgress({ ...value, percent: 45 + Math.round(value.percent * 0.55) });", "  let lastPercent = 45;\n  channel.onmessage = (value) => {\n    lastPercent = Math.max(lastPercent, 45 + Math.round(value.percent * 0.55));\n    onProgress({ ...value, percent: lastPercent });\n  };", path)
-    content = replace_once(content, "'video_project_render'", "'video_skill_render'", path)
-    content = replace_once(content, "      sourceAssets, scenes,", "      sourceAssets, scenes, jobRoute: options.jobRoute,", path)
-    content = replace_once(content, "invoke('video_project_cancel')", "invoke('video_skill_cancel')", path)
-    edits[path] = content
-
-    path = "src/components/VideoStudio.vue"
-    content = (app / path).read_text(encoding="utf-8")
-    content = replace_once(content, "import { AI_PROVIDERS, aiProvider, readSavedAiKey }", "import { AI_PROVIDERS, aiProvider, readSavedAiKey, type AiProviderId }", path)
-    content = replace_once(content, "const aiProviderId = ref('ollama-local');", "const aiProviderId = ref<AiProviderId>('ollama-local');", path)
-    content = replace_once(content, "    if (selected && AI_PROVIDERS.some((provider) => provider.id === selected)) aiProviderId.value = selected;", "    const selectedProvider = AI_PROVIDERS.find((provider) => provider.id === selected);\n    if (selectedProvider) aiProviderId.value = selectedProvider.id;", path)
-    content = content.replace('size="2xs"', 'size="xs"')
-    content = replace_once(content, "        bodyFont: bodyFont.value,\n        fps: fps.value,", "        bodyFont: bodyFont.value,\n        fps: fps.value,\n        jobRoute: kind.value?.id === 'talking-head' ? 'talking-head-video'\n          : plan.value.category === 'product' || ['product-promo', 'launch-video', 'product-film', 'unboxing-demo'].includes(kind.value?.id ?? '')\n            ? 'product-launch-video' : 'explainer-video',", path)
-    content = replace_once(content, '<UAlert color="success" variant="subtle" icon="i-lucide-circle-check" title="Video project complete" :description="`${realOutcome.durationSec.toFixed(1)}s MP4 · ${(realOutcome.sizeBytes / 1048576).toFixed(1)} MB`" />', '<UAlert :color="realOutcome.reviewRequired ? \'warning\' : \'success\'" variant="subtle" icon="i-lucide-circle-check" :title="realOutcome.reviewRequired ? \'Video ready for caption review\' : \'Video project complete\'" :description="`${realOutcome.durationSec.toFixed(1)}s MP4 · ${(realOutcome.sizeBytes / 1048576).toFixed(1)} MB`" />', path)
-    content = replace_once(content, '<li v-if="realOutcome.narration.length">Narration: {{ realOutcome.narration.length }} WAV scene files</li>', '<li v-if="realOutcome.narration.length">Narration: {{ realOutcome.narration.length }} scene files</li>\n              <li v-if="realOutcome.mixedAudio">Final audio: {{ realOutcome.mixedAudio }}</li>\n              <li v-if="realOutcome.transcript">Transcript for review: {{ realOutcome.transcript }}</li>', path)
-    edits[path] = content
-    edits["src-tauri/src/video_skill_job.rs"] = (REPO / "integrations/devmock/video_skill_job.rs").read_text(encoding="utf-8")
-    tools = REPO / "skills-src/_shared/tools"
-    for tool in sorted(tools.iterdir()):
-        if tool.suffix in (".py", ".json"):
-            edits[f"src-tauri/resources/video-tools/{tool.name}"] = tool.read_text(encoding="utf-8")
+def export_worktree(app: Path, output: Path) -> None:
+    """Export the installed integration relative to the app's committed baseline."""
+    baseline = subprocess.run(["git", "-C", str(app), "rev-parse", "--show-toplevel"],
+                              capture_output=True, text=True, check=True)
+    if Path(baseline.stdout.strip()).resolve() != app:
+        raise ValueError("The app path must be its Git repository root")
+    paths = ["tsconfig.check.json", "src-tauri/src/lib.rs", "src-tauri/Cargo.toml", "src-tauri/Cargo.lock",
+             "src-tauri/tauri.conf.json", "src-tauri/src/video_skill_job.rs",
+             "src-tauri/src/video_runtime.rs", "src-tauri/src/video_runtime_requirements.json",
+             "src-tauri/src/audio_studio.rs", "src-tauri/src/speech_recognition.rs",
+             "src/engine/videoProject.ts", "src/engine/videoProject.test.ts", "src/engine/videoRuntime.ts", "src/engine/videoStudio.ts", "src/engine/videoAi.ts",
+             "src/components/VideoStudio.vue", "src/components/VideoCaptionEditor.vue", "src/components/LocalAvatarPanel.vue", "src/components/VideoAssetPanel.vue", "src/components/TextBlockControls.vue", "src/components/converter/ChromaPanel.vue", "src/components/converter/JobProgress.vue", "src/stores/mockupStore.ts", "src/stores/mockupStore.test.ts"]
+    paths.extend(str(path.relative_to(app)) for path in sorted(
+        (app / "src-tauri/resources/video-tools").iterdir()) if path.suffix in (".py", ".json"))
     patch = []
-    for path, after in edits.items():
-        original = app / path
-        before = original.read_text(encoding="utf-8") if original.is_file() else ""
+    for path in paths:
+        after = (app / path).read_text(encoding="utf-8")
+        result = subprocess.run(["git", "-C", str(app), "show", f"HEAD:{path}"],
+                                capture_output=True, text=True)
+        exists = result.returncode == 0
+        before = result.stdout if exists else ""
+        if before == after:
+            continue
         patch.append(f"diff --git a/{path} b/{path}\n")
-        if not original.exists():
+        if not exists:
             patch.append("new file mode 100644\n")
         patch.extend(difflib.unified_diff(before.splitlines(keepends=True), after.splitlines(keepends=True),
-                                        fromfile="a/" + path if original.exists() else "/dev/null", tofile="b/" + path))
+                     fromfile="a/" + path if exists else "/dev/null", tofile="b/" + path))
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text("".join(patch), encoding="utf-8")
-    print(f"Prepared {len(edits)} files in {output}; app checkout was read only")
+    print(f"Exported current integration to {output}; app checkout was read only")
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--app", type=Path, required=True)
     parser.add_argument("--output", type=Path, default=REPO / "docs/patches/devmock-video-job.patch")
+    parser.add_argument("--from-worktree", action="store_true",
+                        help="Export an already integrated checkout relative to its Git HEAD")
     args = parser.parse_args()
-    prepare(args.app.resolve(), args.output.resolve())
+    action = export_worktree if args.from_worktree else prepare
+    action(args.app.resolve(), args.output.resolve())
 
 
 if __name__ == "__main__":

@@ -16,7 +16,8 @@ sys.path.insert(0, str(REPO / "scripts"))
 import gen_skills  # noqa: E402
 
 LINK = re.compile(r"(?<!\!)\[([^\]]*)\]\(([^)#\s]+)\)")
-TOKEN = re.compile(r"\{\{\w+:")
+# Match skill placeholders, allowing literal CSS/JS braces in source tools.
+TOKEN = re.compile(r"\{\{(?:ref|doc|sibling|asset):")
 
 
 def generated() -> dict[Path, str]:

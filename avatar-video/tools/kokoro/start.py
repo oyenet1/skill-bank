@@ -21,6 +21,8 @@ import urllib.request
 
 
 ROOT = Path(__file__).resolve().parent
+sys.path.insert(0, str(ROOT))
+from network_tls import tls_context
 
 
 def runtime_dir() -> Path:
@@ -73,7 +75,7 @@ def ensure_uv() -> Path:
     progress("uv", "Installing private uv runtime")
     with tempfile.TemporaryDirectory(prefix="kokoro-uv-") as scratch:
         installer = Path(scratch) / ("install" + suffix)
-        with urllib.request.urlopen(url, timeout=30) as response, installer.open("wb") as output:
+        with urllib.request.urlopen(url, timeout=30, context=tls_context()) as response, installer.open("wb") as output:
             shutil.copyfileobj(response, output)
         env = os.environ.copy()
         env.update(UV_INSTALL_DIR=str(UV.parent), UV_NO_MODIFY_PATH="1")
@@ -116,7 +118,7 @@ def download_model(name: str, expected_size: int, expected_sha: str) -> None:
     progress("model", f"Downloading {name}", downloadedBytes=offset, totalBytes=expected_size)
     if offset:
         request.add_header("Range", f"bytes={offset}-")
-    with urllib.request.urlopen(request, timeout=60) as response:
+    with urllib.request.urlopen(request, timeout=60, context=tls_context()) as response:
         if offset and response.status != 206:
             offset = 0  # Server ignored Range; start a clean download.
         with partial.open("ab" if offset else "wb") as output:

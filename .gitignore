@@ -1,6 +1,9 @@
 # venvs, model binaries, caches — never commit
 .venv/
 .tooling/
+**/tools/avatar/models/
+**/tools/avatar/.venv/
+**/tools/avatar/.tooling/
 __pycache__/
 *.pyc
 course-creator/tools/kokoro/.venv/

@@ -17,7 +17,7 @@ import subprocess
 import tempfile
 
 from assemble_video import assemble, probe, progress
-from ensure_video_runtime import default_runtime_dir, setup
+from ensure_video_runtime import default_runtime_dir, setup, tool_command
 
 
 IGNORED_DIRS = {".git", "node_modules", "dist", "build", ".cache", "renders"}
@@ -74,7 +74,7 @@ def render(composition: Path, timing: Path, out_dir: Path, runtime_dir: Path,
             command.extend(["--variables-file", str(variables)])
         progress("visuals", f"Rendering HyperFrames composition {composition.name}")
         with render_log.open("w", encoding="utf-8") as log:
-            child = subprocess.run(command, cwd=root, env=env, stdout=log, stderr=subprocess.STDOUT)
+            child = subprocess.run(tool_command(command, Path(paths["node"])), cwd=root, env=env, stdout=log, stderr=subprocess.STDOUT)
         if child.returncode or not clip.is_file():
             detail = render_log.read_text(encoding="utf-8", errors="replace")[-2500:]
             raise RuntimeError(f"HyperFrames render failed ({child.returncode}); see {render_log}: {detail}")
