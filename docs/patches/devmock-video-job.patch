@@ -204,7 +204,7 @@ diff --git a/src-tauri/resources/video-tools/bootstrap.py b/src-tauri/resources/
 new file mode 100644
 --- /dev/null
 +++ b/src-tauri/resources/video-tools/bootstrap.py
-@@ -0,0 +1,206 @@
+@@ -0,0 +1,297 @@
 +#!/usr/bin/env python3
 +"""First-use bootstrap for a video skill on Windows, macOS or Linux.
 +
@@ -230,11 +230,18 @@ new file mode 100644
 +import os
 +from pathlib import Path
 +import platform
++import queue
++import signal
++import threading
++import time
 +import shutil
 +import subprocess
 +import sys
++import zipfile
 +
 +HERE = Path(__file__).resolve().parent
++sys.path.insert(0, str(HERE))
++from install_sibling_skill import dependency_order
 +SKILL_ROOT = HERE.parent
 +DEPENDENCIES = HERE / "dependencies.json"
 +
@@ -282,30 +289,40 @@ new file mode 100644
 +    return command
 +
 +
-+def runtime_steps(spec: dict[str, object], runtime_dir: Path | None) -> list[dict[str, object]]:
++def runtime_steps(spec: dict[str, object], runtime_dir: Path | None, *, check: bool = False) -> list[dict[str, object]]:
 +    steps: list[dict[str, object]] = []
 +    routes = list(spec.get("routes") or [])
 +    for route in routes:
 +        command = [sys.executable, str(HERE / "ensure_video_runtime.py"), str(route)]
 +        if runtime_dir:
 +            command += ["--runtime-dir", str(runtime_dir)]
++        if check:
++            command.append("--check")
 +        steps.append({"kind": "runtime", "name": str(route), "command": command})
 +    if routes and spec.get("transcription"):
 +        command = [sys.executable, str(HERE / "ensure_python_runtime.py"), "--prepare-transcription"]
 +        if runtime_dir:
 +            command += ["--runtime-dir", str(runtime_dir)]
++        if check:
++            command.append("--check")
 +        steps.append({"kind": "transcription", "name": "speech-recognition", "command": command})
 +    if spec.get("voice"):
-+        steps.append({"kind": "voice", "name": "kokoro", "command": [sys.executable, str(HERE / "kokoro/start.py")]})
++        command = [sys.executable, str(HERE / "kokoro/start.py")]
++        if check:
++            command.append("--check")
++        steps.append({"kind": "voice", "name": "kokoro", "command": command})
 +    return steps
 +
 +
 +def skill_steps(spec: dict[str, object], skills_dir: Path, install: bool) -> list[dict[str, object]]:
-+    associated = [name for name in (spec.get("associated") or []) if not sibling_installed(skills_dir, name)]
++    associated = list(spec.get("associated") or [])
 +    if not associated:
 +        return []
 +    installer = HERE / "install_sibling_skill.py"
 +    available = installer.is_file() and (HERE / "sibling_skills.json").is_file()
++    if available:
++        associated = dependency_order(associated, HERE / "sibling_skills.json")
++    associated = [name for name in associated if not sibling_installed(skills_dir, name)]
 +    steps: list[dict[str, object]] = []
 +    for name in associated:
 +        command = [sys.executable, str(installer), name, "--target", str(skills_dir)]
@@ -350,18 +367,76 @@ new file mode 100644
 +                "reason": "The installed skill is missing its bundled sibling snapshot; reinstall the complete skill"}
 +    progress(kind, f"Preparing {name}")
 +    try:
-+        result = subprocess.run(windows_argv(command), capture_output=True, text=True)
++        process = subprocess.Popen(windows_argv(command), stdout=subprocess.PIPE, stderr=subprocess.PIPE,
++                                   text=True, encoding="utf-8", errors="replace",
++                                   env=dict(os.environ, PYTHONUTF8="1", PYTHONIOENCODING="utf-8"), start_new_session=os.name != "nt",
++                                   creationflags=subprocess.CREATE_NEW_PROCESS_GROUP if os.name == "nt" else 0)
 +    except OSError as error:
 +        return {"kind": kind, "name": name, "ok": False, "error": str(error)}
-+    if result.returncode:
-+        return {"kind": kind, "name": name, "ok": False, "error": (result.stderr or result.stdout)[-2000:]}
-+    payload: object = None
-+    for line in reversed((result.stdout or "").strip().splitlines()):
++    events = queue.Queue(maxsize=1000)
++    def read(stream, source):
 +        try:
-+            payload = json.loads(line)
-+            break
++            for line in stream:
++                events.put((source, line))
++        finally:
++            events.put((source, None))
++    readers = [threading.Thread(target=read, args=(stream, source), daemon=True)
++               for stream, source in ((process.stdout, "stdout"), (process.stderr, "stderr"))]
++    for reader in readers:
++        reader.start()
++    stdout = ""; stderr = ""; remaining = 2; reported = time.monotonic()
++    try:
++        while remaining or process.poll() is None:
++            try:
++                source, line = events.get(timeout=0.5)
++                if line is None:
++                    remaining -= 1
++                elif source == "stderr":
++                    stderr = (stderr + line)[-6000:]
++                    sys.stderr.write(line); sys.stderr.flush()
++                else:
++                    stdout = (stdout + line)[-200000:]
++            except queue.Empty:
++                pass
++            if time.monotonic() - reported >= 15:
++                progress(kind, f"Still preparing {name}")
++                reported = time.monotonic()
++        process.wait()
++    except BaseException:
++        if os.name == "nt":
++            subprocess.run(["taskkill.exe", "/T", "/F", "/PID", str(process.pid)], capture_output=True)
++        else:
++            try:
++                os.killpg(process.pid, signal.SIGTERM)
++            except ProcessLookupError:
++                pass
++        try:
++            process.wait(timeout=5)
++        except subprocess.TimeoutExpired:
++            if os.name != "nt":
++                try:
++                    os.killpg(process.pid, signal.SIGKILL)
++                except ProcessLookupError:
++                    pass
++            process.kill(); process.wait()
++        raise
++    finally:
++        for reader in readers:
++            reader.join(timeout=1)
++        process.stdout.close(); process.stderr.close()
++    payload = None
++    for value in [stdout.strip(), *reversed(stdout.strip().splitlines())]:
++        try:
++            candidate = json.loads(value)
++            if isinstance(candidate, dict):
++                payload = candidate
++                break
 +        except ValueError:
-+            continue
++            pass
++    ok = process.returncode == 0 and isinstance(payload, dict) and payload.get("ready") is True
++    if not ok:
++        return {"kind": kind, "name": name, "ok": False, "result": payload,
++                "error": (stderr or stdout)[-2000:]}
 +    return {"kind": kind, "name": name, "ok": True, "result": payload}
 +
 +
@@ -383,16 +458,25 @@ new file mode 100644
 +        return 1
 +
 +    runtime_dir = args.runtime_dir.expanduser().resolve() if args.runtime_dir else None
-+    plan = build_plan(spec, skills_dir, runtime_dir, with_skills=not args.no_skills)
++    try:
++        plan = build_plan(spec, skills_dir, runtime_dir, with_skills=not args.no_skills)
++    except (OSError, ValueError, KeyError, RuntimeError, zipfile.BadZipFile) as error:
++        print(json.dumps({"ready": False, "error": str(error)}))
++        return 1
 +    steps = plan["steps"]
 +
 +    base = {"skill": spec.get("skill"), "os": machine, "skillsDir": str(skills_dir),
 +            "pythonExecutable": sys.executable,
 +            "steps": [{"kind": s["kind"], "name": s["name"]} for s in steps]}
 +    if args.check:
-+        base["ready"] = machine["supported"]
-+        print(json.dumps(base, indent=2))
-+        return 0 if machine["supported"] else 1
++        # Run only read-only checks; never report OS support as tool readiness.
++        checked = runtime_steps(spec, runtime_dir, check=True)
++        results = [run_step(step) for step in checked] if machine["supported"] else []
++        missing_siblings = [step["name"] for step in steps if step["kind"] == "skill"]
++        ready = machine["supported"] and not missing_siblings and all(result["ok"] for result in results)
++        print(json.dumps({**base, "ready": ready, "supported": machine["supported"],
++                          "results": results, "missingSkills": missing_siblings}, indent=2))
++        return 0 if ready else 1
 +    if not machine["supported"]:
 +        print(json.dumps({**base, "ready": False,
 +                          "error": f"No managed runtime for {machine['system']}/{machine['machine']}"}, indent=2))
@@ -410,7 +494,14 @@ new file mode 100644
 +
 +
 +if __name__ == "__main__":
-+    raise SystemExit(main())
++    def interrupted(_signum, _frame):
++        raise KeyboardInterrupt
++    signal.signal(signal.SIGTERM, interrupted)
++    try:
++        raise SystemExit(main())
++    except KeyboardInterrupt:
++        print(json.dumps({"ready": False, "cancelled": True}))
++        raise SystemExit(130)
 diff --git a/src-tauri/resources/video-tools/bootstrap_uv.py b/src-tauri/resources/video-tools/bootstrap_uv.py
 new file mode 100644
 --- /dev/null
@@ -481,10 +572,115 @@ new file mode 100644
 +                (target.parent / f'uv-{license_name}').write_bytes(content)
 +            os.replace(staged, target)
 +    return target
+diff --git a/src-tauri/resources/video-tools/capture_product_screens.py b/src-tauri/resources/video-tools/capture_product_screens.py
+new file mode 100644
+--- /dev/null
++++ b/src-tauri/resources/video-tools/capture_product_screens.py
+@@ -0,0 +1,92 @@
++#!/usr/bin/env python3
++"""Capture real responsive product screens using a private Playwright runtime."""
++import argparse
++import json
++from pathlib import Path
++import subprocess
++import sys
++from urllib.parse import urlsplit
++from ensure_video_runtime import (MANIFEST, default_runtime_dir, resolve_node,
++                                  install_profile, browser_ready, run, environment)
++
++
++def validate(plan):
++    if not isinstance(plan, dict):
++        raise ValueError('Capture plan must be an object')
++    url = urlsplit(plan.get('baseUrl', ''))
++    if url.scheme not in ('http', 'https') or not url.hostname or url.username or url.password:
++        raise ValueError('baseUrl must be an HTTP(S) URL without embedded credentials')
++    profiles = plan.get('profiles', ['desktop'])
++    if not isinstance(profiles, list) or not profiles or any(p not in ('desktop', 'mobile') for p in profiles) or len(set(profiles)) != len(profiles):
++        raise ValueError('profiles must contain desktop, mobile, or both without duplicates')
++    screens = plan.get('screens')
++    if not isinstance(screens, list) or not screens:
++        raise ValueError('Provide at least one named screen')
++    import re
++    names = set()
++    for screen in screens:
++        name = screen.get('name', '')
++        if not re.fullmatch(r'[a-zA-Z0-9_-]+', name) or name in names:
++            raise ValueError('Screen names must be unique filename-safe identifiers')
++        names.add(name)
++        for action in screen.get('steps', []):
++            validate_action(action)
++    login = plan.get('login', {})
++    for action in login.get('steps', []):
++        validate_action(action)
++    if login and not login.get('readySelector'):
++        raise ValueError('Login requires readySelector to verify success before capture')
++    return plan
++
++
++def validate_action(action):
++    if action.get('action') not in ('click', 'fill', 'wait', 'press') or not action.get('selector'):
++        raise ValueError('Steps require click/fill/wait/press and a selector')
++    if action['action'] == 'fill' and not action.get('valueEnv'):
++        raise ValueError('Fill values must reference environment variables via valueEnv')
++
++
++def capture(plan_path, out, runtime, headed=False, session=None):
++    plan_path, out = plan_path.resolve(), out.resolve()
++    validate(json.loads(plan_path.read_text(encoding='utf-8')))
++    if out.exists() and any(out.iterdir()):
++        raise ValueError('Capture output directory must be empty')
++    node, npm = resolve_node(runtime, True)
++    spec = {'packages': {'playwright-chromium': MANIFEST['profiles']['slidev']['packages']['playwright-chromium']}, 'binary': 'playwright'}
++    install_profile('capture', spec, runtime, node, npm, True)
++    profile = runtime / 'capture'
++    if not browser_ready(profile, node):
++        run([node, profile / 'node_modules/playwright-chromium/cli.js', 'install', 'chromium'], node, cwd=profile)
++    if session:
++        session = session.resolve()
++        if session.is_relative_to(out):
++            raise ValueError('Session file must stay outside captured/exported assets')
++        if not session.is_file():
++            raise ValueError('Session file does not exist')
++    command = [str(node), str(Path(__file__).with_name('capture_product_screens.cjs')),
++               str(profile / 'node_modules/playwright-chromium'), str(plan_path), str(out),
++               'headed' if headed else 'headless', str(session) if session else '']
++    result = subprocess.run(command, env=environment(node), capture_output=True, text=True)
++    if result.returncode:
++        # Browser exception text can contain credentials, selector values or URL tokens.
++        raise RuntimeError('Capture failed. Check access, login success selector, screen selectors, and browser dependencies. No credential-bearing browser log was saved.')
++    return json.loads(result.stdout)
++
++
++def main():
++    parser = argparse.ArgumentParser(description=__doc__)
++    parser.add_argument('plan', type=Path)
++    parser.add_argument('--out', type=Path, required=True)
++    parser.add_argument('--runtime-dir', type=Path, default=default_runtime_dir())
++    parser.add_argument('--headed', action='store_true')
++    parser.add_argument('--session', type=Path, help='Existing private Playwright storage-state file')
++    args = parser.parse_args()
++    try:
++        print(json.dumps(capture(args.plan, args.out, args.runtime_dir, args.headed, args.session)))
++        return 0
++    except (ValueError, RuntimeError, OSError) as exc:
++        print(json.dumps({'ready': False, 'error': str(exc)}), file=sys.stderr)
++        return 1
++
++if __name__ == '__main__':
++    sys.exit(main())
 diff --git a/src-tauri/resources/video-tools/ensure_python_runtime.py b/src-tauri/resources/video-tools/ensure_python_runtime.py
 --- a/src-tauri/resources/video-tools/ensure_python_runtime.py
 +++ b/src-tauri/resources/video-tools/ensure_python_runtime.py
-@@ -14,6 +14,7 @@
+@@ -3,6 +3,7 @@
+ from __future__ import annotations
+ 
+ import argparse
++import hashlib
+ import json
+ import os
+ from pathlib import Path
+@@ -14,6 +15,7 @@
  import sys
  import urllib.request
  from network_tls import tls_context
@@ -492,7 +688,7 @@ diff --git a/src-tauri/resources/video-tools/ensure_python_runtime.py b/src-taur
  
  from ensure_video_runtime import MANIFEST, default_runtime_dir, progress
  
-@@ -43,23 +44,29 @@
+@@ -43,63 +45,132 @@
      target.parent.mkdir(parents=True, exist_ok=True)
      suffix = ".ps1" if platform.system() == "Windows" else ".sh"
      progress("setup", "Installing private Python manager")
@@ -533,17 +729,132 @@ diff --git a/src-tauri/resources/video-tools/ensure_python_runtime.py b/src-taur
 +                subprocess.run(command, env=env, check=True, stdout=subprocess.DEVNULL)
 +            if not target.is_file() or not usable(target):
 +                raise RuntimeError("Standalone Python manager installation did not verify")
-+    except (OSError, RuntimeError, subprocess.CalledProcessError) as error:
++    except (OSError, ValueError, RuntimeError, subprocess.CalledProcessError) as error:
 +        progress("setup", "Standalone installer unavailable; using verified PyPI wheel", reason=type(error).__name__)
 +        install_pinned_uv(target)
      if not target.is_file() or not usable(target):
          raise RuntimeError("Private Python manager installation did not verify")
      return target
+ 
+ 
+-def isolated_command(runtime: Path, packages: dict[str, str], script: Path, arguments: list[str]) -> tuple[list[str], dict[str, str]]:
+-    uv = ensure_uv(runtime)
+-    command = [str(uv), "run", "--no-project", "--no-build", "--python", "3.12"]
+-    packages = dict(packages)
+-    if platform.system() == "Darwin" and "av" in packages:
++def transcription_packages() -> dict[str, str]:
++    packages = dict(MANIFEST["transcription"]["packages"])
++    if platform.system() == "Darwin":
+         release = platform.mac_ver()[0]
+         major = int(release.split(".")[0]) if release else 0
+         if major < 14:
+             packages["av"] = MANIFEST["transcription"]["legacyMacAv"]
+-    for name, version in packages.items():
+-        command.extend(["--with", f"{name}=={version}"])
+-    command.extend(["python", str(script), *arguments])
++    return packages
++
++
++def transcription_receipt(runtime: Path, model: str) -> Path:
++    name = hashlib.sha256(model.encode()).hexdigest()[:20]
++    return runtime / "asr" / f"ready-{name}.json"
++
++
++def check_transcription(runtime: Path, model: str) -> dict:
++    missing = {"ready": False, "missing": ["transcription"], "model": model}
++    try:
++        receipt = json.loads(transcription_receipt(runtime, model).read_text(encoding="utf-8"))
++        if (not isinstance(receipt, dict) or receipt.get("packages") != transcription_packages()
++                or receipt.get("model") != model):
++            return missing
++        python = Path(receipt["pythonExecutable"])
++        if not python.is_file():
++            return missing
++        env = dict(os.environ, HF_HUB_OFFLINE="1", PYTHONDONTWRITEBYTECODE="1", PYTHONUTF8="1")
++        command = [str(python), str(Path(__file__).with_name("transcribe_with_faster_whisper.py")),
++                   "--out", str(runtime / "asr/unused.json"), "--models", str(runtime / "asr/models"),
++                   "--model", model, "--check"]
++        result = subprocess.run(command, env=env, capture_output=True, text=True, timeout=120)
++        status = json.loads(result.stdout)
++        if not isinstance(status, dict):
++            return {**missing, "error": "Invalid transcription readiness response"}
++        if result.returncode or not status.get("ready") or status.get("packages") != transcription_packages():
++            return {**missing, "error": status.get("error", "Cached transcription runtime did not verify")}
++        return {**status, "missing": []}
++    except (OSError, ValueError, KeyError, TypeError, subprocess.TimeoutExpired) as error:
++        return {**missing, "error": str(error)}
++
++
++def isolated_command(runtime: Path, packages: dict[str, str], script: Path, arguments: list[str]) -> tuple[list[str], dict[str, str]]:
++    uv = ensure_uv(runtime)
++    packages = dict(packages)
++    if platform.system() == "Darwin" and "av" in packages:
++        packages["av"] = transcription_packages()["av"]
+     env = os.environ.copy()
+     env.update(UV_PYTHON_INSTALL_DIR=str(runtime / "python"), UV_CACHE_DIR=str(runtime / "uv-cache"),
+                PYTHONIOENCODING="utf-8", PYTHONUTF8="1", PYTHONDONTWRITEBYTECODE="1")
+-    return command, env
++    identity = hashlib.sha256(json.dumps({"python": "3.12", "packages": packages}, sort_keys=True).encode()).hexdigest()[:20]
++    venv = runtime / "python-environments" / identity
++    python = venv / ("Scripts/python.exe" if platform.system() == "Windows" else "bin/python")
++    if venv.is_symlink():
++        raise RuntimeError("Private Python environment is an unexpected symbolic link")
++    if not python.is_file():
++        if venv.exists():
++            shutil.rmtree(venv)  # Retry an incomplete managed environment only.
++        venv.parent.mkdir(parents=True, exist_ok=True)
++        subprocess.run([str(uv), "venv", str(venv), "--python", "3.12"], env=env, check=True)
++    marker = venv / ".packages.json"
++    expected = json.dumps(packages, sort_keys=True)
++    if not marker.is_file() or marker.read_text(encoding="utf-8").strip() != expected:
++        subprocess.run([str(uv), "pip", "install", "--python", str(python), "--only-binary", ":all:",
++                        *[f"{name}=={version}" for name, version in packages.items()]], env=env, check=True)
++        marker.write_text(expected + "\n", encoding="utf-8")
++    return [str(python), str(script), *arguments], env
+ 
+ 
+ def main() -> int:
+     parser = argparse.ArgumentParser(description=__doc__)
+     parser.add_argument("--runtime-dir", type=Path, default=default_runtime_dir())
+     parser.add_argument("--prepare-transcription", action="store_true")
++    parser.add_argument("--check", action="store_true")
+     parser.add_argument("--model", default=MANIFEST["transcription"]["englishModel"])
+     args = parser.parse_args()
+     runtime = args.runtime_dir.expanduser().resolve()
+     try:
++        if args.check:
++            result = check_transcription(runtime, args.model)
++            print(json.dumps(result))
++            return 0 if result["ready"] else 1
+         if args.prepare_transcription:
+             progress("setup", "Preparing speech packages and model")
+             worker = Path(__file__).with_name("transcribe_with_faster_whisper.py")
+-            command, env = isolated_command(runtime, MANIFEST["transcription"]["packages"], worker,
++            command, env = isolated_command(runtime, transcription_packages(), worker,
+                 ["--out", str(runtime / "asr/prepare.json"), "--models", str(runtime / "asr/models"), "--model", args.model])
+-            subprocess.run(command, env=env, check=True)
++            prepared = subprocess.run(command, env=env, check=True, stdout=subprocess.PIPE, text=True)
++            result = json.loads(prepared.stdout)
++            if not isinstance(result, dict) or not result.get("ready") or result.get("packages") != transcription_packages():
++                raise RuntimeError("Transcription packages and model did not verify")
++            receipt = transcription_receipt(runtime, args.model)
++            receipt.parent.mkdir(parents=True, exist_ok=True)
++            staged = receipt.with_suffix(".part")
++            staged.write_text(json.dumps(result) + "\n", encoding="utf-8")
++            staged.replace(receipt)
++            print(json.dumps(result))
+         else:
+             print(json.dumps({"ready": True, "uv": str(ensure_uv(runtime))}))
+-    except (OSError, RuntimeError, subprocess.CalledProcessError) as error:
++    except (OSError, ValueError, RuntimeError, subprocess.CalledProcessError) as error:
+         print(json.dumps({"ready": False, "error": str(error)}))
+         return 1
+     return 0
 diff --git a/src-tauri/resources/video-tools/install_sibling_skill.py b/src-tauri/resources/video-tools/install_sibling_skill.py
 new file mode 100644
 --- /dev/null
 +++ b/src-tauri/resources/video-tools/install_sibling_skill.py
-@@ -0,0 +1,92 @@
+@@ -0,0 +1,137 @@
 +"""Install a sibling from the generated snapshot into the requested skill root."""
 +from __future__ import annotations
 +import argparse
@@ -562,7 +873,7 @@ new file mode 100644
 +MAX_BYTES = 32_000_000
 +
 +
-+def install(name: str, root: Path, payload: Path = PAYLOAD) -> dict:
++def _install_one(name: str, root: Path, payload: Path = PAYLOAD) -> dict:
 +    if not re.fullmatch(r'[a-z0-9][a-z0-9-]{0,99}', name):
 +        raise ValueError('Invalid sibling skill name')
 +    root = root.expanduser().resolve()
@@ -620,6 +931,51 @@ new file mode 100644
 +    return {'ready': True, 'skill': name, 'path': str(destination), 'snapshotSha256': document['sha256'], 'reused': False}
 +
 +
++def dependency_order(names: list[str], payload: Path = PAYLOAD) -> list[str]:
++    # Resolve the whole declared graph before publishing anything. Cycles are
++    # normal for complementary video skills, so visit every skill only once.
++    if payload.stat().st_size > MAX_BYTES:
++        raise ValueError('Sibling snapshot exceeds its allowed size')
++    document = json.loads(payload.read_text(encoding='utf-8'))
++    if not isinstance(document, dict):
++        raise ValueError('Invalid sibling snapshot')
++    if (document.get('schemaVersion') != 1 or not isinstance(document.get('skills'), list)
++            or not isinstance(document.get('zipBase64'), str)
++            or not isinstance(document.get('sha256'), str)):
++        raise ValueError('Invalid sibling snapshot')
++    data = base64.b64decode(document['zipBase64'], validate=True)
++    if len(data) > MAX_BYTES or hashlib.sha256(data).hexdigest() != document['sha256']:
++        raise ValueError('Sibling snapshot failed SHA-256 verification')
++    pending = list(names); ordered = []; seen = set()
++    with zipfile.ZipFile(io.BytesIO(data)) as archive:
++        while pending:
++            current = pending.pop(0)
++            if not isinstance(current, str) or not re.fullmatch(r'[a-z0-9][a-z0-9-]{0,99}', current):
++                raise ValueError('Invalid sibling skill name')
++            if current in seen:
++                continue
++            if current not in document['skills']:
++                raise ValueError('The bundled snapshot does not contain this sibling skill')
++            seen.add(current); ordered.append(current)
++            try:
++                info = archive.getinfo(f'{current}/tools/dependencies.json')
++            except KeyError:
++                continue
++            if info.file_size > 65536:
++                raise ValueError('Sibling dependency manifest is unexpectedly large')
++            manifest = json.loads(archive.read(info))
++            if not isinstance(manifest, dict) or not isinstance(manifest.get('associated', []), list):
++                raise ValueError('Invalid sibling dependency list')
++            pending.extend(manifest.get('associated', []))
++    return ordered
++
++
++def install(name: str, root: Path, payload: Path = PAYLOAD) -> dict:
++    ordered = dependency_order([name], payload)
++    results = [_install_one(current, root, payload) for current in ordered]
++    return {**results[0], 'installedSkills': results}
++
++
 +def main():
 +    parser = argparse.ArgumentParser(description=__doc__)
 +    parser.add_argument('name')
@@ -636,6 +992,64 @@ new file mode 100644
 +
 +if __name__ == '__main__':
 +    raise SystemExit(main())
+diff --git a/src-tauri/resources/video-tools/transcribe_with_faster_whisper.py b/src-tauri/resources/video-tools/transcribe_with_faster_whisper.py
+--- a/src-tauri/resources/video-tools/transcribe_with_faster_whisper.py
++++ b/src-tauri/resources/video-tools/transcribe_with_faster_whisper.py
+@@ -4,6 +4,7 @@
+ 
+ import argparse
+ import json
++from importlib.metadata import version
+ import os
+ from pathlib import Path
+ import sys
+@@ -14,14 +15,15 @@
+     print(json.dumps({"phase": "transcribe", "message": message, **details}), file=sys.stderr, flush=True)
+ 
+ 
+-def transcribe(media: Path | None, output: Path, models: Path, model_name: str, language: str | None) -> dict:
++def transcribe(media: Path | None, output: Path, models: Path, model_name: str, language: str | None, *, check: bool = False) -> dict:
+     import ctranslate2
+     from faster_whisper import WhisperModel
+     supported = ctranslate2.get_supported_compute_types("cpu")
+     compute = "int8" if "int8" in supported else "float32"
+     threads = max(1, min(8, os.cpu_count() or 1))
+     progress(f"Preparing local {model_name} speech model", computeType=compute, cpuThreads=threads)
+-    models.mkdir(parents=True, exist_ok=True)
++    if not check:
++        models.mkdir(parents=True, exist_ok=True)
+     finished = threading.Event()
+ 
+     def report_cache() -> None:
+@@ -39,12 +41,14 @@
+     watcher.start()
+     try:
+         model = WhisperModel(model_name, device="cpu", compute_type=compute, cpu_threads=threads,
+-                             download_root=str(models))
++                             download_root=str(models), local_files_only=check)
+     finally:
+         finished.set()
+         watcher.join(timeout=1)
+     if media is None:
+-        return {"ok": True, "ready": True, "engine": "faster-whisper", "model": model_name}
++        return {"ok": True, "ready": True, "engine": "faster-whisper", "model": model_name,
++                "pythonExecutable": sys.executable,
++                "packages": {name: version(name) for name in ("faster-whisper", "ctranslate2", "av")}}
+     progress("Recognizing speech with measured word timing")
+     segments, info = model.transcribe(str(media), language=language, task="transcribe", word_timestamps=True,
+                                      vad_filter=True, beam_size=5)
+@@ -70,9 +74,10 @@
+     parser.add_argument("--models", type=Path, required=True)
+     parser.add_argument("--model", default="small.en")
+     parser.add_argument("--language")
++    parser.add_argument("--check", action="store_true")
+     args = parser.parse_args()
+     try:
+-        result = transcribe(args.media, args.out, args.models, args.model, args.language)
++        result = transcribe(args.media, args.out, args.models, args.model, args.language, check=args.check)
+     except Exception as error:
+         result = {"ok": False, "error": str(error)}
+     print(json.dumps(result))
 diff --git a/src-tauri/resources/video-tools/uv_wheels.json b/src-tauri/resources/video-tools/uv_wheels.json
 new file mode 100644
 --- /dev/null

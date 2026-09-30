@@ -34,10 +34,10 @@ and CPU, then runs `tools/bootstrap.py`, which reads the generated
 `bootstrap.py` verifies the host against the same `x64`/`arm64` table as
 `ensure_video_runtime.py`, prepares the private runtime (Node, FFmpeg/FFprobe,
 the selected renderers, Chromium, and Kokoro or speech models where the skill
-needs them), then installs the associated standalone skills that are missing from
+needs them), then installs the associated standalone skills and indirect dependencies missing from
 the skills directory:
 
-| Skill | Associated skills installed |
+| Skill | Direct associated skills (indirect dependencies are also installed) |
 |---|---|
 | `slide-decks` | `visual-assets`, `explainer-video` |
 | `explainer-video` | `voice-narration`, `product-launch-video`, `slide-decks`, `visual-assets` |
@@ -53,15 +53,19 @@ skills are preserved, incomplete destinations are refused, and a failed sibling
 installation prevents setup from claiming readiness. Each installed sibling
 receives the same snapshot so its future first-use setup can prepare its own
 associated skills. The snapshot excludes model files, virtual environments,
-binary runtime caches and recursive copies of itself. Bundle subskills prepare their renderer runtime but
-do not install siblings or narration — the `course-creator` bundle already ships
-them and its parent `tools/kokoro` path prepares narration. `--check` reports
-the plan without installing, `--yes` skips the prompt, and `--no-skills`
+binary runtime caches and recursive copies of itself. Cyclic associations are
+visited once. Existing direct dependencies still have their indirect dependencies
+checked. Bundle subskills do not install siblings because the bundle ships them.
+The parent `course-creator/tools/setup` launcher prepares renderer, narration and
+transcription; narration-dependent subskills use that launcher automatically.
+Visual assets also ship a launcher. `--check` verifies cached tools, imports,
+models and missing siblings without installation; it fails when a required
+dependency is absent. `--yes` skips the prompt, and `--no-skills`
 prepares runtimes only.
 
 The shared `tools/ensure_video_runtime.py` and Kokoro `tools/kokoro/start.py`
-can be called from a Tauri command and their standard-error JSON progress can
-are relayed to a frontend channel. The Tauri source now wires the Python job
+can be called from a Tauri command and their standard-error JSON progress is
+relayed to a frontend channel. The Tauri source now wires the Python job
 runner and subtitle review into Video Studio; native execution is still unverified.
 
 ## Local photo presenter capability gate

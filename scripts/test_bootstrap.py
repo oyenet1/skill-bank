@@ -88,6 +88,17 @@ class PlanBuilding(unittest.TestCase):
             steps = bootstrap.skill_steps(self.SPEC, Path(temp), install=True)
         self.assertTrue(all(not s["available"] for s in steps))
 
+    def test_existing_direct_dependencies_still_discover_missing_transitive_skills(self):
+        with tempfile.TemporaryDirectory() as temp:
+            skills = Path(temp)
+            for name in self.SPEC['associated']:
+                folder = skills / name
+                folder.mkdir()
+                (folder / 'SKILL.md').write_text('existing user skill')
+            with mock.patch.object(bootstrap, 'HERE', REPO / 'explainer-video/tools'):
+                steps = bootstrap.skill_steps(self.SPEC, skills, install=True)
+        self.assertEqual({s['name'] for s in steps}, {'explainer-video', 'slide-decks', 'visual-assets'})
+
     def test_unavailable_skill_step_reports_the_command(self):
         with tempfile.TemporaryDirectory() as temp, mock.patch("shutil.which", return_value=None):
             step = bootstrap.skill_steps(self.SPEC, Path(temp), install=True)[0]

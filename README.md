@@ -125,8 +125,13 @@ npx skills list -g
 
 ### Prepare the runtime on first use
 
-Skill installation copies files; it does not automatically download video tools.
-Ask your agent to use the installed skill and run its first-use setup. For manual
+`npx skills add` copies files and has no setup hook. Each runtime skill now
+instructs the agent to run automatic first-use setup before production. This
+installs its associated skills, including indirect dependencies, from the
+bundled verified snapshot. The complete course bundle has its own launcher.
+For immediate setup from a repository checkout, run
+`python3 scripts/install_video_skill.py explainer-video --target /path/to/skills`.
+For manual
 setup, open the installed skill directory and use the command for your OS:
 
 | OS | Command |
@@ -136,7 +141,8 @@ setup, open the installed skill directory and use the command for your OS:
 | Windows Command Prompt | `tools\setup.cmd --yes` |
 
 Setup downloads the supported private runtimes and associated skills. Use
-`--check` instead of `--yes` for a read-only check, or add `--no-skills` to prepare
+`--check` instead of `--yes` for a read-only verification of cached runtimes
+(it fails if anything required is missing), or add `--no-skills` to prepare
 runtimes without installing associated skills. First setup needs internet access
 and space for tools/models. No desktop application is needed. Windows/macOS
 end-to-end rendering remains unverified; local avatar generation also needs

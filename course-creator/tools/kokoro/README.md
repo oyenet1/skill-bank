@@ -8,7 +8,7 @@ python3 start.py --text "Welcome to chapter one" --out ../../assets/audio/ch1-in
 # On Windows use: py -3 start.py ...
 ```
 `start.py` installs `uv` privately if missing, creates a Python 3.12 virtual
-environment, installs requirements, and downloads models with size and SHA-256
+environment, installs the hash-locked wheel dependencies from `requirements.lock`, and downloads models with size and SHA-256
 checks. Windows uses PowerShell for the uv installer; macOS and Linux use `sh`.
 No distribution package manager or shell profile change is needed. An existing
 `uv` on `PATH` is reused. MP3 output uses system FFmpeg when present or the
@@ -23,20 +23,19 @@ On macOS and Linux, the shell wrapper remains available:
 ```bash
 cd <installed-skill>/tools/kokoro
 ./start.sh --sample
-# sample -> ../../assets/audio/kokoro_sample.mp3
+# sample -> user runtime directory/kokoro_sample.mp3
 ./start.sh --text "Welcome to chapter one" --out ../../assets/audio/ch1-intro.mp3 --voice af_bella
 ./start.sh --text-file lesson.txt --out ../../assets/audio/lesson.mp3 --voice af_sky --speed 1.0
 ```
-`start.sh` installs `uv` locally when it is missing, creates `.venv` (Python
-3.12 managed by uv), installs `requirements.txt`, verifies and downloads the
-models (~350MB, once) into `models/`, then runs `generate.py`. This needs
-`bash`, `curl`, network access for the first setup, and enough free disk space.
-The uv installer does not edit your shell profile. Existing models are checked
-against pinned file sizes and SHA-256 hashes before reuse.
+`start.sh` delegates to the same private `start.py` runtime. If Python is
+missing, it uses the skill's setup launcher to provision private Python.
+Models (~350MB, once) and environments stay in the user data directory.
+Both entry points accept `--check` to verify cached readiness without
+installing or downloading anything. A missing runtime returns a nonzero exit.
 
 Direct use without the wrapper:
 ```bash
-.venv/bin/python generate.py --text "Hi" --out ../../assets/audio/hi.mp3
+python3 start.py --text "Hi" --out ../../assets/audio/hi.mp3
 ```
 Output is MP3 by default (use `.wav` only if you need uncompressed).
 
@@ -47,7 +46,8 @@ docker compose build
 docker compose run --rm kokoro --text "Welcome to chapter one" --out /audio/ch1-intro.mp3 --voice af_bella
 docker compose run --rm kokoro --text-file /audio/lesson.txt --out /audio/lesson.mp3
 ```
-`models/` is bind-mounted, so native and docker share the same download.
+Docker bind-mounts `models/`. To reuse native models, point the mount at the
+`models` path reported by `start.py --check`.
 Image has system espeak-ng, so no extra setup.
 
 ## Voices (Kokoro v1.0)
@@ -71,3 +71,16 @@ exits. To clean up docker leftovers (containers/network):
 - `download_models.sh` — fetch/refresh `models/` (resume-safe)
 - `Dockerfile`, `docker-compose.yml`, `docker-entrypoint.sh` — container path
 - `models/` — gitignored binaries (never committed)
+
+## Updating dependencies
+
+Keep direct versions in `requirements.txt`; regenerate the universal Python
+3.12 lock with hashes, then regenerate the skill mirrors:
+
+```bash
+uv pip compile requirements.txt --universal --python-version 3.12 --generate-hashes --only-binary :all: --output-file requirements.lock
+```
+
+Narration accepts `.wav` and `.mp3`. It writes to a temporary file and replaces
+the destination only after successful encoding, preserving existing audio on
+failure.
