@@ -4,8 +4,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
       espeak-ng ffmpeg curl ca-certificates \
  && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
-COPY requirements.txt ./
-RUN pip install --no-cache-dir -r requirements.txt
+COPY requirements.txt requirements.lock ./
+RUN pip install --no-cache-dir --require-hashes --only-binary=:all: -r requirements.lock
 COPY generate.py docker-entrypoint.sh ./
 RUN chmod +x docker-entrypoint.sh
 VOLUME ["/models", "/audio"]

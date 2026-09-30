@@ -5,6 +5,15 @@ description: Find, inspect, copy, generate, or draw a teaching image or icon for
 
 # Visual Assets
 
+## Automatic first-use setup
+
+Before production, run the bundled launcher with `--yes`; it detects the host, prepares private runtimes, and installs the declared sibling dependency graph. Do not ask the requester to install packages manually.
+
+- Linux/macOS: `sh tools/setup.sh --yes`
+- Windows: `powershell.exe -NoProfile -ExecutionPolicy Bypass -File tools/setup.ps1 --yes`
+
+Use `--check` for a read-only readiness check. If prerequisites are missing, rerun setup. Follow the returned `pythonExecutable` and runtime paths for later commands. Model-license acceptance, image rights and account credentials remain explicit inputs.
+
 Resolve the object or image the work needs, place it where the project can use it,
 and record where it came from. The object vocabulary is in [objects](references/objects.md).
 

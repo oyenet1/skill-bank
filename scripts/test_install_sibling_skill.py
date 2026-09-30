@@ -16,7 +16,7 @@ import install_sibling_skill as siblings
 
 
 class SiblingSkillTests(unittest.TestCase):
-    def payload(self, root, entries, digest=None):
+    def payload(self, root, entries, digest=None, skills=None):
         stream = io.BytesIO()
         with zipfile.ZipFile(stream, 'w') as archive:
             for name, contents in entries:
@@ -26,7 +26,7 @@ class SiblingSkillTests(unittest.TestCase):
                     archive.writestr(name, contents)
         data = stream.getvalue()
         path = root / 'payload.json'
-        path.write_text(json.dumps({'schemaVersion': 1, 'skills': ['fixture'],
+        path.write_text(json.dumps({'schemaVersion': 1, 'skills': skills or ['fixture'],
             'sha256': digest or hashlib.sha256(data).hexdigest(),
             'zipBase64': base64.b64encode(data).decode()}))
         return path
@@ -44,7 +44,21 @@ class SiblingSkillTests(unittest.TestCase):
             (skill / 'SKILL.md').write_text('User edits')
             self.assertTrue(siblings.install('voice-narration', target, payload)['reused'])
             self.assertEqual((skill / 'SKILL.md').read_text(), 'User edits')
-            self.assertEqual(set(path.name for path in target.iterdir()), {'voice-narration'})
+            self.assertEqual(set(path.name for path in target.iterdir()),
+                             {'voice-narration', 'explainer-video', 'product-launch-video', 'slide-decks', 'visual-assets'})
+
+    def test_transitive_dependencies_and_cycles_are_installed_once(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            payload = self.payload(root, [
+                ('fixture/SKILL.md', 'fixture'),
+                ('fixture/tools/dependencies.json', json.dumps({'associated': ['second']})),
+                ('second/SKILL.md', 'second'),
+                ('second/tools/dependencies.json', json.dumps({'associated': ['fixture']})),
+            ], skills=['fixture', 'second'])
+            result = siblings.install('fixture', root / 'target', payload)
+            self.assertEqual([entry['skill'] for entry in result['installedSkills']], ['fixture', 'second'])
+            self.assertTrue((root / 'target/second/SKILL.md').is_file())
 
     def test_invalid_digest_and_missing_skill_do_not_create_target(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -53,6 +67,7 @@ class SiblingSkillTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'SHA-256'):
                 siblings.install('fixture', target, payload)
             self.assertFalse(target.exists())
+            payload = self.payload(root, [('fixture/SKILL.md', 'fixture')])
             with self.assertRaisesRegex(ValueError, 'does not contain'):
                 siblings.install('missing', target, payload)
 

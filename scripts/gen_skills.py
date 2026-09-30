@@ -152,7 +152,22 @@ def build() -> dict[Path, str]:
             targets.append(("standalone", REPO / spec["standalone"]))
 
         for mode, dest in targets:
-            out[dest / "SKILL.md"] = render(skill_dir, mode, fm, body, caps, modules)
+            rendered = render(skill_dir, mode, fm, body, caps, modules)
+            if spec.get("bootstrap"):
+                prefix = "../../" if mode == "bundle" and spec["bootstrap"].get("voice") else ""
+                setup = (
+                    "\n## Automatic first-use setup\n\n"
+                    "Before production, run the bundled launcher with `--yes`; it detects the host, "
+                    "prepares private runtimes, and installs the declared sibling dependency graph. "
+                    "Do not ask the requester to install packages manually.\n\n"
+                    f"- Linux/macOS: `sh {prefix}tools/setup.sh --yes`\n"
+                    f"- Windows: `powershell.exe -NoProfile -ExecutionPolicy Bypass -File {prefix}tools/setup.ps1 --yes`\n\n"
+                    "Use `--check` for a read-only readiness check. If prerequisites are missing, "
+                    "rerun setup. Follow the returned `pythonExecutable` and runtime paths for later commands. "
+                    "Model-license acceptance, image rights and account credentials remain explicit inputs.\n"
+                )
+                rendered = re.sub(r"(^# [^\n]+\n)", lambda match: match.group(1) + setup, rendered, count=1, flags=re.M)
+            out[dest / "SKILL.md"] = rendered
             for name in spec.get("modules", []):
                 if name == "prompts":
                     continue
@@ -185,6 +200,20 @@ def build() -> dict[Path, str]:
                     if p.is_file():
                         rel = p.relative_to(shared / "library" / name)
                         out[dest / "references" / "library" / name / rel] = p.read_text()
+    # The installable course bundle also needs a first-use entry point.
+    parent_boot = man.get("bundle_bootstrap")
+    if parent_boot:
+        parent = REPO / "course-creator/tools"
+        for rel in BOOTSTRAP_TOOLS + ["ensure_video_runtime.py", "runtime_requirements.json",
+                                     "ensure_python_runtime.py", "transcribe_with_faster_whisper.py",
+                                     "network_tls.py", "bootstrap_uv.py"]:
+            out[parent / rel] = (shared / "tools" / rel).read_text()
+        out[parent / "dependencies.json"] = json.dumps({
+            "schemaVersion": 1, "skill": "course-creator", "capability": "course-creator",
+            "routes": parent_boot["routes"], "voice": parent_boot.get("voice", False),
+            "transcription": parent_boot.get("transcription", False), "associated": []
+        }, indent=2) + "\n"
+
     # Freeze one compact source snapshot before adding payloads, avoiding
     # recursive copies. Every installed sibling receives the same snapshot.
     standalone_names = {spec["standalone"] for spec in caps.values() if spec.get("standalone")}
@@ -218,6 +247,8 @@ def build() -> dict[Path, str]:
         if spec.get("bootstrap"):
             for target in (REPO / spec["standalone"], REPO / "course-creator/subskills" / spec["bundle"]):
                 out[target / "tools/sibling_skills.json"] = payload
+    if parent_boot:
+        out[REPO / "course-creator/tools/sibling_skills.json"] = payload
     return out
 
 
@@ -239,7 +270,7 @@ def sync_tools() -> list[Path]:
 def check_tools() -> list[str]:
     bad = []
     for src_rel, dest_rel in TOOL_COPIES:
-        for name in ("network_tls.py", "bootstrap_uv.py", "uv_wheels.json", "generate.py", "start.py", "start.sh", "ensure_uv.sh", "download_models.sh", "README.md", "requirements.txt"):
+        for name in ("network_tls.py", "bootstrap_uv.py", "uv_wheels.json", "generate.py", "start.py", "start.sh", "ensure_uv.sh", "download_models.sh", "README.md", "requirements.txt", "requirements.lock"):
             s, d = REPO / src_rel / name, REPO / dest_rel / name
             if not d.exists():
                 bad.append(f"missing   {dest_rel}/{name}")

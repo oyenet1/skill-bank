@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "skill": "course-creator",
+  "capability": "course-creator",
+  "routes": [
+    "explainer-video"
+  ],
+  "voice": true,
+  "transcription": true,
+  "associated": []
+}

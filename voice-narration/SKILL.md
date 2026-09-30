@@ -5,6 +5,15 @@ description: Generate clean WAV narration from any supplied script using local K
 
 # Voice Narration
 
+## Automatic first-use setup
+
+Before production, run the bundled launcher with `--yes`; it detects the host, prepares private runtimes, and installs the declared sibling dependency graph. Do not ask the requester to install packages manually.
+
+- Linux/macOS: `sh tools/setup.sh --yes`
+- Windows: `powershell.exe -NoProfile -ExecutionPolicy Bypass -File tools/setup.ps1 --yes`
+
+Use `--check` for a read-only readiness check. If prerequisites are missing, rerun setup. Follow the returned `pythonExecutable` and runtime paths for later commands. Model-license acceptance, image rights and account credentials remain explicit inputs.
+
 Turn any supplied script into editable UTF-8 text and one WAV. Accept a script
 as given, or write one from a brief when asked. A supplied recording always wins
 when the request is to use that recording. Narration stands alone: never produce

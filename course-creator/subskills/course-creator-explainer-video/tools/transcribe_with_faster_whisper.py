@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+from importlib.metadata import version
 import os
 from pathlib import Path
 import sys
@@ -14,14 +15,15 @@ def progress(message: str, **details: object) -> None:
     print(json.dumps({"phase": "transcribe", "message": message, **details}), file=sys.stderr, flush=True)
 
 
-def transcribe(media: Path | None, output: Path, models: Path, model_name: str, language: str | None) -> dict:
+def transcribe(media: Path | None, output: Path, models: Path, model_name: str, language: str | None, *, check: bool = False) -> dict:
     import ctranslate2
     from faster_whisper import WhisperModel
     supported = ctranslate2.get_supported_compute_types("cpu")
     compute = "int8" if "int8" in supported else "float32"
     threads = max(1, min(8, os.cpu_count() or 1))
     progress(f"Preparing local {model_name} speech model", computeType=compute, cpuThreads=threads)
-    models.mkdir(parents=True, exist_ok=True)
+    if not check:
+        models.mkdir(parents=True, exist_ok=True)
     finished = threading.Event()
 
     def report_cache() -> None:
@@ -39,12 +41,14 @@ def transcribe(media: Path | None, output: Path, models: Path, model_name: str, 
     watcher.start()
     try:
         model = WhisperModel(model_name, device="cpu", compute_type=compute, cpu_threads=threads,
-                             download_root=str(models))
+                             download_root=str(models), local_files_only=check)
     finally:
         finished.set()
         watcher.join(timeout=1)
     if media is None:
-        return {"ok": True, "ready": True, "engine": "faster-whisper", "model": model_name}
+        return {"ok": True, "ready": True, "engine": "faster-whisper", "model": model_name,
+                "pythonExecutable": sys.executable,
+                "packages": {name: version(name) for name in ("faster-whisper", "ctranslate2", "av")}}
     progress("Recognizing speech with measured word timing")
     segments, info = model.transcribe(str(media), language=language, task="transcribe", word_timestamps=True,
                                      vad_filter=True, beam_size=5)
@@ -70,9 +74,10 @@ def main() -> int:
     parser.add_argument("--models", type=Path, required=True)
     parser.add_argument("--model", default="small.en")
     parser.add_argument("--language")
+    parser.add_argument("--check", action="store_true")
     args = parser.parse_args()
     try:
-        result = transcribe(args.media, args.out, args.models, args.model, args.language)
+        result = transcribe(args.media, args.out, args.models, args.model, args.language, check=args.check)
     except Exception as error:
         result = {"ok": False, "error": str(error)}
     print(json.dumps(result))

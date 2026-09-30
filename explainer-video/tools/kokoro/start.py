@@ -91,7 +91,7 @@ def ensure_uv() -> Path:
             if not UV.is_file():
                 raise RuntimeError("Standalone Python manager installation did not verify")
             run([UV, "--version"])
-    except (OSError, RuntimeError, subprocess.CalledProcessError) as error:
+    except (OSError, RuntimeError, subprocess.CalledProcessError, subprocess.TimeoutExpired) as error:
         progress("uv", "Standalone installer unavailable; using verified PyPI wheel", reason=type(error).__name__)
         install_pinned_uv(UV)
     if not UV.is_file():
@@ -151,21 +151,45 @@ def setup() -> Path:
     if not python.is_file():
         progress("python", "Preparing private Python 3.12 environment")
         run([uv, "venv", VENV, "--python", "3.12"])
-    requirements = (ROOT / "requirements.txt").read_bytes()
+    requirements = (ROOT / "requirements.txt").read_bytes() + (ROOT / "requirements.lock").read_bytes()
     marker = VENV / ".requirements-sha256"
     wanted = hashlib.sha256(requirements).hexdigest()
     if not marker.is_file() or marker.read_text().strip() != wanted:
         progress("packages", "Installing Kokoro packages")
-        run([uv, "pip", "install", "--python", python, "-r", ROOT / "requirements.txt"])
+        run([uv, "pip", "install", "--python", python, "--require-hashes", "--only-binary", ":all:", "-r", ROOT / "requirements.lock"])
         marker.write_text(wanted + "\n")
+    run([python, "-c", "import kokoro_onnx, soundfile, espeakng_loader, misaki, imageio_ffmpeg"])
     for name, (size, sha) in MODEL_FILES.items():
         download_model(name, size, sha)
     progress("complete", "Kokoro narration tools are ready")
     return python
 
 
+def check_setup() -> dict:
+    missing = []
+    python = venv_python()
+    wanted = hashlib.sha256((ROOT / "requirements.txt").read_bytes() + (ROOT / "requirements.lock").read_bytes()).hexdigest()
+    marker = VENV / ".requirements-sha256"
+    if not python.is_file() or not marker.is_file() or marker.read_text().strip() != wanted:
+        missing.append("kokoro-packages")
+    for name, (size, sha) in MODEL_FILES.items():
+        if not verified(MODELS / name, size, sha):
+            missing.append(name)
+    if not missing:
+        env = dict(os.environ, PYTHONDONTWRITEBYTECODE="1")
+        result = subprocess.run([str(python), "-c", "import kokoro_onnx, soundfile, espeakng_loader, misaki, imageio_ffmpeg"],
+                                env=env, capture_output=True, text=True, timeout=60)
+        if result.returncode:
+            missing.append("kokoro-imports")
+    return {"ready": not missing, "missing": missing, "pythonExecutable": str(python), "models": str(MODELS)}
+
+
 def main() -> int:
     try:
+        if sys.argv[1:] == ["--check"]:
+            result = check_setup()
+            print(json.dumps(result))
+            return 0 if result["ready"] else 1
         python = setup()
         args = sys.argv[1:]
         if args == ["--sample"]:
@@ -173,11 +197,11 @@ def main() -> int:
             sample.parent.mkdir(parents=True, exist_ok=True)
             args = ["--text", "Hello! This is Kokoro running locally. Audio narration is ready.", "--out", str(sample)]
         if not args:
-            print(f"Kokoro ready. Generate audio with: {sys.executable} {ROOT / 'start.py'} --text 'Hello' --out narration.mp3")
+            print(json.dumps({"ready": True, "pythonExecutable": str(python), "models": str(MODELS)}))
             return 0
         run([python, ROOT / "generate.py", "--models-dir", MODELS, *args])
         return 0
-    except (OSError, RuntimeError, subprocess.CalledProcessError) as error:
+    except (OSError, RuntimeError, subprocess.CalledProcessError, subprocess.TimeoutExpired) as error:
         print(f"Kokoro setup failed: {error}", file=sys.stderr)
         return 1
 

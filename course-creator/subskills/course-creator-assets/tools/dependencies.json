@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "skill": "course-creator-assets",
+  "capability": "assets",
+  "repo": "oyenet1/agent-skills",
+  "routes": [],
+  "voice": false,
+  "transcription": false,
+  "associated": []
+}

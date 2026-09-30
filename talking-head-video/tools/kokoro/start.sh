@@ -1,43 +1,28 @@
-#!/usr/bin/env bash
-# Native start: creates .venv (Python 3.12), installs deps, fetches models.
-# Usage:
-#   ./start.sh                     # setup only, prints usage
-#   ./start.sh --sample            # setup + generate sample wav into assets/audio/
-#   ./start.sh --text "Hi class" --out ../../assets/audio/intro.wav [--voice af_sky]
-set -euo pipefail
-HERE="$(cd "$(dirname "$0")" && pwd)"
-VENV="$HERE/.venv"
-AUDIO_DIR="$HERE/../../assets/audio"
-
-UV_BIN="$(bash "$HERE/ensure_uv.sh")"
-
-if [ ! -x "$VENV/bin/python" ]; then
-  echo "creating venv (Python 3.12)..."
-  "$UV_BIN" venv "$VENV" --python 3.12
+#!/bin/sh
+# Compatibility entry point; use the same private runtime as Windows/Python.
+set -eu
+KOKORO_TOOL_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+for KOKORO_PYTHON in python3 python; do
+    if command -v "$KOKORO_PYTHON" >/dev/null 2>&1 && "$KOKORO_PYTHON" -c 'import sys; raise SystemExit(sys.version_info < (3,10))' >/dev/null 2>&1; then
+        exec "$KOKORO_PYTHON" "$KOKORO_TOOL_DIR/start.py" "$@"
+    fi
+done
+if [ "${1:-}" = '--check' ]; then
+    echo '{"ready":false,"missing":["Python 3.10+"]}'
+    exit 1
 fi
-if [ ! -f "$VENV/.requirements-installed" ] || ! cmp -s "$HERE/requirements.txt" "$VENV/.requirements-installed"; then
-  echo "installing requirements..."
-  VIRTUAL_ENV="$VENV" "$UV_BIN" pip install -r "$HERE/requirements.txt"
-  cp "$HERE/requirements.txt" "$VENV/.requirements-installed"
+case $(uname -s) in
+    Darwin) KOKORO_RUNTIME_BASE="$HOME/Library/Application Support";;
+    Linux) KOKORO_RUNTIME_BASE="${XDG_DATA_HOME:-$HOME/.local/share}";;
+    *) echo 'Use the PowerShell setup launcher on Windows.' >&2; exit 1;;
+esac
+KOKORO_PYTHON_RUNTIME="${SKILL_BANK_PYTHON_HOME:-$KOKORO_RUNTIME_BASE/skill-bank/video-runtime}"
+KOKORO_UV="$KOKORO_PYTHON_RUNTIME/python-tools/uv"
+if command -v uv >/dev/null 2>&1; then
+    KOKORO_UV=$(command -v uv)
+elif [ ! -x "$KOKORO_UV" ]; then
+    sh "$KOKORO_TOOL_DIR/../setup.sh" --yes --no-skills
 fi
-
-bash "$HERE/download_models.sh" "$HERE/models"
-
-run_gen() { "$VENV/bin/python" "$HERE/generate.py" --models-dir "$HERE/models" "$@"; }
-
-if [ "${1:-}" = "--sample" ]; then
-  mkdir -p "$AUDIO_DIR"
-  run_gen --text "Hello! This is Kokoro running locally for your course creator. Audio narration is ready." --out "$AUDIO_DIR/kokoro_sample.mp3"
-  exit 0
-fi
-
-if [ $# -eq 0 ]; then
-  echo "Kokoro ready. Generate audio with:"
-  echo "  $VENV/bin/python $HERE/generate.py --text \"Hello class\" --out $AUDIO_DIR/lesson.mp3"
-  echo "  ./start.sh --text \"Hello class\" --out ../../assets/audio/lesson.mp3 --voice af_sky"
-  echo "  ./start.sh --sample   # regenerate the demo mp3"
-  "$VENV/bin/python" "$HERE/generate.py" --help
-  exit 0
-fi
-
-run_gen "$@"
+export UV_PYTHON_INSTALL_DIR="$KOKORO_PYTHON_RUNTIME/python" UV_CACHE_DIR="$KOKORO_PYTHON_RUNTIME/uv-cache"
+export PATH="$(dirname -- "$KOKORO_UV"):$PATH"
+exec "$KOKORO_UV" run --no-project --no-build --python 3.12 python "$KOKORO_TOOL_DIR/start.py" "$@"

@@ -5,6 +5,15 @@ description: Build or revise one editable Slidev lesson deck, storyboard, or sli
 
 # Slide Decks
 
+## Automatic first-use setup
+
+Before production, run the bundled launcher with `--yes`; it detects the host, prepares private runtimes, and installs the declared sibling dependency graph. Do not ask the requester to install packages manually.
+
+- Linux/macOS: `sh tools/setup.sh --yes`
+- Windows: `powershell.exe -NoProfile -ExecutionPolicy Bypass -File tools/setup.ps1 --yes`
+
+Use `--check` for a read-only readiness check. If prerequisites are missing, rerun setup. Follow the returned `pythonExecutable` and runtime paths for later commands. Model-license acceptance, image rights and account credentials remain explicit inputs.
+
 Accept a topic brief, a lesson, a concept, a story, or existing course files.
 Produce only the requested deck, storyboard or slide PDF. A deck does not require
 written notes or a video.

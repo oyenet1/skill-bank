@@ -5,6 +5,15 @@ description: Package an existing talking-head, interview or podcast clip with ca
 
 # Talking Head Video
 
+## Automatic first-use setup
+
+Before production, run the bundled launcher with `--yes`; it detects the host, prepares private runtimes, and installs the declared sibling dependency graph. Do not ask the requester to install packages manually.
+
+- Linux/macOS: `sh tools/setup.sh --yes`
+- Windows: `powershell.exe -NoProfile -ExecutionPolicy Bypass -File tools/setup.ps1 --yes`
+
+Use `--check` for a read-only readiness check. If prerequisites are missing, rerun setup. Follow the returned `pythonExecutable` and runtime paths for later commands. Model-license acceptance, image rights and account credentials remain explicit inputs.
+
 Package an existing talking-head, interview or podcast clip — add captions, or
 designed graphic overlays, or both. **The footage plays in full and is never
 altered**: no regrade, no scanline, no reframing of the person, and no cut of the

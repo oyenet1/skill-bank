@@ -23,11 +23,18 @@ import json
 import os
 from pathlib import Path
 import platform
+import queue
+import signal
+import threading
+import time
 import shutil
 import subprocess
 import sys
+import zipfile
 
 HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE))
+from install_sibling_skill import dependency_order
 SKILL_ROOT = HERE.parent
 DEPENDENCIES = HERE / "dependencies.json"
 
@@ -75,30 +82,40 @@ def windows_argv(command: list[str]) -> list[str]:
     return command
 
 
-def runtime_steps(spec: dict[str, object], runtime_dir: Path | None) -> list[dict[str, object]]:
+def runtime_steps(spec: dict[str, object], runtime_dir: Path | None, *, check: bool = False) -> list[dict[str, object]]:
     steps: list[dict[str, object]] = []
     routes = list(spec.get("routes") or [])
     for route in routes:
         command = [sys.executable, str(HERE / "ensure_video_runtime.py"), str(route)]
         if runtime_dir:
             command += ["--runtime-dir", str(runtime_dir)]
+        if check:
+            command.append("--check")
         steps.append({"kind": "runtime", "name": str(route), "command": command})
     if routes and spec.get("transcription"):
         command = [sys.executable, str(HERE / "ensure_python_runtime.py"), "--prepare-transcription"]
         if runtime_dir:
             command += ["--runtime-dir", str(runtime_dir)]
+        if check:
+            command.append("--check")
         steps.append({"kind": "transcription", "name": "speech-recognition", "command": command})
     if spec.get("voice"):
-        steps.append({"kind": "voice", "name": "kokoro", "command": [sys.executable, str(HERE / "kokoro/start.py")]})
+        command = [sys.executable, str(HERE / "kokoro/start.py")]
+        if check:
+            command.append("--check")
+        steps.append({"kind": "voice", "name": "kokoro", "command": command})
     return steps
 
 
 def skill_steps(spec: dict[str, object], skills_dir: Path, install: bool) -> list[dict[str, object]]:
-    associated = [name for name in (spec.get("associated") or []) if not sibling_installed(skills_dir, name)]
+    associated = list(spec.get("associated") or [])
     if not associated:
         return []
     installer = HERE / "install_sibling_skill.py"
     available = installer.is_file() and (HERE / "sibling_skills.json").is_file()
+    if available:
+        associated = dependency_order(associated, HERE / "sibling_skills.json")
+    associated = [name for name in associated if not sibling_installed(skills_dir, name)]
     steps: list[dict[str, object]] = []
     for name in associated:
         command = [sys.executable, str(installer), name, "--target", str(skills_dir)]
@@ -143,18 +160,76 @@ def run_step(step: dict[str, object]) -> dict[str, object]:
                 "reason": "The installed skill is missing its bundled sibling snapshot; reinstall the complete skill"}
     progress(kind, f"Preparing {name}")
     try:
-        result = subprocess.run(windows_argv(command), capture_output=True, text=True)
+        process = subprocess.Popen(windows_argv(command), stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                   text=True, encoding="utf-8", errors="replace",
+                                   env=dict(os.environ, PYTHONUTF8="1", PYTHONIOENCODING="utf-8"), start_new_session=os.name != "nt",
+                                   creationflags=subprocess.CREATE_NEW_PROCESS_GROUP if os.name == "nt" else 0)
     except OSError as error:
         return {"kind": kind, "name": name, "ok": False, "error": str(error)}
-    if result.returncode:
-        return {"kind": kind, "name": name, "ok": False, "error": (result.stderr or result.stdout)[-2000:]}
-    payload: object = None
-    for line in reversed((result.stdout or "").strip().splitlines()):
+    events = queue.Queue(maxsize=1000)
+    def read(stream, source):
         try:
-            payload = json.loads(line)
-            break
+            for line in stream:
+                events.put((source, line))
+        finally:
+            events.put((source, None))
+    readers = [threading.Thread(target=read, args=(stream, source), daemon=True)
+               for stream, source in ((process.stdout, "stdout"), (process.stderr, "stderr"))]
+    for reader in readers:
+        reader.start()
+    stdout = ""; stderr = ""; remaining = 2; reported = time.monotonic()
+    try:
+        while remaining or process.poll() is None:
+            try:
+                source, line = events.get(timeout=0.5)
+                if line is None:
+                    remaining -= 1
+                elif source == "stderr":
+                    stderr = (stderr + line)[-6000:]
+                    sys.stderr.write(line); sys.stderr.flush()
+                else:
+                    stdout = (stdout + line)[-200000:]
+            except queue.Empty:
+                pass
+            if time.monotonic() - reported >= 15:
+                progress(kind, f"Still preparing {name}")
+                reported = time.monotonic()
+        process.wait()
+    except BaseException:
+        if os.name == "nt":
+            subprocess.run(["taskkill.exe", "/T", "/F", "/PID", str(process.pid)], capture_output=True)
+        else:
+            try:
+                os.killpg(process.pid, signal.SIGTERM)
+            except ProcessLookupError:
+                pass
+        try:
+            process.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            if os.name != "nt":
+                try:
+                    os.killpg(process.pid, signal.SIGKILL)
+                except ProcessLookupError:
+                    pass
+            process.kill(); process.wait()
+        raise
+    finally:
+        for reader in readers:
+            reader.join(timeout=1)
+        process.stdout.close(); process.stderr.close()
+    payload = None
+    for value in [stdout.strip(), *reversed(stdout.strip().splitlines())]:
+        try:
+            candidate = json.loads(value)
+            if isinstance(candidate, dict):
+                payload = candidate
+                break
         except ValueError:
-            continue
+            pass
+    ok = process.returncode == 0 and isinstance(payload, dict) and payload.get("ready") is True
+    if not ok:
+        return {"kind": kind, "name": name, "ok": False, "result": payload,
+                "error": (stderr or stdout)[-2000:]}
     return {"kind": kind, "name": name, "ok": True, "result": payload}
 
 
@@ -176,16 +251,25 @@ def main() -> int:
         return 1
 
     runtime_dir = args.runtime_dir.expanduser().resolve() if args.runtime_dir else None
-    plan = build_plan(spec, skills_dir, runtime_dir, with_skills=not args.no_skills)
+    try:
+        plan = build_plan(spec, skills_dir, runtime_dir, with_skills=not args.no_skills)
+    except (OSError, ValueError, KeyError, RuntimeError, zipfile.BadZipFile) as error:
+        print(json.dumps({"ready": False, "error": str(error)}))
+        return 1
     steps = plan["steps"]
 
     base = {"skill": spec.get("skill"), "os": machine, "skillsDir": str(skills_dir),
             "pythonExecutable": sys.executable,
             "steps": [{"kind": s["kind"], "name": s["name"]} for s in steps]}
     if args.check:
-        base["ready"] = machine["supported"]
-        print(json.dumps(base, indent=2))
-        return 0 if machine["supported"] else 1
+        # Run only read-only checks; never report OS support as tool readiness.
+        checked = runtime_steps(spec, runtime_dir, check=True)
+        results = [run_step(step) for step in checked] if machine["supported"] else []
+        missing_siblings = [step["name"] for step in steps if step["kind"] == "skill"]
+        ready = machine["supported"] and not missing_siblings and all(result["ok"] for result in results)
+        print(json.dumps({**base, "ready": ready, "supported": machine["supported"],
+                          "results": results, "missingSkills": missing_siblings}, indent=2))
+        return 0 if ready else 1
     if not machine["supported"]:
         print(json.dumps({**base, "ready": False,
                           "error": f"No managed runtime for {machine['system']}/{machine['machine']}"}, indent=2))
@@ -203,4 +287,11 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    def interrupted(_signum, _frame):
+        raise KeyboardInterrupt
+    signal.signal(signal.SIGTERM, interrupted)
+    try:
+        raise SystemExit(main())
+    except KeyboardInterrupt:
+        print(json.dumps({"ready": False, "cancelled": True}))
+        raise SystemExit(130)

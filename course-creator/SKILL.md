@@ -8,6 +8,17 @@ metadata:
 
 # Course Creator
 
+## Automatic first-use setup
+
+Before production, run `sh tools/setup.sh --yes` on Linux/macOS, or
+`powershell.exe -NoProfile -ExecutionPolicy Bypass -File tools/setup.ps1 --yes`
+on Windows. The bundle prepares its private rendering, narration and speech
+runtimes; all course subskills already ship together. Use `--check` to report
+actual readiness without installing. Use the returned `pythonExecutable` and
+runtime paths rather than assuming Python or Node is available globally.
+Preserve model-license and image-rights consent and request credentials only
+when the chosen hosted feature requires them.
+
 Help a teacher build one useful part of a course at a time. A course is **sections → chapters → lessons → concepts**. Each later concept depends only on knowledge already taught or introduced immediately before its use. Preserve the teacher's choices about audience, subject, delivery, materials, and which asset to make next. This parent skill contains the focused subskills below; read the relevant subskill for each requested output. Top-level `curriculum-map`, `content-authoring`, `visual-assets`, `slide-decks`, `explainer-video`, `voice-narration`, `marketing-copy`, `product-launch-video`, `talking-head-video`, and `avatar-video` remain independent entry points when installed separately.
 
 ## Choose one action

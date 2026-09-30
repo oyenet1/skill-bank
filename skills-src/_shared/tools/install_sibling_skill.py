@@ -16,7 +16,7 @@ PAYLOAD = Path(__file__).with_name('sibling_skills.json')
 MAX_BYTES = 32_000_000
 
 
-def install(name: str, root: Path, payload: Path = PAYLOAD) -> dict:
+def _install_one(name: str, root: Path, payload: Path = PAYLOAD) -> dict:
     if not re.fullmatch(r'[a-z0-9][a-z0-9-]{0,99}', name):
         raise ValueError('Invalid sibling skill name')
     root = root.expanduser().resolve()
@@ -72,6 +72,51 @@ def install(name: str, root: Path, payload: Path = PAYLOAD) -> dict:
                 raise ValueError('Sibling destination appeared during installation; no files were overwritten')
             staged.rename(destination)
     return {'ready': True, 'skill': name, 'path': str(destination), 'snapshotSha256': document['sha256'], 'reused': False}
+
+
+def dependency_order(names: list[str], payload: Path = PAYLOAD) -> list[str]:
+    # Resolve the whole declared graph before publishing anything. Cycles are
+    # normal for complementary video skills, so visit every skill only once.
+    if payload.stat().st_size > MAX_BYTES:
+        raise ValueError('Sibling snapshot exceeds its allowed size')
+    document = json.loads(payload.read_text(encoding='utf-8'))
+    if not isinstance(document, dict):
+        raise ValueError('Invalid sibling snapshot')
+    if (document.get('schemaVersion') != 1 or not isinstance(document.get('skills'), list)
+            or not isinstance(document.get('zipBase64'), str)
+            or not isinstance(document.get('sha256'), str)):
+        raise ValueError('Invalid sibling snapshot')
+    data = base64.b64decode(document['zipBase64'], validate=True)
+    if len(data) > MAX_BYTES or hashlib.sha256(data).hexdigest() != document['sha256']:
+        raise ValueError('Sibling snapshot failed SHA-256 verification')
+    pending = list(names); ordered = []; seen = set()
+    with zipfile.ZipFile(io.BytesIO(data)) as archive:
+        while pending:
+            current = pending.pop(0)
+            if not isinstance(current, str) or not re.fullmatch(r'[a-z0-9][a-z0-9-]{0,99}', current):
+                raise ValueError('Invalid sibling skill name')
+            if current in seen:
+                continue
+            if current not in document['skills']:
+                raise ValueError('The bundled snapshot does not contain this sibling skill')
+            seen.add(current); ordered.append(current)
+            try:
+                info = archive.getinfo(f'{current}/tools/dependencies.json')
+            except KeyError:
+                continue
+            if info.file_size > 65536:
+                raise ValueError('Sibling dependency manifest is unexpectedly large')
+            manifest = json.loads(archive.read(info))
+            if not isinstance(manifest, dict) or not isinstance(manifest.get('associated', []), list):
+                raise ValueError('Invalid sibling dependency list')
+            pending.extend(manifest.get('associated', []))
+    return ordered
+
+
+def install(name: str, root: Path, payload: Path = PAYLOAD) -> dict:
+    ordered = dependency_order([name], payload)
+    results = [_install_one(current, root, payload) for current in ordered]
+    return {**results[0], 'installedSkills': results}
 
 
 def main():

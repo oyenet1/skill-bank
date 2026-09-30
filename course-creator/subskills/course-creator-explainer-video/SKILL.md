@@ -5,6 +5,15 @@ description: Create an educational Remotion lesson video or a CapCut Desktop edi
 
 # Explainer Video
 
+## Automatic first-use setup
+
+Before production, run the bundled launcher with `--yes`; it detects the host, prepares private runtimes, and installs the declared sibling dependency graph. Do not ask the requester to install packages manually.
+
+- Linux/macOS: `sh ../../tools/setup.sh --yes`
+- Windows: `powershell.exe -NoProfile -ExecutionPolicy Bypass -File ../../tools/setup.ps1 --yes`
+
+Use `--check` for a read-only readiness check. If prerequisites are missing, rerun setup. Follow the returned `pythonExecutable` and runtime paths for later commands. Model-license acceptance, image rights and account credentials remain explicit inputs.
+
 Produce the requested video and nothing else. Start from the supplied brief and
 actual existing assets — a Slidev deck can guide the design but is not required.
 Work from real material; never invent a UI state, a metric, a testimonial or a

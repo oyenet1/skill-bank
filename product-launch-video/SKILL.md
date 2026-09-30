@@ -5,6 +5,15 @@ description: Create a motion-led product launch ad or screenshot-based product d
 
 # Product Launch Video
 
+## Automatic first-use setup
+
+Before production, run the bundled launcher with `--yes`; it detects the host, prepares private runtimes, and installs the declared sibling dependency graph. Do not ask the requester to install packages manually.
+
+- Linux/macOS: `sh tools/setup.sh --yes`
+- Windows: `powershell.exe -NoProfile -ExecutionPolicy Bypass -File tools/setup.ps1 --yes`
+
+Use `--check` for a read-only readiness check. If prerequisites are missing, rerun setup. Follow the returned `pythonExecutable` and runtime paths for later commands. Model-license acceptance, image rights and account credentials remain explicit inputs.
+
 Accept product screenshots as the main input; also use any supplied product
 brief, site, repository, brand assets, screen recording or founder footage.
 Inspect every selected screenshot before writing a claim. A screenshot-only

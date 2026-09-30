@@ -76,10 +76,10 @@ class PlanBuilding(unittest.TestCase):
             (skills / "voice-narration" / "SKILL.md").write_text("---\nname: voice-narration\n---\n")
             with mock.patch.object(bootstrap, "HERE", REPO / "explainer-video/tools"):
                 steps = bootstrap.skill_steps(self.SPEC, skills, install=True)
-        self.assertEqual([s["name"] for s in steps], ["product-launch-video"])
+        self.assertEqual(set(s["name"] for s in steps), {"product-launch-video", "explainer-video", "slide-decks", "visual-assets"})
         self.assertEqual(steps[0]["command"][0], sys.executable)
         self.assertEqual(Path(steps[0]["command"][1]).name, "install_sibling_skill.py")
-        self.assertEqual(steps[0]["command"][2], "product-launch-video")
+        self.assertEqual(steps[0]["command"][2], steps[0]["name"])
         self.assertTrue(steps[0]["available"])
         self.assertEqual(steps[0]["command"][3:], ["--target", str(skills)])
 
@@ -152,12 +152,14 @@ class CheckModeStopsShort(unittest.TestCase):
                 "voice": True, "transcription": True, "associated": ["voice-narration"],
                 "repo": "oyenet1/agent-skills",
             }))
-            with mock.patch.object(bootstrap, "DEPENDENCIES", manifest), mock.patch(
-                "subprocess.run"
-            ) as run, mock.patch.object(sys, "argv", ["bootstrap.py", "--check"]):
+            with mock.patch.object(bootstrap, "DEPENDENCIES", manifest), mock.patch.object(
+                bootstrap, "run_step", return_value={"ok": False, "result": {"ready": False}}
+            ) as check, mock.patch.object(sys, "argv", ["bootstrap.py", "--check", "--runtime-dir", temp]):
                 code = bootstrap.main()
-        run.assert_not_called()
-        self.assertEqual(code, 0)
+            self.assertEqual(code, 1)
+            self.assertTrue(all("--check" in call.args[0]["command"] for call in check.call_args_list))
+            self.assertEqual(list(Path(temp).iterdir()), [manifest])
+
 
 
 if __name__ == "__main__":

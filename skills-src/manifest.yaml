@@ -5,6 +5,10 @@
 # plus the declared shared modules into each target's references/.
 
 shared_dir: _shared
+bundle_bootstrap:
+  routes: [explainer-video]
+  voice: true
+  transcription: true
 
 # Shared modules are emitted as references/<file> into every target that lists them.
 modules:
@@ -40,6 +44,9 @@ capabilities:
     bundle: course-creator-assets
     modules: [intake, brand, objects, generated-assets]
     shared_tools: [bootstrap_uv.py, uv_wheels.json, network_tls.py, generate_image_asset.py]
+    bootstrap:
+      routes: []
+      associated: []
 
   content-authoring:
     standalone: content-authoring
