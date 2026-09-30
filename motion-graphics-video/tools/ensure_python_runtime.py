@@ -119,6 +119,10 @@ def isolated_command(runtime: Path, packages: dict[str, str], script: Path, argu
     if platform.system() == "Darwin" and "av" in packages:
         packages["av"] = transcription_packages()["av"]
     env = os.environ.copy()
+    # Large ASR wheels need more than UV's default 30-second read timeout on
+    # slow links. Bound its internal downloads while other setup branches run.
+    env.setdefault("UV_HTTP_TIMEOUT", "120")
+    env.setdefault("UV_CONCURRENT_DOWNLOADS", "4")
     env.update(UV_PYTHON_INSTALL_DIR=str(runtime / "python"), UV_CACHE_DIR=str(runtime / "uv-cache"),
                PYTHONIOENCODING="utf-8", PYTHONUTF8="1", PYTHONDONTWRITEBYTECODE="1")
     identity = hashlib.sha256(json.dumps({"python": "3.12", "packages": packages}, sort_keys=True).encode()).hexdigest()[:20]

@@ -8,7 +8,7 @@
   ──────────────────────────────────────────────────────────────────
 -->
 
-# Agent Skills
+# Skill Bank
 
 A collection of reusable AI agent skills by [Bowofade Oyerinde](https://github.com/oyenet1) / **Bonifade Technologies**.
 
@@ -352,9 +352,46 @@ package/model requirements live in
 Renderer and transcription transitive versions are resolved at installation;
 there is no single checked-in lock covering all platforms and features.
 
+Optional local avatar installations, after a compatible hardware probe:
+
+1. **MuseTalk 1.5 (CUDA):** Python 3.10, PyTorch/torchvision/torchaudio,
+   NumPy, OpenCV, soundfile, einops, OmegaConf, ffmpeg-python, imageio,
+   imageio-ffmpeg, Pillow, tqdm, diffusers, accelerate, transformers,
+   huggingface-hub, librosa, MoviePy, mmengine, mmcv, mmdet, mmpose and
+   xtcocotools. Source builds can additionally need antlr4-python3-runtime,
+   chumpy and its build dependencies. Models: MuseTalk UNet, SD VAE, Whisper,
+   DWPose, face parsing, ResNet18 and S3FD; about 4.5 GB of model downloads.
+2. **MuseTalk (Apple MPS):** Python 3.10 and the common MuseTalk packages above,
+   with mediapipe in place of the CUDA OpenMMLab stack; about 4.0 GB of models.
+3. **LatentSync 1.5 (CUDA):** Python and the pinned PyTorch stack, accelerate,
+   av, decord, diffusers, einops, face-alignment, ffmpeg-python, huggingface-hub,
+   imageio, imageio-ffmpeg, kornia, librosa, lpips, matplotlib, mediapipe,
+   NumPy, OmegaConf, OpenCV, Pillow, python-speech-features, safetensors,
+   scenedetect, soundfile, tqdm and transformers. Models include LatentSync,
+   SyncNet, Whisper, face detection/alignment, I3D, VGG16, ViT, KonIQ and
+   SD VAE; about 10.2 GB of model downloads. See the avatar manifest for
+   exact pins, source builds, accelerator memory and per-file hashes.
+
+To see dependencies of dependencies for an installed renderer, run
+`npm --prefix /path/to/video-runtime/remotion ls --all --json` (replace
+`remotion` with `slidev` or `hyperframes`). Each profile also retains its
+resolved `package-lock.json`. For a private Python environment, run
+`uv pip freeze --python /path/to/environment/bin/python`; on Windows use
+`Scripts/python.exe`. These show the versions actually installed on your
+platform, including indirect packages. A fresh full setup needs disk space
+for caches, extracted browsers, Python environments and models; use a
+sandbox directory on disk rather than a quota-limited temporary filesystem.
+
 Repeated setup verifies and reuses ready packages, browsers, model files and
 environments rather than downloading them again. Missing or failed components
-are retried. Browser readiness checks inspect the actual browser, not a stale
+are retried. The standalone bootstrap retries a failed component once while
+preserving completed components; a second failure remains an explicit setup
+failure. Python package downloads use a 120-second read timeout and at most
+four concurrent UV downloads per branch, honoring any user-supplied
+`UV_HTTP_TIMEOUT` or `UV_CONCURRENT_DOWNLOADS` values. These settings avoid
+UV's short default read timeout and limit contention during parallel setup
+([UV settings](https://docs.astral.sh/uv/reference/environment/)).
+Browser readiness checks inspect the actual browser, not a stale
 marker file. The installer also reuses an existing skill directory containing
 `SKILL.md`; it preserves user edits and refuses incomplete directories or
 symlink destinations. `--resume` remains available after a failed install.

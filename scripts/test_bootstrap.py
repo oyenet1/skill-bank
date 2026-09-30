@@ -55,7 +55,7 @@ class PlanBuilding(unittest.TestCase):
         "voice": True,
         "transcription": True,
         "associated": ["voice-narration", "product-launch-video"],
-        "repo": "oyenet1/agent-skills",
+        "repo": "oyenet1/skill-bank",
     }
 
     def test_runtime_steps_cover_every_route(self):
@@ -151,6 +151,19 @@ class ParallelSetup(unittest.TestCase):
         finally:
             timer.cancel()
 
+    def test_failed_component_is_retried_without_repeating_successful_components(self):
+        calls = []
+        def run(step, cancel):
+            calls.append(step['name'])
+            return {'name': step['name'], 'ok': step['name'] != 'voice' or calls.count('voice') == 2}
+        steps = [{'kind': kind, 'name': kind} for kind in ['runtime', 'voice']]
+        with mock.patch.object(bootstrap, 'run_step', side_effect=run):
+            results = bootstrap.run_steps(steps)
+        self.assertTrue(all(result['ok'] for result in results))
+        self.assertEqual(calls.count('runtime'), 1)
+        self.assertEqual(calls.count('voice'), 2)
+        self.assertEqual([result['attempts'] for result in results], [1, 2])
+
 
 class WindowsLaunchers(unittest.TestCase):
     def test_cmd_is_wrapped_with_comspec(self):
@@ -203,7 +216,7 @@ class CheckModeStopsShort(unittest.TestCase):
             manifest.write_text(json.dumps({
                 "skill": "explainer-video", "routes": ["explainer-video"],
                 "voice": True, "transcription": True, "associated": ["voice-narration"],
-                "repo": "oyenet1/agent-skills",
+                "repo": "oyenet1/skill-bank",
             }))
             with mock.patch.object(bootstrap, "DEPENDENCIES", manifest), mock.patch.object(
                 bootstrap, "run_step", return_value={"ok": False, "result": {"ready": False}}

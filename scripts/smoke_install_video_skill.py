@@ -45,10 +45,13 @@ def main() -> int:
     (root / "environment.json").write_text(json.dumps(
         {key: value for key, value in env.items() if key not in os.environ or value != os.environ[key]}, indent=2))
     report = {"sandbox": str(root), "source": args.source, "skill": args.skill,
-              "systemToolsMayBeReused": True, "stages": []}
+              "systemToolsMayBeReused": True, "stages": [], "ready": False}
 
     def stage(name: str, command: list[str]) -> bool:
         print(f"{name}: started ({root})", flush=True)
+        report['runningStage'] = name
+        report['ready'] = False
+        (root / 'report.json').write_text(json.dumps(report, indent=2))
         started = time.monotonic()
         with (root / f"{name}.log").open("w") as log:
             result = subprocess.run(command, cwd=paths["workspace"], env=env,
@@ -56,7 +59,9 @@ def main() -> int:
         entry = {"name": name, "seconds": round(time.monotonic() - started, 3),
                  "exitCode": result.returncode}
         report["stages"].append(entry)
-        report["ready"] = result.returncode == 0
+        report.pop('runningStage', None)
+        report['skillFilesInstalled'] = any(item['name'] == 'skill-files' and item['exitCode'] == 0 for item in report['stages'])
+        report["ready"] = name == 'read-only-check' and result.returncode == 0
         (root / "report.json").write_text(json.dumps(report, indent=2))
         print(json.dumps(entry), flush=True)
         return result.returncode == 0

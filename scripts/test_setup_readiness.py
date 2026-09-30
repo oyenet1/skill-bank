@@ -2,6 +2,7 @@
 import importlib.util
 import io
 import json
+import os
 from pathlib import Path
 import sys
 import tempfile
@@ -40,6 +41,22 @@ class SetupReadiness(unittest.TestCase):
             with patch.object(runtime.subprocess, 'run', side_effect=AssertionError('Cached setup must not reinstall')):
                 again, _ = runtime.isolated_command(root, {'fixture': '1.0'}, root / 'worker.py', [])
             self.assertEqual(command, again)
+
+    def test_download_limits_default_and_preserve_user_configuration(self):
+        def install(command, **kwargs):
+            if command[1] == 'venv':
+                Path(command[2]).mkdir(parents=True, exist_ok=True)
+            return Mock(returncode=0)
+        with tempfile.TemporaryDirectory() as temp, patch.object(runtime, 'ensure_uv', return_value=Path('/private/uv')), patch.object(runtime.subprocess, 'run', side_effect=install):
+            root = Path(temp)
+            with patch.dict(os.environ, {}, clear=True):
+                _, env = runtime.isolated_command(root, {}, root / 'worker.py', [])
+                self.assertEqual(env['UV_HTTP_TIMEOUT'], '120')
+                self.assertEqual(env['UV_CONCURRENT_DOWNLOADS'], '4')
+            with patch.dict(os.environ, {'UV_HTTP_TIMEOUT': '240', 'UV_CONCURRENT_DOWNLOADS': '2'}):
+                _, env = runtime.isolated_command(root, {}, root / 'worker.py', [])
+                self.assertEqual(env['UV_HTTP_TIMEOUT'], '240')
+                self.assertEqual(env['UV_CONCURRENT_DOWNLOADS'], '2')
 
     def test_pretty_json_result_is_preserved_and_child_logs_are_relayed(self):
         command = [sys.executable, '-c', 'import json,sys; print("live progress",file=sys.stderr); print(json.dumps({"ready":True,"paths":{"node":"private node"}},indent=2))']

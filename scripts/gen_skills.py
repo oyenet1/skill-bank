@@ -50,7 +50,7 @@ TOOL_IGNORE = {"models", ".venv", ".tooling", "__pycache__", "node_modules"}
 # A capability with a `bootstrap:` manifest block ships these first-use files
 # plus a generated tools/dependencies.json next to them.
 BOOTSTRAP_TOOLS = ["bootstrap.py", "setup.sh", "setup.cmd", "setup.ps1", "uv_wheels.json", "install_sibling_skill.py"]
-DEFAULT_SKILL_REPO = "oyenet1/agent-skills"
+DEFAULT_SKILL_REPO = "oyenet1/skill-bank"
 
 
 def dependencies_document(cap_id: str, spec: dict, mode: str) -> dict:

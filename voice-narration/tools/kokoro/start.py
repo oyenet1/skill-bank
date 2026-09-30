@@ -55,7 +55,10 @@ def venv_python() -> Path:
 
 
 def run(arguments: list[str | Path], **kwargs: object) -> None:
-    subprocess.run([str(argument) for argument in arguments], check=True, **kwargs)
+    env = dict(kwargs.pop("env", os.environ))
+    env.setdefault("UV_HTTP_TIMEOUT", "120")
+    env.setdefault("UV_CONCURRENT_DOWNLOADS", "4")
+    subprocess.run([str(argument) for argument in arguments], check=True, env=env, **kwargs)
 
 
 def progress(phase: str, message: str, **details: object) -> None:

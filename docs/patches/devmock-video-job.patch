@@ -204,7 +204,7 @@ diff --git a/src-tauri/resources/video-tools/bootstrap.py b/src-tauri/resources/
 new file mode 100644
 --- /dev/null
 +++ b/src-tauri/resources/video-tools/bootstrap.py
-@@ -0,0 +1,338 @@
+@@ -0,0 +1,348 @@
 +#!/usr/bin/env python3
 +"""First-use bootstrap for a video skill on Windows, macOS or Linux.
 +
@@ -249,10 +249,12 @@ new file mode 100644
 +# Node ships installed runtimes only for these systems and architectures.
 +ARCHITECTURES = {"x86_64": "x64", "amd64": "x64", "aarch64": "arm64", "arm64": "arm64"}
 +SUPPORTED_SYSTEMS = ("Linux", "Darwin", "Windows")
++PROGRESS_LOCK = threading.Lock()
 +
 +
 +def progress(phase: str, message: str, **details: object) -> None:
-+    print(json.dumps({"phase": phase, "message": message, **details}), file=sys.stderr, flush=True)
++    with PROGRESS_LOCK:
++        print(json.dumps({"phase": phase, "message": message, **details}), file=sys.stderr, flush=True)
 +
 +
 +def host() -> dict[str, str]:
@@ -398,7 +400,8 @@ new file mode 100644
 +                    remaining -= 1
 +                elif source == "stderr":
 +                    stderr = (stderr + line)[-6000:]
-+                    sys.stderr.write(line); sys.stderr.flush()
++                    with PROGRESS_LOCK:
++                        sys.stderr.write(line); sys.stderr.flush()
 +                else:
 +                    stdout = (stdout + line)[-200000:]
 +            except queue.Empty:
@@ -465,7 +468,14 @@ new file mode 100644
 +        for index, step in items:
 +            if cancel.is_set():
 +                break
-+            completed.append((index, run_step(step, cancel)))
++            for attempt in (1, 2):
++                result = run_step(step, cancel)
++                result["attempts"] = attempt
++                if result["ok"] or result.get("cancelled") or cancel.is_set():
++                    break
++                if attempt == 1:
++                    progress(step["kind"], f"Retrying {step['name']}; preserving verified components")
++            completed.append((index, result))
 +        return completed
 +
 +    with ThreadPoolExecutor(max_workers=4) as pool:
@@ -729,7 +739,7 @@ diff --git a/src-tauri/resources/video-tools/ensure_python_runtime.py b/src-taur
  
  from ensure_video_runtime import MANIFEST, default_runtime_dir, progress
  
-@@ -43,63 +45,132 @@
+@@ -43,63 +45,136 @@
      target.parent.mkdir(parents=True, exist_ok=True)
      suffix = ".ps1" if platform.system() == "Windows" else ".sh"
      progress("setup", "Installing private Python manager")
@@ -832,6 +842,10 @@ diff --git a/src-tauri/resources/video-tools/ensure_python_runtime.py b/src-taur
 +    if platform.system() == "Darwin" and "av" in packages:
 +        packages["av"] = transcription_packages()["av"]
      env = os.environ.copy()
++    # Large ASR wheels need more than UV's default 30-second read timeout on
++    # slow links. Bound its internal downloads while other setup branches run.
++    env.setdefault("UV_HTTP_TIMEOUT", "120")
++    env.setdefault("UV_CONCURRENT_DOWNLOADS", "4")
      env.update(UV_PYTHON_INSTALL_DIR=str(runtime / "python"), UV_CACHE_DIR=str(runtime / "uv-cache"),
                 PYTHONIOENCODING="utf-8", PYTHONUTF8="1", PYTHONDONTWRITEBYTECODE="1")
 -    return command, env

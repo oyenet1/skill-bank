@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "skill": "course-creator-product-launch-video",
   "capability": "product-launch-video",
-  "repo": "oyenet1/agent-skills",
+  "repo": "oyenet1/skill-bank",
   "routes": [
     "product-launch-video"
   ],

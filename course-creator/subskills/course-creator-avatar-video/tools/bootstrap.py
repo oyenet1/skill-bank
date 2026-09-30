@@ -42,10 +42,12 @@ DEPENDENCIES = HERE / "dependencies.json"
 # Node ships installed runtimes only for these systems and architectures.
 ARCHITECTURES = {"x86_64": "x64", "amd64": "x64", "aarch64": "arm64", "arm64": "arm64"}
 SUPPORTED_SYSTEMS = ("Linux", "Darwin", "Windows")
+PROGRESS_LOCK = threading.Lock()
 
 
 def progress(phase: str, message: str, **details: object) -> None:
-    print(json.dumps({"phase": phase, "message": message, **details}), file=sys.stderr, flush=True)
+    with PROGRESS_LOCK:
+        print(json.dumps({"phase": phase, "message": message, **details}), file=sys.stderr, flush=True)
 
 
 def host() -> dict[str, str]:
@@ -191,7 +193,8 @@ def run_step(step: dict[str, object], cancel: threading.Event | None = None) -> 
                     remaining -= 1
                 elif source == "stderr":
                     stderr = (stderr + line)[-6000:]
-                    sys.stderr.write(line); sys.stderr.flush()
+                    with PROGRESS_LOCK:
+                        sys.stderr.write(line); sys.stderr.flush()
                 else:
                     stdout = (stdout + line)[-200000:]
             except queue.Empty:
@@ -258,7 +261,14 @@ def run_steps(steps: list[dict[str, object]]) -> list[dict[str, object]]:
         for index, step in items:
             if cancel.is_set():
                 break
-            completed.append((index, run_step(step, cancel)))
+            for attempt in (1, 2):
+                result = run_step(step, cancel)
+                result["attempts"] = attempt
+                if result["ok"] or result.get("cancelled") or cancel.is_set():
+                    break
+                if attempt == 1:
+                    progress(step["kind"], f"Retrying {step['name']}; preserving verified components")
+            completed.append((index, result))
         return completed
 
     with ThreadPoolExecutor(max_workers=4) as pool:

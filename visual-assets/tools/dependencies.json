@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "skill": "visual-assets",
   "capability": "assets",
-  "repo": "oyenet1/agent-skills",
+  "repo": "oyenet1/skill-bank",
   "routes": [],
   "voice": false,
   "transcription": false,

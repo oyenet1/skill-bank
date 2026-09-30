@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "skill": "explainer-video",
   "capability": "explainer-video",
-  "repo": "oyenet1/agent-skills",
+  "repo": "oyenet1/skill-bank",
   "routes": [
     "explainer-video"
   ],

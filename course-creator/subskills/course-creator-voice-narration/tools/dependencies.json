@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "skill": "course-creator-voice-narration",
   "capability": "voice-narration",
-  "repo": "oyenet1/agent-skills",
+  "repo": "oyenet1/skill-bank",
   "routes": [],
   "voice": false,
   "transcription": false,

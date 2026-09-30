@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "skill": "course-creator-talking-head-video",
   "capability": "talking-head-video",
-  "repo": "oyenet1/agent-skills",
+  "repo": "oyenet1/skill-bank",
   "routes": [
     "talking-head-video"
   ],

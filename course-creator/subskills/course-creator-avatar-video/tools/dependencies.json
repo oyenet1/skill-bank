@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "skill": "course-creator-avatar-video",
   "capability": "avatar-video",
-  "repo": "oyenet1/agent-skills",
+  "repo": "oyenet1/skill-bank",
   "routes": [
     "avatar-video"
   ],
