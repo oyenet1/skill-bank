@@ -17,6 +17,7 @@ modules:
   slidev: slidev.md
   code: code.md
   generated-assets: generated-assets.md
+  product-capture: product-capture.md
 
 # prompts/ is copied as references/prompts/ for capabilities that list "prompts".
 
@@ -57,8 +58,8 @@ capabilities:
   explainer-video:
     standalone: explainer-video
     bundle: course-creator-explainer-video
-    modules: [intake, brand, video, voice, preflight, generated-assets, objects, slidev, code, prompts]
-    shared_tools: [bootstrap_uv.py, uv_wheels.json, network_tls.py, generate_image_asset.py, write_subtitles.py, review_captions.py, transcribe_captions.py, ensure_python_runtime.py, transcribe_with_faster_whisper.py, assemble_video.py, render_slidev_video.py, render_remotion_video.py, render_hyperframes_video.py, run_video_job.py, run_desktop_video_job.py, author_desktop_video.py, desktop_fonts.py, render_desktop_sources.py, ensure_video_runtime.py, runtime_requirements.json]
+    modules: [intake, brand, video, voice, preflight, generated-assets, product-capture, objects, slidev, code, prompts]
+    shared_tools: [capture_product_screens.py, capture_product_screens.cjs, bootstrap_uv.py, uv_wheels.json, network_tls.py, generate_image_asset.py, write_subtitles.py, review_captions.py, transcribe_captions.py, ensure_python_runtime.py, transcribe_with_faster_whisper.py, assemble_video.py, render_slidev_video.py, render_remotion_video.py, render_hyperframes_video.py, run_video_job.py, run_desktop_video_job.py, author_desktop_video.py, desktop_fonts.py, render_desktop_sources.py, ensure_video_runtime.py, runtime_requirements.json]
     bootstrap:
       routes: [explainer-video]
       voice: true
@@ -85,8 +86,8 @@ capabilities:
   product-launch-video:
     standalone: product-launch-video
     bundle: course-creator-product-launch-video
-    modules: [intake, brand, video, voice, preflight, generated-assets, objects, slidev, code, prompts]
-    shared_tools: [bootstrap_uv.py, uv_wheels.json, network_tls.py, generate_image_asset.py, write_subtitles.py, review_captions.py, transcribe_captions.py, ensure_python_runtime.py, transcribe_with_faster_whisper.py, assemble_video.py, render_remotion_video.py, render_hyperframes_video.py, run_video_job.py, run_desktop_video_job.py, author_desktop_video.py, desktop_fonts.py, render_desktop_sources.py, ensure_video_runtime.py, runtime_requirements.json]
+    modules: [intake, brand, video, voice, preflight, generated-assets, product-capture, objects, slidev, code, prompts]
+    shared_tools: [capture_product_screens.py, capture_product_screens.cjs, bootstrap_uv.py, uv_wheels.json, network_tls.py, generate_image_asset.py, write_subtitles.py, review_captions.py, transcribe_captions.py, ensure_python_runtime.py, transcribe_with_faster_whisper.py, assemble_video.py, render_remotion_video.py, render_hyperframes_video.py, run_video_job.py, run_desktop_video_job.py, author_desktop_video.py, desktop_fonts.py, render_desktop_sources.py, ensure_video_runtime.py, runtime_requirements.json]
     bootstrap:
       routes: [product-launch-video]
       voice: true

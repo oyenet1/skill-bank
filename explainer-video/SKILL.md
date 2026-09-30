@@ -32,6 +32,16 @@ matters:
 Missing deliverable-changing inputs go into **one batched block** with options and
 a recommended pick each. Do not re-ask what the request already states.
 
+## Automatic product screenshots
+
+For product demos and launch ads, read [product-capture](references/product-capture.md). When real
+screenshots are missing, capture the identified public or authenticated product
+with `tools/capture_product_screens.py`. Choose desktop, mobile, or both from the
+product experience and video brief; prefer mobile captures for mobile demos.
+Use private environment credentials or an existing session, verify login, mask
+private data, and inspect the images before building scenes. Ask for a product
+URL or local project when neither is available; never generate substitute UI.
+
 ## 2. Preflight
 
 Read [preflight](references/preflight.md) and run

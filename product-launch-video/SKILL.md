@@ -19,6 +19,16 @@ from this skill directory, where `<renderer>` is `remotion` (default) or
 `hyperframes`. Use the verified executable paths in its JSON result for the
 chosen renderer and FFmpeg; report any setup failure before promising a render.
 
+## Automatic product screenshots
+
+For product demos and launch ads, read [product-capture](references/product-capture.md). When real
+screenshots are missing, capture the identified public or authenticated product
+with `tools/capture_product_screens.py`. Choose desktop, mobile, or both from the
+product experience and video brief; prefer mobile captures for mobile demos.
+Use private environment credentials or an existing session, verify login, mask
+private data, and inspect the images before building scenes. Ask for a product
+URL or local project when neither is available; never generate substitute UI.
+
 ## 1. Establish what is true
 
 Inventory the supplied screenshots and inspect them at readable size. Record each

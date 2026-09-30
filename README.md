@@ -108,6 +108,21 @@ pre-pull those siblings explicitly, install them alongside, for example:
 npx skills add oyenet1/agent-skills@explainer-video oyenet1/agent-skills@voice-narration oyenet1/agent-skills@product-launch-video -g
 ```
 
+### Automatic product screenshots
+
+`product-launch-video` and `explainer-video` can capture real public or logged-in
+web product screens using their bundled `tools/capture_product_screens.py`.
+Choose desktop, mobile, or both; mobile capture uses responsive browser device
+emulation. Credentials come from private environment variables or an existing
+session outside exported assets. The capture tool prepares its own private
+Playwright/Chromium runtime and outputs PNGs with provenance. See the
+[capture plan and login guide](skills-src/_shared/product-capture.md).
+Native mobile apps require supplied captures or a separate emulator tool.
+
+Optional intake choices use a 30-second default when the agent host supports
+asynchronous questions and timers. Required access details and approvals remain
+pending. This is skill behavior, not a timer installed into third-party apps.
+
 ## Editing Skills
 
 For the current video production steps, installer gaps, subtitle contract, and
