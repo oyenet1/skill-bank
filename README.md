@@ -49,7 +49,7 @@ Create a Remotion launch ad from these product screenshots and the product websi
 
 **Install:**
 ```bash
-npx skills add oyenet1/agent-skills@course-creator
+npx skills add oyenet1/spec-driven-development --skill course-creator
 ```
 
 ---
@@ -65,7 +65,7 @@ Takes any rough requirement and produces:
 
 **Install:**
 ```bash
-npx skills add oyenet1/agent-skills@spec-driven-development
+npx skills add oyenet1/spec-driven-development --skill spec-driven-development
 ```
 
 **Triggers on:** "spec this", "SDD", "plan this feature", "break this down", "generate requirements", "write a spec", and more.
@@ -74,38 +74,80 @@ npx skills add oyenet1/agent-skills@spec-driven-development
 
 ## Installing Skills
 
+These skills work in a coding agent that can read files and run commands; the
+desktop app is not required. Install Node.js with npm first so `npx` is available.
+The installation commands below work in Linux/macOS terminals and Windows
+PowerShell or Command Prompt.
+
+### Choose a video skill
+
+| Skill | Use it for |
+|---|---|
+| `product-launch-video` | Product launch ads and demos with real desktop/mobile screenshots |
+| `explainer-video` | Explainers, lessons, motion graphics and product walkthroughs |
+| `talking-head-video` | Captions and graphic overlays on supplied presenter footage |
+| `avatar-video` | Avatar or talking-photo presenters; provider or hardware requirements apply |
+| `voice-narration` | Local narration audio |
+| `slide-decks` | Slide presentations |
+| `course-creator` | The full course workflow with its bundled subskills |
+
+Install one skill globally (available across projects):
+
 ```bash
-# Install a specific skill globally
-npx skills add oyenet1/agent-skills@course-creator -g
-
-# Install another specific skill globally
-npx skills add oyenet1/agent-skills@spec-driven-development -g
-
-# Install one course output skill independently
-npx skills add oyenet1/agent-skills@voice-narration -g
-
-# Install screenshot-driven Remotion product ads independently
-npx skills add oyenet1/agent-skills@product-launch-video -g
-
-# Install talking-head packaging and AI avatar video independently
-npx skills add oyenet1/agent-skills@talking-head-video -g
-npx skills add oyenet1/agent-skills@avatar-video -g
-
-# Install the standalone planning, copy and visual-sourcing skills
-npx skills add oyenet1/agent-skills@curriculum-map -g
-npx skills add oyenet1/agent-skills@marketing-copy -g
-npx skills add oyenet1/agent-skills@visual-assets -g
-
-# Install all skills from this repo
-npx skills add oyenet1/agent-skills --all
+npx skills add oyenet1/spec-driven-development --skill product-launch-video -g
+npx skills add oyenet1/spec-driven-development --skill explainer-video -g
+npx skills add oyenet1/spec-driven-development --skill talking-head-video -g
+npx skills add oyenet1/spec-driven-development --skill avatar-video -g
+npx skills add oyenet1/spec-driven-development --skill voice-narration -g
+npx skills add oyenet1/spec-driven-development --skill slide-decks -g
 ```
 
-Installing a video skill is enough to start: its first-use bootstrap downloads
-the runtime it needs and offers the associated skills it can hand off to. To
-pre-pull those siblings explicitly, install them alongside, for example:
+Run only the command for the skill you need, or install several together:
 
 ```bash
-npx skills add oyenet1/agent-skills@explainer-video oyenet1/agent-skills@voice-narration oyenet1/agent-skills@product-launch-video -g
+npx skills add oyenet1/spec-driven-development --skill product-launch-video --skill explainer-video --skill voice-narration -g
+```
+
+Install the complete course bundle:
+
+```bash
+npx skills add oyenet1/spec-driven-development --skill course-creator -g
+```
+
+Omit `-g` to install into the current project. The installer prompts for the agent
+to use; add `-a codex` to target Codex explicitly. To inspect available skills or
+check your global installation:
+
+```bash
+npx skills add oyenet1/spec-driven-development --list
+npx skills list -g
+```
+
+### Prepare the runtime on first use
+
+Skill installation copies files; it does not automatically download video tools.
+Ask your agent to use the installed skill and run its first-use setup. For manual
+setup, open the installed skill directory and use the command for your OS:
+
+| OS | Command |
+|---|---|
+| Linux/macOS | `sh tools/setup.sh --yes` |
+| Windows PowerShell | `powershell -ExecutionPolicy Bypass -File tools\setup.ps1 --yes` |
+| Windows Command Prompt | `tools\setup.cmd --yes` |
+
+Setup downloads the supported private runtimes and associated skills. Use
+`--check` instead of `--yes` for a read-only check, or add `--no-skills` to prepare
+runtimes without installing associated skills. First setup needs internet access
+and space for tools/models. No desktop application is needed. Windows/macOS
+end-to-end rendering remains unverified; local avatar generation also needs
+supported hardware, and hosted providers need credentials.
+
+Example requests after installation:
+
+```text
+Use product-launch-video to make a 30-second mobile demo of my app at http://localhost:3000. Capture real mobile screens; ask for private login access if needed.
+Use explainer-video to make a 60-second narrated walkthrough using both desktop and mobile screenshots of my website.
+Use talking-head-video to caption my recorded presentation.
 ```
 
 ### Automatic product screenshots
