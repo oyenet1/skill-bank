@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "skill": "course-creator-motion-graphics-video",
+  "capability": "motion-graphics-video",
+  "repo": "oyenet1/agent-skills",
+  "routes": [
+    "explainer-video"
+  ],
+  "voice": false,
+  "transcription": true,
+  "associated": []
+}

@@ -38,6 +38,7 @@ TOKEN = re.compile(r"\{\{(ref|doc|sibling|asset):([^}|]+?)(?:\|([^}]+))?\}\}")
 
 # Tool trees are generated too, so the standalone install works alone.
 TOOL_COPIES = [
+    ("course-creator/tools/kokoro", "motion-graphics-video/tools/kokoro"),
     ("course-creator/tools/kokoro", "voice-narration/tools/kokoro"),
     ("course-creator/tools/kokoro", "explainer-video/tools/kokoro"),
     ("course-creator/tools/kokoro", "product-launch-video/tools/kokoro"),

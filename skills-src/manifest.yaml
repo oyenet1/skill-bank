@@ -124,3 +124,44 @@ capabilities:
       voice: true
       transcription: true
       associated: [talking-head-video, voice-narration]
+
+  motion-graphics-video:
+    standalone: motion-graphics-video
+    bundle: course-creator-motion-graphics-video
+    modules:
+    - intake
+    - brand
+    - video
+    - voice
+    - preflight
+    - objects
+    - generated-assets
+    - code
+    shared_tools:
+    - bootstrap_uv.py
+    - uv_wheels.json
+    - network_tls.py
+    - generate_image_asset.py
+    - write_subtitles.py
+    - review_captions.py
+    - transcribe_captions.py
+    - ensure_python_runtime.py
+    - transcribe_with_faster_whisper.py
+    - assemble_video.py
+    - render_remotion_video.py
+    - render_hyperframes_video.py
+    - run_video_job.py
+    - run_desktop_video_job.py
+    - author_desktop_video.py
+    - desktop_fonts.py
+    - render_desktop_sources.py
+    - ensure_video_runtime.py
+    - runtime_requirements.json
+    bootstrap:
+      routes:
+      - explainer-video
+      voice: true
+      transcription: true
+      associated:
+      - voice-narration
+      - visual-assets

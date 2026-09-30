@@ -7,7 +7,7 @@ App builds remain disabled at the requester's instruction.
 | Requirement | Authoritative evidence | Status |
 |---|---|---|
 | Explain skill workflow and duration guidance | `video-desktop-integration.md`, generated skill intake/preflight/generation instructions | Documented. Initial target: 30 seconds–3 minutes; longer teaching material in 5–10 minute chapters. 30 minutes is a limit, not a benchmark. |
-| Automatically prepare missing tools | Shared runtime manifest/installers, cross-platform `bootstrap.py` launchers (`setup.sh`/`.cmd`/`.ps1`), Kokoro bootstrap, managed ASR first use, desktop host provisioning | Implemented; the bootstrap detects OS/arch, prepares the runtime, and installs missing associated sibling skills from the bundled snapshot, with `--check` for a read-only plan. Managed ASR and authored renderer setup exercised on Linux. Generic skill managers have no install hook, so the first-use launcher performs setup. |
+| Automatically prepare missing tools | Shared runtime manifest/installers, cross-platform `bootstrap.py` launchers (`setup.sh`/`.cmd`/`.ps1`), Kokoro bootstrap, managed ASR first use, desktop host provisioning | Implemented; the bootstrap detects OS/arch, prepares the runtime, and installs missing associated sibling skills from the bundled snapshot, with `--check` for read-only cached runtime verification. Managed ASR and authored renderer setup exercised on Linux. Generic skill managers have no install hook, so the first-use launcher performs setup. |
 | Script and editable storyboard | Desktop template draft, configured AI writer, `videoAi.test.ts`, importer/exported project | Implemented. Provider planning requires configured credentials/local service; no live provider planning claim is made from parser tests. |
 | User form/media input | Video Studio with searchable menus, uploaded source images, narration and footage; importer tests | Implemented and source-checked. Native form interactions require a built host to verify. |
 | Generate supporting visual assets | Shared `generate_image_asset.py`, native command, VideoAssetPanel, frontend and PNG/provider tests | Implemented with cached PNGs and provenance. No paid OpenAI request was made; account/model access remains unverified. Real product/portrait inputs remain required. |
@@ -21,14 +21,14 @@ App builds remain disabled at the requester's instruction.
 
 ## Verification completed
 
-- 136 Python tests pass, including OS/arch bootstrap planning and launcher
+- 150 Python tests pass, including OS/arch bootstrap planning and launcher
   emission, actual media importer/renderer handoff, and process-tree
   cancellation; provider/image inference tests use explicit stubs.
 - Seven frontend tests pass for storyboard parsing, image generation/cancellation,
   and actual storyboard store actions.
 - Both full Vue checking and the configured type check pass. The configured check
   now includes Vue and TSX, preventing previously missed component errors.
-- All 515 generated skill files match their sources.
+- All 555 generated skill files match their sources.
 - Shared download TLS loads distro CA bundles and macOS system Keychain roots
   for managed Python. Tests retain certificate/hostname verification and tolerate
   missing optional stores. A live Hugging Face HTTPS request passed on Linux.
@@ -41,7 +41,7 @@ App builds remain disabled at the requester's instruction.
   UV and Python 3.12.14 and ran the bootstrap CLI. Source tests also prove old
   Python rejection, read-only missing-Python checks, argument preservation and
   propagated exit codes. PowerShell execution remains unverified.
-- The generated sibling source snapshot installed four associated skills into
+- The generated sibling source snapshot installed five skills including the requested skill and its indirect dependencies into
   an exact target containing spaces without npx, Git or a remote clone. Tests
   cover preserving user edits, incomplete destinations, symlinks, unsafe archive
   paths, digest failures and propagation of the original source snapshot. Both
@@ -80,3 +80,13 @@ The remaining gates require external state: a current native host when builds
 are allowed, eligible NVIDIA/Apple Silicon machines, and configured hosted
 account access for live provider checks. The existing model-license deviation
 also remains unresolved. These gates prevent declaring the full goal complete.
+
+## Latest source and installation audit
+
+See [code-audit.md](code-audit.md) for the dependency closure, persistent ASR
+interpreter, hash-locked narration, honest readiness and atomic audio fixes.
+A fresh final spoken render at
+`/tmp/skill-bank-audit-final-project/project/video.mp4` probes as H.264/AAC,
+4.021354 seconds, with local-ASR JSON/SRT/VTT, editable source and a manifest.
+Caption review remains required; recognition is not treated as approved text.
+No app build or GPU inference was performed.

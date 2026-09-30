@@ -18,11 +18,11 @@ A collection of reusable AI agent skills by [Bowofade Oyerinde](https://github.c
 
 Plans and builds instructor-led courses one action at a time, for technology or other subjects. A course map contains sections, chapters, lessons, concepts, prerequisites, and a simple-to-complex project ladder. Teachers can reorder it without losing stable lesson IDs.
 
-Installing `course-creator` includes its [ten focused subskills](./course-creator/SKILL.md): curriculum mapping, content authoring, visual assets, Slidev decks, Remotion or HyperFrames lesson video, Kokoro voice narration, marketing copy, product launch, talking-head packaging, and avatar video. The parent chooses only the subskills needed for the teacher's request. They can work alone or share the same course map and assets.
+Installing `course-creator` includes its [eleven focused subskills](./course-creator/SKILL.md): curriculum mapping, content authoring, visual assets, Slidev decks, Remotion or HyperFrames lesson video, Kokoro voice narration, marketing copy, motion graphics, product launch, talking-head packaging, and avatar video. The parent chooses only the subskills needed for the teacher's request. They can work alone or share the same course map and assets.
 
 Independent actions include lesson writing; notes as PDF or an online page; optional exercises; publishable assignments, quizzes, and rubrics; lesson-by-lesson Slidev decks; optional local Kokoro voice narration; Remotion or HyperFrames videos using supplied text, audio, or teacher footage; captioning or overlay packaging of an existing talking-head clip; AI avatar, talking-photo or dubbed presenter video; and a timecoded CapCut Desktop handoff. Written material, decks, narration, and video can be produced separately or combined. Visual outputs can use the 580 bundled SVG images and icons. Videos use a shared course style and a per-video `style.md`.
 
-For separate installation or invocation outside the parent, use [curriculum-map](./curriculum-map/SKILL.md), [content-authoring](./content-authoring/SKILL.md), [visual-assets](./visual-assets/SKILL.md), [slide-decks](./slide-decks/SKILL.md), [explainer-video](./explainer-video/SKILL.md), [voice-narration](./voice-narration/SKILL.md), [marketing-copy](./marketing-copy/SKILL.md), [product-launch-video](./product-launch-video/SKILL.md), [talking-head-video](./talking-head-video/SKILL.md), or [avatar-video](./avatar-video/SKILL.md). Each accepts a standalone brief or existing files, and each is craft-first: it leads with the artifact it produces and treats course work as one optional branch rather than a requirement. The marketing-copy skill is general purpose — it writes for any product, service or brand — and draws from the LodgeStatus campaign notes for credible hooks and sales copy on skills and courses.
+For separate installation or invocation outside the parent, use [curriculum-map](./curriculum-map/SKILL.md), [content-authoring](./content-authoring/SKILL.md), [visual-assets](./visual-assets/SKILL.md), [slide-decks](./slide-decks/SKILL.md), [explainer-video](./explainer-video/SKILL.md), [motion-graphics-video](./motion-graphics-video/SKILL.md), [voice-narration](./voice-narration/SKILL.md), [marketing-copy](./marketing-copy/SKILL.md), [product-launch-video](./product-launch-video/SKILL.md), [talking-head-video](./talking-head-video/SKILL.md), or [avatar-video](./avatar-video/SKILL.md). Each accepts a standalone brief or existing files, and each is craft-first: it leads with the artifact it produces and treats course work as one optional branch rather than a requirement. The marketing-copy skill is general purpose — it writes for any product, service or brand — and draws from the LodgeStatus campaign notes for credible hooks and sales copy on skills and courses.
 
 The [product-launch-video](./product-launch-video/SKILL.md) skill is also included as a subskill in `course-creator`. It turns supplied screenshots and product information into a motion ad or screenshot-based demo, using genuine screens as evidence. It writes a per-video `style.md` and delivers editable Remotion or HyperFrames source plus an MP4 when rendering is available.
 
@@ -49,8 +49,26 @@ Create a Remotion launch ad from these product screenshots and the product websi
 
 **Install:**
 ```bash
-npx skills add oyenet1/spec-driven-development --skill course-creator
+npx skills add oyenet1/skill-bank --skill course-creator
 ```
+
+---
+
+### [motion-graphics-video](./motion-graphics-video/SKILL.md)
+
+Generate kinetic typography, animated charts, process flows, diagrams, logo
+reveals and visual concept explanations with Remotion or HyperFrames. Delivers
+an MP4 and editable source, with optional narration and captions. Works alone
+or as the motion graphics subskill inside `course-creator` for lesson diagrams
+and chapter titles, reusing the course style and lesson IDs.
+
+```bash
+npx skills add oyenet1/skill-bank --skill motion-graphics-video -g
+```
+
+Example: “Create a 20-second motion graphics video explaining the water cycle
+with animated arrows and labels.” For a course: “Animate this lesson's process
+diagram using the course style and register the video under the lesson.”
 
 ---
 
@@ -65,7 +83,7 @@ Takes any rough requirement and produces:
 
 **Install:**
 ```bash
-npx skills add oyenet1/spec-driven-development --skill spec-driven-development
+npx skills add oyenet1/skill-bank --skill spec-driven-development
 ```
 
 **Triggers on:** "spec this", "SDD", "plan this feature", "break this down", "generate requirements", "write a spec", and more.
@@ -84,6 +102,7 @@ PowerShell or Command Prompt.
 | Skill | Use it for |
 |---|---|
 | `product-launch-video` | Product launch ads and demos with real desktop/mobile screenshots |
+| `motion-graphics-video` | Kinetic typography, animated diagrams, charts, processes and lesson titles |
 | `explainer-video` | Explainers, lessons, motion graphics and product walkthroughs |
 | `talking-head-video` | Captions and graphic overlays on supplied presenter footage |
 | `avatar-video` | Avatar or talking-photo presenters; provider or hardware requirements apply |
@@ -94,24 +113,25 @@ PowerShell or Command Prompt.
 Install one skill globally (available across projects):
 
 ```bash
-npx skills add oyenet1/spec-driven-development --skill product-launch-video -g
-npx skills add oyenet1/spec-driven-development --skill explainer-video -g
-npx skills add oyenet1/spec-driven-development --skill talking-head-video -g
-npx skills add oyenet1/spec-driven-development --skill avatar-video -g
-npx skills add oyenet1/spec-driven-development --skill voice-narration -g
-npx skills add oyenet1/spec-driven-development --skill slide-decks -g
+npx skills add oyenet1/skill-bank --skill product-launch-video -g
+npx skills add oyenet1/skill-bank --skill motion-graphics-video -g
+npx skills add oyenet1/skill-bank --skill explainer-video -g
+npx skills add oyenet1/skill-bank --skill talking-head-video -g
+npx skills add oyenet1/skill-bank --skill avatar-video -g
+npx skills add oyenet1/skill-bank --skill voice-narration -g
+npx skills add oyenet1/skill-bank --skill slide-decks -g
 ```
 
 Run only the command for the skill you need, or install several together:
 
 ```bash
-npx skills add oyenet1/spec-driven-development --skill product-launch-video --skill explainer-video --skill voice-narration -g
+npx skills add oyenet1/skill-bank --skill product-launch-video --skill explainer-video --skill voice-narration -g
 ```
 
 Install the complete course bundle:
 
 ```bash
-npx skills add oyenet1/spec-driven-development --skill course-creator -g
+npx skills add oyenet1/skill-bank --skill course-creator -g
 ```
 
 Omit `-g` to install into the current project. The installer prompts for the agent
@@ -119,7 +139,7 @@ to use; add `-a codex` to target Codex explicitly. To inspect available skills o
 check your global installation:
 
 ```bash
-npx skills add oyenet1/spec-driven-development --list
+npx skills add oyenet1/skill-bank --list
 npx skills list -g
 ```
 

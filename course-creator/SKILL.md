@@ -19,7 +19,7 @@ runtime paths rather than assuming Python or Node is available globally.
 Preserve model-license and image-rights consent and request credentials only
 when the chosen hosted feature requires them.
 
-Help a teacher build one useful part of a course at a time. A course is **sections → chapters → lessons → concepts**. Each later concept depends only on knowledge already taught or introduced immediately before its use. Preserve the teacher's choices about audience, subject, delivery, materials, and which asset to make next. This parent skill contains the focused subskills below; read the relevant subskill for each requested output. Top-level `curriculum-map`, `content-authoring`, `visual-assets`, `slide-decks`, `explainer-video`, `voice-narration`, `marketing-copy`, `product-launch-video`, `talking-head-video`, and `avatar-video` remain independent entry points when installed separately.
+Help a teacher build one useful part of a course at a time. A course is **sections → chapters → lessons → concepts**. Each later concept depends only on knowledge already taught or introduced immediately before its use. Preserve the teacher's choices about audience, subject, delivery, materials, and which asset to make next. This parent skill contains the focused subskills below; read the relevant subskill for each requested output. Top-level `curriculum-map`, `content-authoring`, `visual-assets`, `slide-decks`, `explainer-video`, `motion-graphics-video`, `voice-narration`, `marketing-copy`, `product-launch-video`, `talking-head-video`, and `avatar-video` remain independent entry points when installed separately.
 
 ## Choose one action
 
@@ -33,6 +33,7 @@ Identify the requested action and target before generating anything. Ask only fo
 | Create a Slidev deck or slide PDF | Create the selected lesson deck or export it | [slide decks](subskills/course-creator-slide-decks/SKILL.md) |
 | Generate speech from text | Produce only the requested script and Kokoro WAV narration | [voice narration](subskills/course-creator-voice-narration/SKILL.md) |
 | Create an educational video or CapCut handoff | Produce the selected lesson video artifacts and editing directions | [explainer video](subskills/course-creator-explainer-video/SKILL.md) |
+| Animate lesson diagrams, processes, charts or chapter titles | Produce a motion graphics video with editable source and optional narration | [motion graphics](subskills/course-creator-motion-graphics-video/SKILL.md) |
 | Sell a course or skill | Write only the requested hook, listing, page, post, email, or promotional script | [marketing copy](subskills/course-creator-marketing-copy/SKILL.md) |
 | Launch a product with a Remotion ad or screenshot demo | Build a source-grounded product video from real screens and product information | [product launch](subskills/course-creator-product-launch-video/SKILL.md) |
 | Caption or package a talking-head or interview clip | Add captions or designed graphic overlays to existing footage, leaving it untouched | [talking head](subskills/course-creator-talking-head-video/SKILL.md) |

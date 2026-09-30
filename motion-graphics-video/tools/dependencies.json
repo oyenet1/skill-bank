@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "skill": "motion-graphics-video",
+  "capability": "motion-graphics-video",
+  "repo": "oyenet1/agent-skills",
+  "routes": [
+    "explainer-video"
+  ],
+  "voice": true,
+  "transcription": true,
+  "associated": [
+    "voice-narration",
+    "visual-assets"
+  ]
+}
