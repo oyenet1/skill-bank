@@ -4,7 +4,7 @@ Usage:
   python generate.py --text "Hello class" --out /path/to/lesson.mp3
   python generate.py --text-file lesson.txt --voice af_sky --out lesson.mp3 --speed 1.0
 
-Output is MP3 when --out ends with .mp3 (requires ffmpeg), otherwise WAV.
+Output is MP3 when --out ends with .mp3 (uses system or bundled ffmpeg), otherwise WAV.
 
 Needs model files in --models-dir (see download_models.sh):
   kokoro-v1.0.onnx + voices-v1.0.bin
@@ -68,8 +68,12 @@ def main(argv=None):
     if out.lower().endswith(".mp3"):
         ffmpeg = shutil.which("ffmpeg")
         if not ffmpeg:
-            print("error: ffmpeg not found, needed for .mp3 output", file=sys.stderr)
-            return 1
+            try:
+                import imageio_ffmpeg
+                ffmpeg = imageio_ffmpeg.get_ffmpeg_exe()
+            except (ImportError, RuntimeError) as error:
+                print(f"error: ffmpeg is unavailable for MP3 output: {error}", file=sys.stderr)
+                return 1
         with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
             tmp_wav = tmp.name
         try:

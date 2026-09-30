@@ -1,5 +1,6 @@
 # venvs, model binaries, caches — never commit
 .venv/
+.tooling/
 __pycache__/
 *.pyc
 course-creator/tools/kokoro/.venv/

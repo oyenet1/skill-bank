@@ -1,0 +1,2664 @@
+diff --git a/src-tauri/src/lib.rs b/src-tauri/src/lib.rs
+--- a/src-tauri/src/lib.rs
++++ b/src-tauri/src/lib.rs
+@@ -4,6 +4,7 @@
+ mod video;
+ mod video_project;
+ mod video_runtime;
++mod video_skill_job;
+ mod audio_studio;
+ mod audio_ai;
+ mod converter;
+@@ -301,6 +302,7 @@
+         .manage(video::MediaState::default())
+         .manage(video_project::ProjectState::default())
+         .manage(video_runtime::RuntimeState::default())
++        .manage(video_skill_job::SkillJobState::default())
+         .manage(audio_studio::AudioState::default())
+         .manage(converter::ConverterState::default())
+         .invoke_handler(tauri::generate_handler![
+@@ -330,6 +332,8 @@
+             video_project::video_project_cancel,
+             video_runtime::video_runtime_setup,
+             video_runtime::video_runtime_cancel,
++            video_skill_job::video_skill_render,
++            video_skill_job::video_skill_cancel,
+             audio_studio::audio_status,
+             audio_studio::audio_cancel,
+             audio_studio::audio_play,
+diff --git a/src-tauri/Cargo.toml b/src-tauri/Cargo.toml
+--- a/src-tauri/Cargo.toml
++++ b/src-tauri/Cargo.toml
+@@ -46,3 +46,6 @@
+ codegen-units = 1
+ panic = "abort"
+ strip = true
++
++[target.'cfg(unix)'.dependencies]
++libc = "0.2"
+diff --git a/src-tauri/Cargo.lock b/src-tauri/Cargo.lock
+--- a/src-tauri/Cargo.lock
++++ b/src-tauri/Cargo.lock
+@@ -3489,6 +3489,7 @@
+  "ffmpeg-sidecar",
+  "gif",
+  "hound",
++ "libc",
+  "png 0.18.1",
+  "rayon",
+  "reqwest 0.12.28",
+diff --git a/src-tauri/tauri.conf.json b/src-tauri/tauri.conf.json
+--- a/src-tauri/tauri.conf.json
++++ b/src-tauri/tauri.conf.json
+@@ -41,7 +41,8 @@
+     ],
+     "resources": {
+       "../prompts/": "prompts/",
+-      "../.agents/skills/": "skills/"
++      "../.agents/skills/": "skills/",
++      "resources/video-tools/": "video-tools/"
+     }
+   }
+ }
+diff --git a/src/engine/videoProject.ts b/src/engine/videoProject.ts
+--- a/src/engine/videoProject.ts
++++ b/src/engine/videoProject.ts
+@@ -20,6 +20,9 @@
+   captionsVtt: string;
+   durationSec: number;
+   sizeBytes: number;
++  reviewRequired: boolean;
++  mixedAudio: string | null;
++  transcript: string | null;
+ };
+ 
+ type Pack = { id: string; kind: string; ready: boolean; size: number; required_disk: number };
+@@ -40,6 +43,7 @@
+   headlineFont: string;
+   bodyFont: string;
+   fps: number;
++  jobRoute?: 'explainer-video' | 'product-launch-video' | 'talking-head-video';
+ };
+ 
+ function report(onProgress: (value: VideoProjectProgress) => void, phase: string, percent: number, message: string) {
+@@ -250,9 +254,14 @@
+       imagePngBase64, audioWavBase64, audioSource, videoSource });
+   }
+   report(onProgress, 'assets', 45, 'Scene images and narration are ready');
++  if (cancelled.value) throw new Error('Video job cancelled');
+   const channel = new Channel<VideoProjectProgress>();
+-  channel.onmessage = (value) => onProgress({ ...value, percent: 45 + Math.round(value.percent * 0.55) });
+-  const result = await invoke<VideoProjectOutcome>('video_project_render', {
++  let lastPercent = 45;
++  channel.onmessage = (value) => {
++    lastPercent = Math.max(lastPercent, 45 + Math.round(value.percent * 0.55));
++    onProgress({ ...value, percent: lastPercent });
++  };
++  const result = await invoke<VideoProjectOutcome>('video_skill_render', {
+     request: {
+       title: options.plan.title, category: options.plan.category, platform: options.plan.platform,
+       language: options.plan.language, aspect: options.plan.aspect, fps: options.fps,
+@@ -260,7 +269,7 @@
+       headlineFont: options.headlineFont, bodyFont: options.bodyFont,
+       planSource: options.plan.planning?.source ?? 'template',
+       planModel: options.plan.planning?.model ?? null,
+-      sourceAssets, scenes,
++      sourceAssets, scenes, jobRoute: options.jobRoute,
+     },
+     onProgress: channel,
+   });
+@@ -269,5 +278,5 @@
+ 
+ export async function cancelVideoProject(): Promise<void> {
+   if (!isTauri()) return;
+-  await Promise.allSettled([invoke('audio_cancel'), invoke('video_project_cancel')]);
+-}
++  await Promise.allSettled([invoke('audio_cancel'), invoke('video_skill_cancel')]);
++}
+diff --git a/src/components/VideoStudio.vue b/src/components/VideoStudio.vue
+--- a/src/components/VideoStudio.vue
++++ b/src/components/VideoStudio.vue
+@@ -40,7 +40,7 @@
+ } from '../engine/inspo';
+ import { cancelVideoProject, runVideoProject, type VideoProjectOutcome } from '../engine/videoProject';
+ import { cancelVideoRuntime, prepareVideoRuntime, type VideoRuntimeResult } from '../engine/videoRuntime';
+-import { AI_PROVIDERS, aiProvider, readSavedAiKey } from '../engine/aiProviders';
++import { AI_PROVIDERS, aiProvider, readSavedAiKey, type AiProviderId } from '../engine/aiProviders';
+ import { generateAiVideoPlan } from '../engine/videoAi';
+ 
+ const emit = defineEmits<{ (e: 'close'): void }>();
+@@ -97,7 +97,7 @@
+ 
+ const generating = ref(false);
+ const storyboardError = ref('');
+-const aiProviderId = ref('ollama-local');
++const aiProviderId = ref<AiProviderId>('ollama-local');
+ const aiBase = ref('http://localhost:11434');
+ const aiCompat = ref('openai');
+ const aiModel = ref('');
+@@ -143,7 +143,8 @@
+   try {
+     const prefs = await load('audio-providers.json');
+     const selected = await prefs.get<string>('selected');
+-    if (selected && AI_PROVIDERS.some((provider) => provider.id === selected)) aiProviderId.value = selected;
++    const selectedProvider = AI_PROVIDERS.find((provider) => provider.id === selected);
++    if (selectedProvider) aiProviderId.value = selectedProvider.id;
+     else await loadAiPreference();
+   } catch {
+     await loadAiPreference();
+@@ -492,6 +493,9 @@
+         headlineFont: headlineFont.value,
+         bodyFont: bodyFont.value,
+         fps: fps.value,
++        jobRoute: kind.value?.id === 'talking-head' ? 'talking-head-video'
++          : plan.value.category === 'product' || ['product-promo', 'launch-video', 'product-film', 'unboxing-demo'].includes(kind.value?.id ?? '')
++            ? 'product-launch-video' : 'explainer-video',
+       }, (event) => {
+         renderMessage.value = event.message;
+         progress.value = event.percent;
+@@ -1027,7 +1031,7 @@
+                         v-for="option in gap.options"
+                         :key="option"
+                         :label="option"
+-                        size="2xs"
++                        size="xs"
+                         :variant="answers[gap.id] === option ? 'solid' : 'soft'"
+                         color="primary"
+                         @click="answers = { ...answers, [gap.id]: option }"
+@@ -1124,9 +1128,9 @@
+                     <UBadge color="neutral" variant="subtle" size="sm">{{ scene.durationSec }}s</UBadge>
+                   </div>
+                   <div class="flex items-center gap-1">
+-                    <UButton icon="i-lucide-arrow-up" color="neutral" variant="ghost" size="2xs" aria-label="Move scene up" :disabled="index === 0" @click="moveScene(index, -1)" />
+-                    <UButton icon="i-lucide-arrow-down" color="neutral" variant="ghost" size="2xs" aria-label="Move scene down" :disabled="index === plan.scenes.length - 1" @click="moveScene(index, 1)" />
+-                    <UButton icon="i-lucide-trash-2" color="error" variant="ghost" size="2xs" aria-label="Delete scene" :disabled="plan.scenes.length <= 1" @click="removeScene(index)" />
++                    <UButton icon="i-lucide-arrow-up" color="neutral" variant="ghost" size="xs" aria-label="Move scene up" :disabled="index === 0" @click="moveScene(index, -1)" />
++                    <UButton icon="i-lucide-arrow-down" color="neutral" variant="ghost" size="xs" aria-label="Move scene down" :disabled="index === plan.scenes.length - 1" @click="moveScene(index, 1)" />
++                    <UButton icon="i-lucide-trash-2" color="error" variant="ghost" size="xs" aria-label="Delete scene" :disabled="plan.scenes.length <= 1" @click="removeScene(index)" />
+                   </div>
+                 </header>
+ 
+@@ -1266,13 +1270,15 @@
+           </section>
+ 
+           <section v-if="realOutcome && !rendering" class="space-y-3 rounded-xl border border-default bg-default p-4 sm:p-5">
+-            <UAlert color="success" variant="subtle" icon="i-lucide-circle-check" title="Video project complete" :description="`${realOutcome.durationSec.toFixed(1)}s MP4 · ${(realOutcome.sizeBytes / 1048576).toFixed(1)} MB`" />
++            <UAlert :color="realOutcome.reviewRequired ? 'warning' : 'success'" variant="subtle" icon="i-lucide-circle-check" :title="realOutcome.reviewRequired ? 'Video ready for caption review' : 'Video project complete'" :description="`${realOutcome.durationSec.toFixed(1)}s MP4 · ${(realOutcome.sizeBytes / 1048576).toFixed(1)} MB`" />
+             <p class="break-all text-xs text-toned">Project folder: {{ realOutcome.directory }}</p>
+             <ul class="space-y-1 break-all text-xs text-muted">
+               <li>MP4: {{ realOutcome.video }}</li>
+               <li>Script: {{ realOutcome.script }}</li>
+               <li>Captions: {{ realOutcome.captionsSrt }} · {{ realOutcome.captionsVtt }}</li>
+-              <li v-if="realOutcome.narration.length">Narration: {{ realOutcome.narration.length }} WAV scene files</li>
++              <li v-if="realOutcome.narration.length">Narration: {{ realOutcome.narration.length }} scene files</li>
++              <li v-if="realOutcome.mixedAudio">Final audio: {{ realOutcome.mixedAudio }}</li>
++              <li v-if="realOutcome.transcript">Transcript for review: {{ realOutcome.transcript }}</li>
+             </ul>
+             <UButton label="Download plan (.json)" icon="i-lucide-file-json" color="neutral" variant="soft" size="sm" @click="downloadPlan" />
+           </section>
+diff --git a/src-tauri/src/video_skill_job.rs b/src-tauri/src/video_skill_job.rs
+new file mode 100644
+--- /dev/null
++++ b/src-tauri/src/video_skill_job.rs
+@@ -0,0 +1,420 @@
++//! Host the bundled video job tools in writable app data on all desktop targets.
++
++use serde::Serialize;
++use serde_json::{json, Value};
++use std::{
++    fs::{self, File},
++    io::{BufRead, BufReader, Write},
++    path::{Path, PathBuf},
++    process::{Child, Command, Stdio},
++    sync::{
++        atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering},
++        Arc,
++    },
++    thread,
++    time::{Duration, Instant, SystemTime, UNIX_EPOCH},
++};
++use tauri::{ipc::Channel, path::BaseDirectory, AppHandle, Manager};
++
++#[derive(Default)]
++pub struct SkillJobState {
++    running: AtomicBool,
++    cancel: AtomicBool,
++    next_id: AtomicU64,
++    percent: Arc<AtomicU32>,
++}
++
++#[derive(Clone, Serialize)]
++#[serde(rename_all = "camelCase")]
++pub struct SkillJobProgress {
++    phase: String,
++    percent: u32,
++    message: String,
++    artifact: Option<String>,
++}
++
++fn report(
++    channel: &Channel<SkillJobProgress>,
++    phase: &str,
++    percent: u32,
++    message: impl Into<String>,
++    artifact: Option<&Path>,
++) {
++    let _ = channel.send(SkillJobProgress {
++        phase: phase.into(),
++        percent,
++        message: message.into(),
++        artifact: artifact.map(|path| path.to_string_lossy().into_owned()),
++    });
++}
++
++fn checked_cancel(state: &SkillJobState) -> Result<(), String> {
++    if state.cancel.load(Ordering::SeqCst) {
++        Err("Video job cancelled".into())
++    } else {
++        Ok(())
++    }
++}
++
++fn configure_process(command: &mut Command) {
++    command.stdin(Stdio::null());
++    #[cfg(unix)]
++    {
++        use std::os::unix::process::CommandExt;
++        command.process_group(0);
++    }
++    #[cfg(windows)]
++    {
++        use std::os::windows::process::CommandExt;
++        command.creation_flags(0x08000000); // CREATE_NO_WINDOW
++    }
++}
++
++fn stop_process(child: &mut Child) {
++    #[cfg(windows)]
++    {
++        let mut command = Command::new("taskkill.exe");
++        configure_process(&mut command);
++        let _ = command
++            .args(["/T", "/F", "/PID", &child.id().to_string()])
++            .status();
++        let _ = child.kill();
++    }
++    #[cfg(unix)]
++    {
++        // The Python runner handles SIGTERM and stops its renderer process group.
++        unsafe {
++            libc::kill(-(child.id() as i32), libc::SIGTERM);
++        }
++        let deadline = Instant::now() + Duration::from_secs(10);
++        while Instant::now() < deadline {
++            if child.try_wait().ok().flatten().is_some() {
++                return;
++            }
++            thread::sleep(Duration::from_millis(100));
++        }
++        unsafe {
++            libc::kill(-(child.id() as i32), libc::SIGKILL);
++        }
++        let _ = child.kill();
++    }
++    let _ = child.wait();
++}
++
++fn phase_percent(value: &Value) -> u32 {
++    match value["phase"].as_str().unwrap_or("command") {
++        "import" => 8,
++        "validate" => 15,
++        "visuals" => 20,
++        "render" => {
++            if value.get("durationSec").is_some() {
++                70
++            } else {
++                25
++            }
++        }
++        "assemble" => 72,
++        "audio" => 78,
++        "subtitles" | "transcribe" => 88,
++        "complete" => {
++            if value.get("reviewRequired").is_some() {
++                98
++            } else {
++                80
++            }
++        }
++        _ => 5,
++    }
++}
++
++fn execute(
++    command: &mut Command,
++    directory: &Path,
++    label: &str,
++    channel: &Channel<SkillJobProgress>,
++    state: &SkillJobState,
++) -> Result<PathBuf, String> {
++    checked_cancel(state)?;
++    configure_process(command);
++    let stdout_path = directory.join(format!("{label}.stdout.log"));
++    let stderr_path = directory.join(format!("{label}.stderr.log"));
++    let stdout = File::create(&stdout_path).map_err(|e| e.to_string())?;
++    let mut stderr_log = File::create(stderr_path).map_err(|e| e.to_string())?;
++    command.stdout(Stdio::from(stdout)).stderr(Stdio::piped());
++    let mut child = command
++        .spawn()
++        .map_err(|e| format!("Could not start {label}: {e}"))?;
++    let stderr = child
++        .stderr
++        .take()
++        .ok_or("Could not capture job progress")?;
++    let progress_channel = channel.clone();
++    let progress_percent = state.percent.clone();
++    let reader = thread::spawn(move || {
++        let mut percent = progress_percent.load(Ordering::Relaxed).max(2);
++        for line in BufReader::new(stderr).lines() {
++            let Ok(line) = line else {
++                break;
++            };
++            let _ = writeln!(stderr_log, "{line}");
++            let value = serde_json::from_str::<Value>(&line).ok();
++            if let Some(value) = value {
++                percent = percent.max(phase_percent(&value));
++                progress_percent.store(percent, Ordering::Relaxed);
++                let _ = progress_channel.send(SkillJobProgress {
++                    phase: value["phase"].as_str().unwrap_or("command").into(),
++                    percent,
++                    message: value["message"].as_str().unwrap_or(&line).into(),
++                    artifact: value["artifact"]
++                        .as_str()
++                        .filter(|path| Path::new(path).exists())
++                        .map(str::to_owned),
++                });
++            } else if !line.trim().is_empty() {
++                report(&progress_channel, "command", percent, line, None);
++            }
++        }
++    });
++    let mut last_update = Instant::now();
++    let result = loop {
++        if state.cancel.load(Ordering::SeqCst) {
++            stop_process(&mut child);
++            break Err("Video job cancelled".into());
++        }
++        match child.try_wait() {
++            Ok(Some(status)) if status.success() => break Ok(stdout_path.clone()),
++            Ok(Some(status)) => {
++                let detail = fs::read(&stdout_path)
++                    .ok()
++                    .and_then(|bytes| serde_json::from_slice::<Value>(&bytes).ok())
++                    .and_then(|value| value["error"].as_str().map(str::to_owned))
++                    .unwrap_or_default();
++                break Err(format!(
++                    "{label} failed ({status}): {detail}; logs: {}",
++                    directory.display()
++                ));
++            }
++            Err(error) => {
++                stop_process(&mut child);
++                break Err(error.to_string());
++            }
++            Ok(None) => {
++                if last_update.elapsed() >= Duration::from_secs(10) {
++                    report(
++                        channel,
++                        "command",
++                        state.percent.load(Ordering::Relaxed),
++                        format!("Still running {label}"),
++                        None,
++                    );
++                    last_update = Instant::now();
++                }
++                thread::sleep(Duration::from_millis(100));
++            }
++        }
++    };
++    let _ = reader.join();
++    result
++}
++
++fn ensure_uv(
++    data: &Path,
++    job: &Path,
++    channel: &Channel<SkillJobProgress>,
++    state: &SkillJobState,
++) -> Result<PathBuf, String> {
++    let name = if cfg!(windows) { "uv.exe" } else { "uv" };
++    let tools = data.join("video-runtime/python-tools");
++    fs::create_dir_all(&tools).map_err(|e| e.to_string())?;
++    let target = tools.join(name);
++    for candidate in [Some(target.clone()), crate::ffmpeg::which(name)]
++        .into_iter()
++        .flatten()
++    {
++        let mut command = Command::new(&candidate);
++        configure_process(&mut command);
++        if command
++            .arg("--version")
++            .output()
++            .is_ok_and(|output| output.status.success())
++        {
++            return Ok(candidate);
++        }
++    }
++    checked_cancel(state)?;
++    report(
++        channel,
++        "setup",
++        1,
++        "Installing private Python manager",
++        None,
++    );
++    let extension = if cfg!(windows) { "ps1" } else { "sh" };
++    let installer = tools.join(format!("uv-install.{extension}"));
++    let client = reqwest::blocking::Client::builder()
++        .timeout(Duration::from_secs(60))
++        .build()
++        .map_err(|e| e.to_string())?;
++    let bytes = client
++        .get(format!("https://astral.sh/uv/install.{extension}"))
++        .send()
++        .and_then(reqwest::blocking::Response::error_for_status)
++        .map_err(|e| format!("Could not download the Python manager: {e}"))?
++        .bytes()
++        .map_err(|e| e.to_string())?;
++    checked_cancel(state)?;
++    fs::write(&installer, bytes).map_err(|e| e.to_string())?;
++    let mut command;
++    if cfg!(windows) {
++        command = Command::new("powershell.exe");
++        command
++            .args(["-NoProfile", "-ExecutionPolicy", "Bypass", "-File"])
++            .arg(&installer);
++    } else {
++        command = Command::new("sh");
++        command.arg(&installer);
++    }
++    command
++        .env("UV_INSTALL_DIR", &tools)
++        .env("UV_NO_MODIFY_PATH", "1");
++    execute(&mut command, job, "python-manager-install", channel, state)?;
++    if !target.is_file() {
++        return Err("Python manager installation did not verify".into());
++    }
++    Ok(target)
++}
++
++fn run(
++    app: &AppHandle,
++    request: Value,
++    channel: &Channel<SkillJobProgress>,
++) -> Result<Value, String> {
++    if !request.is_object() || !request["scenes"].is_array() {
++        return Err("Video request needs a storyboard".into());
++    }
++    let data = app.path().app_data_dir().map_err(|e| e.to_string())?;
++    let state = app.state::<SkillJobState>();
++    let timestamp = SystemTime::now()
++        .duration_since(UNIX_EPOCH)
++        .map_err(|e| e.to_string())?
++        .as_millis();
++    let sequence = state.next_id.fetch_add(1, Ordering::SeqCst);
++    let job = data
++        .join("projects")
++        .join(format!("video-skill-{timestamp}-{sequence}"));
++    fs::create_dir_all(&job).map_err(|e| e.to_string())?;
++    report(channel, "import", 0, "Created video workspace", Some(&job));
++    let runner = app
++        .path()
++        .resolve(
++            "video-tools/run_desktop_video_job.py",
++            BaseDirectory::Resource,
++        )
++        .map_err(|e| e.to_string())?;
++    if !runner.is_file() {
++        return Err("Bundled video job tools are missing".into());
++    }
++    let payload = job.join("desktop-request.json");
++    fs::write(
++        &payload,
++        serde_json::to_vec(
++            &json!({"schemaVersion":1,"request":request,"runtimeDir":data.join("video-runtime")}),
++        )
++        .map_err(|e| e.to_string())?,
++    )
++    .map_err(|e| e.to_string())?;
++    let uv = ensure_uv(&data, &job, channel, &state)?;
++    checked_cancel(&state)?;
++    report(
++        channel,
++        "setup",
++        2,
++        "Preparing Python 3.12 and video tools",
++        None,
++    );
++    let mut command = Command::new(uv);
++    command
++        .current_dir(&job)
++        .args(["run", "--no-project", "--python", "3.12", "python"])
++        .arg(runner)
++        .arg(&payload)
++        .arg("--workspace")
++        .arg(job.join("project"))
++        .env("UV_PYTHON_INSTALL_DIR", data.join("video-runtime/python"))
++        .env("UV_CACHE_DIR", data.join("video-runtime/uv-cache"))
++        .env("PYTHONIOENCODING", "utf-8")
++        .env("PYTHONUTF8", "1")
++        .env("PYTHONDONTWRITEBYTECODE", "1");
++    let path = std::env::var_os("PATH").unwrap_or_default();
++    let media_directories = [
++        crate::ffmpeg::find(&data),
++        crate::ffmpeg::find_ffprobe(&data),
++    ]
++    .into_iter()
++    .flatten()
++    .filter_map(|(binary, _)| binary.parent().map(Path::to_path_buf))
++    .collect::<Vec<_>>();
++    if let Ok(path) = std::env::join_paths(
++        media_directories
++            .into_iter()
++            .chain(std::env::split_paths(&path)),
++    ) {
++        command.env("PATH", path);
++    }
++    let stdout = execute(&mut command, &job, "video-job", channel, &state)?;
++    let result: Value = serde_json::from_slice(&fs::read(stdout).map_err(|e| e.to_string())?)
++        .map_err(|e| {
++            format!(
++                "Video runner returned invalid JSON: {e}; logs: {}",
++                job.display()
++            )
++        })?;
++    if result["ready"] != true {
++        return Err(result["error"]
++            .as_str()
++            .unwrap_or("Video job did not finish")
++            .into());
++    }
++    report(
++        channel,
++        "complete",
++        100,
++        if result["reviewRequired"] == true {
++            "Video project ready for caption review"
++        } else {
++            "Video project verified"
++        },
++        result["video"].as_str().map(Path::new),
++    );
++    Ok(result)
++}
++
++#[tauri::command(async)]
++pub async fn video_skill_render(
++    app: AppHandle,
++    request: Value,
++    on_progress: Channel<SkillJobProgress>,
++) -> Result<Value, String> {
++    let state = app.state::<SkillJobState>();
++    if state
++        .running
++        .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
++        .is_err()
++    {
++        return Err("Another video skill job is running".into());
++    }
++    state.cancel.store(false, Ordering::SeqCst);
++    state.percent.store(0, Ordering::Relaxed);
++    let worker = app.clone();
++    let result =
++        tauri::async_runtime::spawn_blocking(move || run(&worker, request, &on_progress)).await;
++    app.state::<SkillJobState>()
++        .running
++        .store(false, Ordering::SeqCst);
++    result.map_err(|e| e.to_string())?
++}
++
++#[tauri::command]
++pub fn video_skill_cancel(state: tauri::State<'_, SkillJobState>) {
++    state.cancel.store(true, Ordering::SeqCst);
++}
+diff --git a/src-tauri/resources/video-tools/assemble_video.py b/src-tauri/resources/video-tools/assemble_video.py
+new file mode 100644
+--- /dev/null
++++ b/src-tauri/resources/video-tools/assemble_video.py
+@@ -0,0 +1,323 @@
++#!/usr/bin/env python3
++"""Assemble rendered scenes and optional narration into a portable video project.
++
++Input JSON example:
++{
++  "title": "A short explainer", "aspect": "16:9", "fps": 30,
++  "scenes": [
++    {"id": "hook", "visual": "frames/hook.png", "duration_sec": 2.5,
++     "narration": "audio/hook.wav", "caption": "A better opening"},
++    {"id": "demo", "visual": "clips/demo.mp4", "duration_sec": 4,
++     "caption": "The real product screen"}
++  ]
++}
++
++Visuals are produced by Slidev, Remotion, HyperFrames, or supplied footage.
++This tool assembles them; it does not generate or verify factual claims.
++Progress is JSON on stderr. The finished project path is JSON on stdout.
++"""
++
++from __future__ import annotations
++
++import argparse
++import json
++import math
++from pathlib import Path
++import shutil
++import subprocess
++import sys
++
++from write_subtitles import render as render_subtitles, validate as validate_cues
++
++
++ASPECTS = {"16:9": (1920, 1080), "9:16": (1080, 1920), "1:1": (1080, 1080), "4:5": (1080, 1350)}
++IMAGE_SUFFIXES = {".png", ".jpg", ".jpeg", ".webp"}
++VIDEO_SUFFIXES = {".mp4", ".mov", ".webm", ".mkv"}
++MAX_SCENES = 80
++MAX_SECONDS = 30 * 60
++
++
++def progress(phase: str, message: str, **details: object) -> None:
++    print(json.dumps({"phase": phase, "message": message, **details}), file=sys.stderr, flush=True)
++
++
++def run(command: list[str], log: Path) -> None:
++    with log.open("w", encoding="utf-8") as output:
++        child = subprocess.Popen(command, stdin=subprocess.DEVNULL, stdout=output, stderr=subprocess.STDOUT)
++        try:
++            code = child.wait()
++        except KeyboardInterrupt:
++            child.kill()
++            child.wait()
++            raise
++    if code:
++        detail = log.read_text(encoding="utf-8", errors="replace")[-2500:]
++        raise RuntimeError(f"Command failed ({code}); see {log}: {detail}")
++
++
++def probe(ffprobe: Path, source: Path) -> dict:
++    result = subprocess.run(
++        [str(ffprobe), "-v", "error", "-show_entries", "format=duration:stream=codec_type", "-of", "json", str(source)],
++        capture_output=True, text=True, timeout=60,
++    )
++    if result.returncode:
++        raise ValueError(f"Could not inspect {source}: {result.stderr.strip()}")
++    data = json.loads(result.stdout)
++    try:
++        duration = float(data.get("format", {}).get("duration", 0))
++    except (TypeError, ValueError):
++        duration = 0.0
++    return {"duration": duration, "streams": {item.get("codec_type") for item in data.get("streams", [])}}
++
++
++def source_path(base: Path, value: object, kind: str) -> Path:
++    if not isinstance(value, str) or not value.strip():
++        raise ValueError(f"{kind} needs a file path")
++    source = (base / value).resolve()
++    if not source.is_file():
++        raise ValueError(f"{kind} is missing: {source}")
++    return source
++
++
++def validate_plan(plan: object, base: Path, ffprobe: Path) -> tuple[list[dict], tuple[int, int], int]:
++    if not isinstance(plan, dict) or not isinstance(plan.get("scenes"), list):
++        raise ValueError("Plan needs a scenes array")
++    scenes = plan["scenes"]
++    if not 1 <= len(scenes) <= MAX_SCENES:
++        raise ValueError(f"Plan needs 1 to {MAX_SCENES} scenes")
++    aspect = plan.get("aspect", "16:9")
++    if aspect not in ASPECTS:
++        raise ValueError(f"Unsupported aspect: {aspect}")
++    fps = plan.get("fps", 30)
++    if isinstance(fps, bool) or fps not in (24, 25, 30, 60):
++        raise ValueError("fps must be 24, 25, 30 or 60")
++    music = plan.get("music")
++    if music is not None:
++        if not isinstance(music, dict):
++            raise ValueError("music must be an object with file and volume")
++        music_file = source_path(base, music.get("file"), "Music")
++        if "audio" not in probe(ffprobe, music_file)["streams"]:
++            raise ValueError("Music file has no audio stream")
++        volume = music.get("volume", 0.15)
++        if isinstance(volume, bool) or not isinstance(volume, (int, float)) or not math.isfinite(volume) or not 0 < volume <= 1:
++            raise ValueError("music volume must be above 0 and at most 1")
++    prepared = []
++    total = 0.0
++    seen = set()
++    for index, scene in enumerate(scenes, 1):
++        if not isinstance(scene, dict):
++            raise ValueError(f"Scene {index} must be an object")
++        scene_id = scene.get("id", f"s{index}")
++        if not isinstance(scene_id, str) or not scene_id.strip() or scene_id in seen:
++            raise ValueError(f"Scene {index} has an invalid or duplicate ID")
++        seen.add(scene_id)
++        visual = source_path(base, scene.get("visual"), f"Scene {index} visual")
++        if visual.suffix.lower() not in IMAGE_SUFFIXES | VIDEO_SUFFIXES:
++            raise ValueError(f"Scene {index} visual must be an image or video")
++        visual_probe = probe(ffprobe, visual)
++        if "video" not in visual_probe["streams"]:
++            raise ValueError(f"Scene {index} visual has no video stream")
++        narration = source_path(base, scene["narration"], f"Scene {index} narration") if scene.get("narration") else None
++        audio_from_visual = scene.get("audio_from_visual", False)
++        if not isinstance(audio_from_visual, bool) or (audio_from_visual and narration):
++            raise ValueError(f"Scene {index} must choose one audio source")
++        if audio_from_visual and (visual.suffix.lower() in IMAGE_SUFFIXES or "audio" not in visual_probe["streams"]):
++            raise ValueError(f"Scene {index} visual has no audio to use")
++        audio_duration = 0.0
++        if narration:
++            audio_probe = probe(ffprobe, narration)
++            if "audio" not in audio_probe["streams"] or audio_probe["duration"] <= 0:
++                raise ValueError(f"Scene {index} narration has no measured audio")
++            audio_duration = audio_probe["duration"]
++        elif audio_from_visual:
++            audio_duration = visual_probe["duration"]
++        requested = scene.get("duration_sec")
++        if requested is None:
++            requested = audio_duration or visual_probe["duration"]
++        if isinstance(requested, bool) or not isinstance(requested, (int, float)) or not math.isfinite(requested):
++            raise ValueError(f"Scene {index} needs a finite duration_sec")
++        duration = float(requested) if audio_from_visual else max(float(requested), audio_duration)
++        if not 0.3 <= duration <= MAX_SECONDS:
++            raise ValueError(f"Scene {index} duration must be 0.3 to {MAX_SECONDS} seconds")
++        if audio_from_visual and duration > visual_probe["duration"] + 0.001:
++            raise ValueError(f"Scene {index} cannot extend footage audio by looping it")
++        if audio_from_visual:
++            audio_duration = duration
++        caption = scene.get("caption", "")
++        if not isinstance(caption, str):
++            raise ValueError(f"Scene {index} caption must be text")
++        if (narration or audio_from_visual) and not caption.strip() and not scene.get("cues"):
++            raise ValueError(f"Scene {index} audio needs its transcript in caption or cues")
++        local_cues = scene.get("cues")
++        if local_cues is not None:
++            validate_cues({"duration_sec": duration, "cues": local_cues})
++        total += duration
++        prepared.append({"id": scene_id, "visual": visual, "narration": narration,
++                         "audio_from_visual": audio_from_visual,
++                         "requested_duration": duration, "audio_duration": audio_duration,
++                         "caption": caption.strip(), "cues": local_cues})
++    if total > MAX_SECONDS:
++        raise ValueError("Project duration exceeds 30 minutes")
++    return prepared, ASPECTS[aspect], fps
++
++
++def render_scene(ffmpeg: Path, scene: dict, index: int, size: tuple[int, int], fps: int, has_audio: bool, output: Path, log: Path) -> None:
++    width, height = size
++    visual = scene["visual"]
++    args = [str(ffmpeg), "-hide_banner", "-y"]
++    if visual.suffix.lower() in IMAGE_SUFFIXES:
++        args.extend(["-loop", "1", "-framerate", str(fps)])
++    else:
++        args.extend(["-stream_loop", "-1"])
++    args.extend(["-i", str(visual)])
++    if scene["narration"]:
++        args.extend(["-i", str(scene["narration"])])
++    elif has_audio and not scene["audio_from_visual"]:
++        args.extend(["-f", "lavfi", "-i", "anullsrc=r=48000:cl=stereo"])
++    duration = scene["requested_duration"]
++    args.extend(["-map", "0:v:0"])
++    if has_audio:
++        args.extend(["-map", "0:a:0" if scene["audio_from_visual"] else "1:a:0"])
++    args.extend([
++        "-t", f"{duration:.3f}",
++        "-vf", f"scale={width}:{height}:force_original_aspect_ratio=increase,crop={width}:{height},fps={fps},format=yuv420p",
++        "-r", str(fps),
++        "-c:v", "libx264", "-preset", "veryfast", "-crf", "20",
++    ])
++    if has_audio:
++        args.extend(["-af", "aresample=48000,apad", "-c:a", "aac", "-b:a", "160k", "-ar", "48000", "-ac", "2"])
++    args.extend(["-movflags", "+faststart", str(output)])
++    progress("render", f"Rendering scene {index}", scene=index)
++    run(args, log)
++
++
++def assemble(plan_file: Path, out_dir: Path, ffmpeg: Path, ffprobe: Path) -> dict:
++    plan_file = plan_file.resolve()
++    out_dir = out_dir.resolve()
++    if out_dir.exists() and any(out_dir.iterdir()):
++        raise ValueError(f"Output directory is not empty: {out_dir}")
++    plan = json.loads(plan_file.read_text(encoding="utf-8"))
++    scenes, size, fps = validate_plan(plan, plan_file.parent, ffprobe)
++    has_scene_audio = any(scene["narration"] or scene["audio_from_visual"] for scene in scenes)
++    music_spec = plan.get("music")
++    out_dir.mkdir(parents=True, exist_ok=True)
++    (out_dir / "assets").mkdir()
++    (out_dir / "audio").mkdir()
++    (out_dir / "segments").mkdir()
++    (out_dir / "logs").mkdir()
++    script = [f"# {plan.get('title', 'Video')}\n"]
++    storyboard = ["# Storyboard\n"]
++    imported = []
++    portable_scenes = []
++    segments = []
++    cues = []
++    cursor = 0.0
++    for index, scene in enumerate(scenes, 1):
++        visual = scene["visual"]
++        visual_copy = out_dir / "assets" / f"scene-{index:03d}{visual.suffix.lower()}"
++        shutil.copy2(visual, visual_copy)
++        audio_copy = None
++        if scene["narration"]:
++            audio_copy = out_dir / "audio" / f"scene-{index:03d}{scene['narration'].suffix.lower()}"
++            shutil.copy2(scene["narration"], audio_copy)
++        scene_copy = {**scene, "visual": visual_copy, "narration": audio_copy}
++        segment = out_dir / "segments" / f"scene-{index:03d}.mp4"
++        render_scene(ffmpeg, scene_copy, index, size, fps, has_scene_audio, segment, out_dir / "logs" / f"scene-{index:03d}.log")
++        segment_duration = probe(ffprobe, segment)["duration"]
++        if segment_duration <= 0:
++            raise RuntimeError(f"Rendered scene {index} has no duration")
++        if scene["cues"]:
++            for cue in scene["cues"]:
++                cues.append({"start": cursor + cue["start"], "end": cursor + cue["end"], "text": cue["text"]})
++        elif scene["caption"]:
++            caption_end = min(segment_duration, scene["audio_duration"] or segment_duration)
++            cues.append({"start": cursor, "end": cursor + max(caption_end, 0.1), "text": scene["caption"]})
++        transcript = scene["caption"] or "\n".join(cue["text"] for cue in scene["cues"] or [])
++        script.append(f"## {scene['id']}\n\n{transcript}\n")
++        storyboard.append(f"- {scene['id']} · {segment_duration:.3f}s · {visual_copy.relative_to(out_dir)}\n")
++        imported.append({"sceneId": scene["id"], "visual": str(visual_copy.relative_to(out_dir)),
++                         "originalVisual": str(visual), "narration": str(audio_copy.relative_to(out_dir)) if audio_copy else None,
++                         "audioFromVisual": scene["audio_from_visual"]})
++        portable_scene = dict(plan["scenes"][index - 1])
++        portable_scene["visual"] = str(visual_copy.relative_to(out_dir))
++        if audio_copy:
++            portable_scene["narration"] = str(audio_copy.relative_to(out_dir))
++        portable_scenes.append(portable_scene)
++        segments.append(segment)
++        cursor += segment_duration
++        progress("render", f"Rendered scene {index} of {len(scenes)}", scene=index, durationSec=segment_duration)
++    concat = out_dir / "segments.txt"
++    concat.write_text("".join(f"file '{path.as_posix().replace(chr(39), chr(39) + chr(92) + chr(39) + chr(39))}'\n" for path in segments), encoding="utf-8")
++    final = out_dir / "video.mp4"
++    assembled = out_dir / "segments" / "assembled.mp4" if music_spec else final
++    progress("assemble", "Joining scenes")
++    run([str(ffmpeg), "-hide_banner", "-y", "-f", "concat", "-safe", "0", "-i", str(concat), "-c", "copy", "-movflags", "+faststart", str(assembled)], out_dir / "logs" / "final.log")
++    if music_spec:
++        music_source = source_path(plan_file.parent, music_spec["file"], "Music")
++        music_copy = out_dir / "audio" / f"background{music_source.suffix.lower()}"
++        shutil.copy2(music_source, music_copy)
++        assembled_duration = probe(ffprobe, assembled)["duration"]
++        volume = float(music_spec.get("volume", 0.15))
++        if has_scene_audio:
++            audio_filter = f"[0:a]aresample=48000[scene];[1:a]aresample=48000,volume={volume},atrim=duration={assembled_duration:.3f}[bed];[scene][bed]amix=inputs=2:duration=first:dropout_transition=0[mix]"
++        else:
++            audio_filter = f"[1:a]aresample=48000,volume={volume},atrim=duration={assembled_duration:.3f}[mix]"
++        progress("audio", "Mixing background music")
++        run([str(ffmpeg), "-hide_banner", "-y", "-i", str(assembled), "-stream_loop", "-1", "-i", str(music_copy),
++             "-filter_complex", audio_filter, "-map", "0:v:0", "-map", "[mix]", "-t", f"{assembled_duration:.3f}",
++             "-c:v", "copy", "-c:a", "aac", "-b:a", "160k", "-ar", "48000", "-ac", "2", "-movflags", "+faststart", str(final)],
++            out_dir / "logs" / "mix.log")
++    final_probe = probe(ffprobe, final)
++    duration = final_probe["duration"]
++    has_audio = has_scene_audio or bool(music_spec)
++    if duration <= 0 or "video" not in final_probe["streams"] or (has_audio and "audio" not in final_probe["streams"]):
++        raise RuntimeError("Final MP4 is missing a required media stream")
++    audio = None
++    if has_audio:
++        audio = out_dir / "audio.mp3"
++        progress("audio", "Exporting audio")
++        run([str(ffmpeg), "-hide_banner", "-y", "-i", str(final), "-vn", "-c:a", "libmp3lame", "-q:a", "2", str(audio)], out_dir / "logs" / "audio.log")
++        if "audio" not in probe(ffprobe, audio)["streams"]:
++            raise RuntimeError("Audio export did not verify")
++    caption_data = {"duration_sec": duration, "cues": cues}
++    if cues:
++        validate_cues(caption_data)
++    (out_dir / "captions.json").write_text(json.dumps(caption_data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
++    (out_dir / "captions.srt").write_text(render_subtitles(cues) if cues else "", encoding="utf-8")
++    (out_dir / "captions.vtt").write_text(render_subtitles(cues, webvtt=True) if cues else "WEBVTT\n", encoding="utf-8")
++    (out_dir / "script.md").write_text("\n".join(script), encoding="utf-8")
++    (out_dir / "storyboard.md").write_text("\n".join(storyboard), encoding="utf-8")
++    portable_plan = {**plan, "scenes": portable_scenes}
++    if music_spec:
++        portable_plan["music"] = {**music_spec, "file": str(music_copy.relative_to(out_dir))}
++    (out_dir / "project.json").write_text(json.dumps(portable_plan, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
++    manifest = {"status": "complete", "title": plan.get("title", "Video"), "durationSec": duration,
++                "video": "video.mp4", "audio": "audio.mp3" if audio else None, "script": "script.md", "storyboard": "storyboard.md",
++                "captions": ["captions.json", "captions.srt", "captions.vtt"], "scenes": imported,
++                "music": str(music_copy.relative_to(out_dir)) if music_spec else None}
++    (out_dir / "manifest.json").write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
++    progress("complete", "Video project ready", durationSec=duration)
++    return {"ready": True, "directory": str(out_dir), "video": str(final), "audio": str(audio) if audio else None, "durationSec": duration,
++            "captions": manifest["captions"]}
++
++
++def main() -> int:
++    parser = argparse.ArgumentParser(description=__doc__)
++    parser.add_argument("plan", type=Path)
++    parser.add_argument("--out", type=Path, required=True)
++    parser.add_argument("--ffmpeg", type=Path, default=shutil.which("ffmpeg"))
++    parser.add_argument("--ffprobe", type=Path, default=shutil.which("ffprobe"))
++    args = parser.parse_args()
++    try:
++        if not args.ffmpeg or not args.ffprobe:
++            raise ValueError("FFmpeg and FFprobe are required; run ensure_video_runtime.py first")
++        result = assemble(args.plan, args.out, Path(args.ffmpeg), Path(args.ffprobe))
++    except (OSError, ValueError, RuntimeError, subprocess.TimeoutExpired, json.JSONDecodeError) as error:
++        print(json.dumps({"ready": False, "error": str(error)}))
++        return 1
++    print(json.dumps(result, indent=2))
++    return 0
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())
+diff --git a/src-tauri/resources/video-tools/ensure_video_runtime.py b/src-tauri/resources/video-tools/ensure_video_runtime.py
+new file mode 100644
+--- /dev/null
++++ b/src-tauri/resources/video-tools/ensure_video_runtime.py
+@@ -0,0 +1,403 @@
++#!/usr/bin/env python3
++"""Install a private Node/video toolchain for Slidev, Remotion and HyperFrames skills.
++
++Usage: python3 tools/ensure_video_runtime.py explainer-video [--check]
++The final stdout line is JSON. Progress and install logs go to stderr.
++This tool does not modify PATH, shell profiles, or global npm packages.
++"""
++
++from __future__ import annotations
++
++import argparse
++import hashlib
++import json
++import os
++from pathlib import Path
++import platform
++import re
++import shutil
++import subprocess
++import sys
++import tarfile
++import tempfile
++import time
++import urllib.error
++import urllib.request
++import zipfile
++
++
++MANIFEST = json.loads((Path(__file__).with_name("runtime_requirements.json")).read_text())
++NODE_INDEX = "https://nodejs.org/dist/index.json"
++
++
++def progress(phase: str, message: str, **details: object) -> None:
++    print(json.dumps({"phase": phase, "message": message, **details}), file=sys.stderr, flush=True)
++
++
++def default_runtime_dir() -> Path:
++    if platform.system() == "Windows":
++        base = Path(os.environ.get("LOCALAPPDATA") or Path.home() / "AppData/Local")
++    elif platform.system() == "Darwin":
++        base = Path.home() / "Library/Application Support"
++    else:
++        base = Path(os.environ.get("XDG_DATA_HOME") or Path.home() / ".local/share")
++    return base / "skill-bank" / "video-runtime"
++
++
++def platform_archive(version: str, system: str | None = None, machine: str | None = None) -> str:
++    system = system or platform.system()
++    machine = (machine or platform.machine()).lower()
++    arch = {"x86_64": "x64", "amd64": "x64", "aarch64": "arm64", "arm64": "arm64"}.get(machine)
++    if not arch or system not in ("Linux", "Darwin", "Windows"):
++        raise RuntimeError(f"No managed Node binary for {system}/{machine}")
++    os_tag = {"Linux": "linux", "Darwin": "darwin", "Windows": "win"}[system]
++    extension = ".zip" if system == "Windows" else ".tar.xz"
++    return f"node-{version}-{os_tag}-{arch}{extension}"
++
++
++def parse_version(value: str) -> tuple[int, int, int]:
++    match = re.search(r"v?(\d+)\.(\d+)\.(\d+)", value)
++    if not match:
++        raise ValueError(f"Could not parse version: {value!r}")
++    return tuple(int(piece) for piece in match.groups())
++
++
++def command_version(binary: Path | str) -> str | None:
++    try:
++        result = subprocess.run([str(binary), "--version"], capture_output=True, text=True, timeout=20)
++        return (result.stdout or result.stderr).strip().splitlines()[0] if result.returncode == 0 else None
++    except (OSError, subprocess.TimeoutExpired, IndexError):
++        return None
++
++
++def media_version(binary: Path | str) -> str | None:
++    try:
++        result = subprocess.run([str(binary), "-version"], capture_output=True, text=True, timeout=20)
++        return (result.stdout or result.stderr).strip().splitlines()[0] if result.returncode == 0 else None
++    except (OSError, subprocess.TimeoutExpired, IndexError):
++        return None
++
++
++def cli_ready(binary: Path, ready_args: list[str], node: Path, profile: Path) -> bool:
++    try:
++        arguments = [str(binary), *ready_args]
++        return subprocess.run(arguments, cwd=profile, capture_output=True, text=True, timeout=30, env=environment(node)).returncode == 0
++    except (OSError, subprocess.TimeoutExpired):
++        return False
++
++
++def node_paths(root: Path) -> tuple[Path, Path]:
++    if platform.system() == "Windows":
++        return root / "node.exe", root / "npm.cmd"
++    return root / "bin/node", root / "bin/npm"
++
++
++def suitable_node(node: Path | str | None, npm: Path | str | None) -> bool:
++    if not node or not npm:
++        return False
++    version = command_version(node)
++    return bool(version and parse_version(version) >= parse_version(MANIFEST["minimumNode"]) and Path(npm).is_file())
++
++
++def extract_node_archive(archive: Path, destination: Path) -> None:
++    """Reject archive members that could escape the private install directory."""
++    if archive.suffix == ".zip":
++        with zipfile.ZipFile(archive) as bundle:
++            for member in bundle.infolist():
++                target = (destination / member.filename).resolve()
++                if not target.is_relative_to(destination.resolve()):
++                    raise RuntimeError("Node archive contains an unsafe path")
++            bundle.extractall(destination)
++    else:
++        with tarfile.open(archive, "r:xz") as bundle:
++            for member in bundle.getmembers():
++                target = (destination / member.name).resolve()
++                if not target.is_relative_to(destination.resolve()) or not (member.isfile() or member.isdir() or member.issym() or member.islnk()):
++                    raise RuntimeError("Node archive contains an unsafe member")
++                if member.issym() or member.islnk():
++                    link = (target.parent / member.linkname).resolve() if member.issym() else (destination / member.linkname).resolve()
++                    if not link.is_relative_to(destination.resolve()):
++                        raise RuntimeError("Node archive contains an unsafe link")
++            bundle.extractall(destination)
++
++
++def fetch_json(url: str) -> object:
++    request = urllib.request.Request(url, headers={"User-Agent": "skill-bank-runtime/1"})
++    with urllib.request.urlopen(request, timeout=30) as response:
++        return json.load(response)
++
++
++def fetch_text(url: str) -> str:
++    request = urllib.request.Request(url, headers={"User-Agent": "skill-bank-runtime/1"})
++    with urllib.request.urlopen(request, timeout=30) as response:
++        return response.read().decode("utf-8")
++
++
++def download_verified(url: str, target: Path, sha256: str) -> None:
++    request = urllib.request.Request(url, headers={"User-Agent": "skill-bank-runtime/1"})
++    digest = hashlib.sha256()
++    received = 0
++    with urllib.request.urlopen(request, timeout=60) as response, target.open("wb") as output:
++        total = int(response.headers.get("Content-Length") or 0)
++        while chunk := response.read(1024 * 1024):
++            output.write(chunk)
++            digest.update(chunk)
++            received += len(chunk)
++            if total and (received == total or received % (16 * 1024 * 1024) < len(chunk)):
++                progress("node-download", "Downloading managed Node", downloadedBytes=received, totalBytes=total)
++    if digest.hexdigest() != sha256:
++        raise RuntimeError("Node archive failed SHA-256 verification")
++
++
++def node_release() -> tuple[str, str, str]:
++    releases = fetch_json(NODE_INDEX)
++    if not isinstance(releases, list):
++        raise RuntimeError("Node release index has an invalid format")
++    release = next((item for item in releases if isinstance(item, dict) and item.get("lts")), None)
++    if not release:
++        raise RuntimeError("No Node LTS release found")
++    version = release["version"]
++    archive = platform_archive(version)
++    shasums = fetch_text(f"https://nodejs.org/dist/{version}/SHASUMS256.txt")
++    sha256 = next((line.split()[0] for line in shasums.splitlines() if line.split()[1:] == [archive]), None)
++    if not sha256:
++        raise RuntimeError(f"Node release {version} has no checksum for {archive}")
++    return version, archive, sha256
++
++
++def install_node(runtime: Path) -> tuple[Path, Path]:
++    version, archive, sha256 = node_release()
++    if parse_version(version) < parse_version(MANIFEST["minimumNode"]):
++        raise RuntimeError(f"Latest Node LTS {version} is older than the required version")
++    target = runtime / "node" / version
++    node, npm = node_paths(target)
++    if suitable_node(node, npm):
++        return node, npm
++    progress("node", f"Installing Node {version} into {target}")
++    target.parent.mkdir(parents=True, exist_ok=True)
++    with tempfile.TemporaryDirectory(prefix="node-install-", dir=target.parent) as scratch:
++        scratch_dir = Path(scratch)
++        downloaded = scratch_dir / archive
++        download_verified(f"https://nodejs.org/dist/{version}/{archive}", downloaded, sha256)
++        extracted = scratch_dir / "unpacked"
++        extracted.mkdir()
++        extract_node_archive(downloaded, extracted)
++        folder = extracted / archive.removesuffix(".zip").removesuffix(".tar.xz")
++        if not folder.is_dir():
++            raise RuntimeError("Node archive has an unexpected layout")
++        test_node, test_npm = node_paths(folder)
++        if not suitable_node(test_node, test_npm):
++            raise RuntimeError("Downloaded Node or npm did not verify")
++        if target.exists():
++            shutil.rmtree(target)
++        folder.rename(target)
++    return node_paths(target)
++
++
++def resolve_node(runtime: Path, ensure: bool) -> tuple[Path, Path] | None:
++    system_node, system_npm = shutil.which("node"), shutil.which("npm")
++    if suitable_node(system_node, system_npm):
++        progress("node", f"Using Node {command_version(system_node)} from PATH")
++        return Path(system_node), Path(system_npm)
++    managed_dir = runtime / "node"
++    for folder in sorted(managed_dir.glob("v*"), reverse=True) if managed_dir.exists() else []:
++        node, npm = node_paths(folder)
++        if suitable_node(node, npm):
++            progress("node", f"Using managed Node {command_version(node)}")
++            return node, npm
++    return install_node(runtime) if ensure else None
++
++
++def environment(node: Path) -> dict[str, str]:
++    env = os.environ.copy()
++    env["PATH"] = str(node.parent) + os.pathsep + env.get("PATH", "")
++    return env
++
++
++def run(command: list[str | Path], node: Path, *, cwd: Path | None = None) -> str:
++    args = [str(piece) for piece in command]
++    progress("command", "Running " + " ".join(args[:3]))
++    started = time.monotonic()
++    process = subprocess.Popen(args, cwd=cwd, env=environment(node), text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
++    try:
++        while True:
++            try:
++                stdout, stderr = process.communicate(timeout=15)
++                break
++            except subprocess.TimeoutExpired:
++                progress("command", "Still running " + " ".join(args[:3]), elapsedSeconds=round(time.monotonic() - started))
++    except KeyboardInterrupt:
++        process.kill()
++        process.communicate()
++        raise
++    if process.returncode:
++        raise RuntimeError(f"{' '.join(args[:3])} failed: {(stderr or stdout)[-3000:]}")
++    return stdout.strip()
++
++
++def package_file(profile: Path, packages: dict[str, str]) -> Path:
++    return profile / "package.json"
++
++
++def install_profile(name: str, spec: dict, runtime: Path, node: Path, npm: Path, ensure: bool) -> Path | None:
++    packages, binary_name = spec["packages"], spec["binary"]
++    ready_args = spec.get("readyArgs", ["--version"])
++    profile = runtime / name
++    binary = profile / "node_modules" / ".bin" / (binary_name + (".cmd" if platform.system() == "Windows" else ""))
++    wanted = {"private": True, "name": f"skill-bank-{name}", "version": "1.0.0", "dependencies": packages}
++    try:
++        current = json.loads(package_file(profile, packages).read_text()) if package_file(profile, packages).is_file() else None
++    except (OSError, ValueError):
++        current = None
++    if binary.is_file() and current == wanted and cli_ready(binary, ready_args, node, profile):
++        return binary
++    if not ensure:
++        return None
++    profile.mkdir(parents=True, exist_ok=True)
++    if current != wanted:
++        (profile / ".browser-ready").unlink(missing_ok=True)
++    package_file(profile, packages).write_text(json.dumps(wanted, indent=2) + "\n")
++    progress(name, f"Installing {name} packages into {profile}")
++    run([npm, "install", "--prefix", profile, "--no-audit", "--no-fund"], node)
++    if not binary.is_file() or not cli_ready(binary, ready_args, node, profile):
++        raise RuntimeError(f"{name} install finished without {binary_name}")
++    return binary
++
++
++def resolve_media(runtime: Path, node: Path, npm: Path, ensure: bool) -> tuple[Path, Path] | None:
++    ffmpeg, ffprobe = shutil.which("ffmpeg"), shutil.which("ffprobe")
++    if ffmpeg and ffprobe and media_version(ffmpeg) and media_version(ffprobe):
++        return Path(ffmpeg), Path(ffprobe)
++    packages = MANIFEST["mediaPackages"]
++    profile = runtime / "media"
++    marker = profile / "package.json"
++    wanted = {"private": True, "name": "skill-bank-media", "version": "1.0.0", "dependencies": packages}
++    try:
++        current = json.loads(marker.read_text()) if marker.is_file() else None
++    except (OSError, ValueError):
++        current = None
++    if current != wanted or not (profile / "node_modules" / "ffmpeg-static").is_dir() or not (profile / "node_modules" / "@derhuerst" / "ffprobe-static").is_dir():
++        if not ensure:
++            return None
++        profile.mkdir(parents=True, exist_ok=True)
++        marker.write_text(json.dumps(wanted, indent=2) + "\n")
++        progress("media", "Installing managed FFmpeg and FFprobe")
++        run([npm, "install", "--prefix", profile, "--no-audit", "--no-fund"], node)
++    try:
++        output = run([node, "-e", "const f=require('ffmpeg-static'); const p=require('@derhuerst/ffprobe-static').path; console.log(JSON.stringify([f,p]))"], node, cwd=profile)
++        paths = tuple(Path(item) for item in json.loads(output))
++        return paths if len(paths) == 2 and all(media_version(path) for path in paths) else None
++    except (OSError, ValueError, RuntimeError):
++        if ensure:
++            raise
++        return None
++
++
++def browser_ready(profile: Path, node: Path) -> bool:
++    try:
++        output = run([node, "-e", "console.log(require('playwright-chromium').chromium.executablePath())"], node, cwd=profile)
++        return Path(output).is_file()
++    except (OSError, RuntimeError):
++        return False
++
++
++def renderer_browser_ready(name: str, binary: Path, node: Path, profile: Path) -> bool:
++    """Check a renderer's browser without downloading or trusting a marker."""
++    try:
++        if name == "remotion":
++            script = (
++                "const {ensureBrowser}=require('@remotion/renderer');"
++                "ensureBrowser({logLevel:'error',onBrowserDownload:()=>{throw Error('browser missing')}})"
++                ".then(()=>process.stdout.write('ready')).catch(()=>process.exit(1))"
++            )
++            result = subprocess.run([str(node), "-e", script], cwd=profile, env=environment(node),
++                                    capture_output=True, text=True, timeout=30)
++            return result.returncode == 0 and result.stdout.strip() == "ready"
++        if name == "hyperframes":
++            result = subprocess.run([str(binary), "browser", "path"], cwd=profile, env=environment(node),
++                                    capture_output=True, text=True, timeout=30)
++            path = result.stdout.strip().splitlines()[-1] if result.stdout.strip() else ""
++            return result.returncode == 0 and bool(path) and Path(path).is_file()
++    except (OSError, subprocess.TimeoutExpired):
++        return False
++    raise ValueError(f"Unknown renderer browser: {name}")
++
++
++def ensure_profiles(route: str, runtime: Path, node: Path, npm: Path, ensure: bool, only: str | None = None) -> tuple[dict[str, str], list[str]]:
++    paths: dict[str, str] = {}
++    missing: list[str] = []
++    names = MANIFEST["routes"][route]
++    if only:
++        if only not in names:
++            raise RuntimeError(f"Renderer {only!r} is not available for route {route!r}")
++        names = [only]
++    for name in names:
++        spec = MANIFEST["profiles"][name]
++        binary = install_profile(name, spec, runtime, node, npm, ensure)
++        if not binary:
++            missing.append(name)
++            continue
++        paths[name] = str(binary)
++        profile = runtime / name
++        if name == "slidev" and not browser_ready(profile, node):
++            if ensure:
++                progress("browser", "Installing Chromium for Slidev export")
++                playwright = profile / "node_modules" / ".bin" / ("playwright.cmd" if platform.system() == "Windows" else "playwright")
++                run([playwright, "install", "chromium"], node, cwd=profile)
++            if not browser_ready(profile, node):
++                missing.append("slidev-browser")
++        if name in ("remotion", "hyperframes"):
++            ready = renderer_browser_ready(name, binary, node, profile)
++            if not ready and ensure:
++                progress("browser", f"Ensuring {name} browser")
++                run([binary, "browser", "ensure"], node, cwd=profile)
++                ready = renderer_browser_ready(name, binary, node, profile)
++            if ensure:
++                if ready:
++                    (profile / ".browser-ready").write_text(f"verified {name} browser path\n")
++                else:
++                    (profile / ".browser-ready").unlink(missing_ok=True)
++            if not ready:
++                missing.append(f"{name}-browser")
++    return paths, missing
++
++
++def setup(route: str, runtime: Path, ensure: bool, only: str | None = None) -> dict[str, object]:
++    if route not in MANIFEST["routes"]:
++        raise RuntimeError(f"Unknown video route: {route}")
++    missing: list[str] = []
++    paths: dict[str, str] = {}
++    selected = resolve_node(runtime, ensure)
++    if not selected:
++        missing.append("node")
++        return {"ready": False, "route": route, "paths": paths, "missing": missing}
++    node, npm = selected
++    paths.update(node=str(node), npm=str(npm))
++    media = resolve_media(runtime, node, npm, ensure)
++    if media:
++        paths.update(ffmpeg=str(media[0]), ffprobe=str(media[1]))
++    else:
++        missing.extend(("ffmpeg", "ffprobe"))
++    profiles, profile_missing = ensure_profiles(route, runtime, node, npm, ensure, only)
++    paths.update(profiles)
++    missing.extend(profile_missing)
++    return {"ready": not missing, "route": route, "paths": paths, "missing": missing}
++
++
++def main() -> int:
++    parser = argparse.ArgumentParser(description=__doc__)
++    parser.add_argument("route", choices=MANIFEST["routes"])
++    parser.add_argument("--check", action="store_true", help="Read only; report missing prerequisites")
++    parser.add_argument("--renderer", help="Install and verify only this renderer profile")
++    parser.add_argument("--runtime-dir", type=Path, default=default_runtime_dir())
++    args = parser.parse_args()
++    try:
++        result = setup(args.route, args.runtime_dir, ensure=not args.check, only=args.renderer)
++    except (OSError, ValueError, RuntimeError, urllib.error.URLError) as error:
++        result = {"ready": False, "route": args.route, "paths": {}, "missing": [], "error": str(error)}
++    print(json.dumps(result, indent=2))
++    return 0 if result["ready"] else 1
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())
+diff --git a/src-tauri/resources/video-tools/render_hyperframes_video.py b/src-tauri/resources/video-tools/render_hyperframes_video.py
+new file mode 100644
+--- /dev/null
++++ b/src-tauri/resources/video-tools/render_hyperframes_video.py
+@@ -0,0 +1,127 @@
++#!/usr/bin/env python3
++"""Render a HyperFrames HTML composition into a portable video project.
++
++The timing JSON follows assemble_video.py's plan format with exactly one scene.
++The rendered composition supplies the visual. Declare audio_from_visual with
++transcript text to retain embedded audio, or narration to replace it.
++"""
++
++from __future__ import annotations
++
++import argparse
++import json
++import os
++from pathlib import Path
++import shutil
++import subprocess
++import tempfile
++
++from assemble_video import assemble, probe, progress
++from ensure_video_runtime import default_runtime_dir, setup
++
++
++IGNORED_DIRS = {".git", "node_modules", "dist", "build", ".cache", "renders"}
++
++
++def copy_source(root: Path, target: Path, output: Path) -> None:
++    def ignore(directory: str, names: list[str]) -> set[str]:
++        parent = Path(directory)
++        skipped = {name for name in names if name in IGNORED_DIRS and (parent / name).is_dir()}
++        skipped.update(name for name in names if (parent / name).resolve() == output)
++        return skipped
++
++    shutil.copytree(root, target, ignore=ignore, symlinks=True)
++
++
++def render(composition: Path, timing: Path, out_dir: Path, runtime_dir: Path,
++           source_root: Path | None = None, variables: Path | None = None) -> dict:
++    composition = composition.resolve()
++    timing = timing.resolve()
++    out_dir = out_dir.resolve()
++    if not composition.is_file() or composition.suffix.lower() != ".html":
++        raise ValueError(f"HyperFrames composition is missing: {composition}")
++    if out_dir.exists() and any(out_dir.iterdir()):
++        raise ValueError(f"Output directory is not empty: {out_dir}")
++    root = (source_root or composition.parent).resolve()
++    if not root.is_dir() or not composition.is_relative_to(root):
++        raise ValueError("Composition must be inside the source project directory")
++    plan = json.loads(timing.read_text(encoding="utf-8"))
++    if not isinstance(plan, dict) or not isinstance(plan.get("scenes"), list) or len(plan["scenes"]) != 1:
++        raise ValueError("HyperFrames timing plan needs exactly one scene")
++    scene = plan["scenes"][0]
++    if not isinstance(scene, dict):
++        raise ValueError("HyperFrames scene must be an object")
++    if scene.get("narration") and scene.get("audio_from_visual"):
++        raise ValueError("Choose narration or audio_from_visual for the HyperFrames render")
++    variables = variables.resolve() if variables else None
++    if variables and not variables.is_file():
++        raise ValueError(f"HyperFrames variables file is missing: {variables}")
++    progress("setup", "Preparing HyperFrames and FFmpeg")
++    runtime = setup("product-launch-video", runtime_dir, ensure=True, only="hyperframes")
++    if not runtime["ready"]:
++        raise RuntimeError(f"Video runtime is incomplete: {runtime['missing']}")
++    paths = runtime["paths"]
++    out_dir.parent.mkdir(parents=True, exist_ok=True)
++    render_log = out_dir.with_name(out_dir.name + ".hyperframes-render.log")
++    with tempfile.TemporaryDirectory(prefix="hyperframes-video-", dir=out_dir.parent) as scratch:
++        scratch_dir = Path(scratch)
++        clip = scratch_dir / "composition.mp4"
++        env = os.environ.copy()
++        env["PATH"] = str(Path(paths["node"]).parent) + os.pathsep + env.get("PATH", "")
++        command = [paths["hyperframes"], "render", "-c", str(composition.relative_to(root)), "--output", str(clip),
++                   "--quality", "looks"]
++        if variables:
++            command.extend(["--variables-file", str(variables)])
++        progress("visuals", f"Rendering HyperFrames composition {composition.name}")
++        with render_log.open("w", encoding="utf-8") as log:
++            child = subprocess.run(command, cwd=root, env=env, stdout=log, stderr=subprocess.STDOUT)
++        if child.returncode or not clip.is_file():
++            detail = render_log.read_text(encoding="utf-8", errors="replace")[-2500:]
++            raise RuntimeError(f"HyperFrames render failed ({child.returncode}); see {render_log}: {detail}")
++        clip_info = probe(Path(paths["ffprobe"]), clip)
++        if "video" not in clip_info["streams"] or clip_info["duration"] <= 0:
++            raise RuntimeError("HyperFrames output has no playable video stream")
++        if "audio" in clip_info["streams"] and not (scene.get("audio_from_visual") or scene.get("narration")):
++            raise ValueError("HyperFrames output contains audio; choose audio_from_visual with transcript, or provide narration")
++        prepared_scene = {**scene, "visual": str(clip)}
++        if prepared_scene.get("narration"):
++            prepared_scene["narration"] = str((timing.parent / prepared_scene["narration"]).resolve())
++        prepared = {**plan, "scenes": [prepared_scene]}
++        if isinstance(plan.get("music"), dict) and plan["music"].get("file"):
++            prepared["music"] = {**plan["music"], "file": str((timing.parent / plan["music"]["file"]).resolve())}
++        prepared_file = scratch_dir / "prepared-plan.json"
++        prepared_file.write_text(json.dumps(prepared, ensure_ascii=False), encoding="utf-8")
++        result = assemble(prepared_file, out_dir, Path(paths["ffmpeg"]), Path(paths["ffprobe"]))
++        source = out_dir / "source"
++        copy_source(root, source, out_dir)
++        if variables and not variables.is_relative_to(root):
++            shutil.copy2(variables, source / "render-variables.json")
++        shutil.copy2(render_log, out_dir / "logs" / "hyperframes-render.log")
++        manifest = out_dir / "manifest.json"
++        data = json.loads(manifest.read_text(encoding="utf-8"))
++        data.update(renderer="hyperframes", sourceComposition=str((source / composition.relative_to(root)).relative_to(out_dir)))
++        manifest.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
++        return result
++
++
++def main() -> int:
++    parser = argparse.ArgumentParser(description=__doc__)
++    parser.add_argument("composition", type=Path)
++    parser.add_argument("timing", type=Path)
++    parser.add_argument("--out", type=Path, required=True)
++    parser.add_argument("--project-root", type=Path)
++    parser.add_argument("--variables", type=Path)
++    parser.add_argument("--runtime-dir", type=Path, default=default_runtime_dir())
++    args = parser.parse_args()
++    try:
++        result = render(args.composition, args.timing, args.out, args.runtime_dir,
++                        args.project_root, args.variables)
++    except (OSError, ValueError, RuntimeError, json.JSONDecodeError) as error:
++        print(json.dumps({"ready": False, "error": str(error)}))
++        return 1
++    print(json.dumps(result, indent=2))
++    return 0
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())
+diff --git a/src-tauri/resources/video-tools/render_remotion_video.py b/src-tauri/resources/video-tools/render_remotion_video.py
+new file mode 100644
+--- /dev/null
++++ b/src-tauri/resources/video-tools/render_remotion_video.py
+@@ -0,0 +1,135 @@
++#!/usr/bin/env python3
++"""Render one Remotion composition and package its video, audio, and captions.
++
++The timing JSON follows assemble_video.py's plan format with exactly one scene.
++The rendered composition supplies that scene's visual. Use audio_from_visual:
++true with a transcript to retain the composition's audio, or narration to
++replace it. Progress is JSON on stderr; the project result is JSON on stdout.
++"""
++
++from __future__ import annotations
++
++import argparse
++import json
++import os
++from pathlib import Path
++import shutil
++import subprocess
++import tempfile
++
++from assemble_video import assemble, probe, progress
++from ensure_video_runtime import default_runtime_dir, setup
++
++
++IGNORED_DIRS = {".git", "node_modules", "dist", "build", ".cache", ".next", ".remotion"}
++
++
++def project_root(entry: Path) -> Path:
++    return next((folder for folder in (entry.parent, *entry.parent.parents) if (folder / "package.json").is_file()), entry.parent)
++
++
++def copy_project(root: Path, target: Path, output: Path) -> None:
++    def ignore(directory: str, names: list[str]) -> set[str]:
++        parent = Path(directory)
++        skipped = {name for name in names if name in IGNORED_DIRS and (parent / name).is_dir()}
++        skipped.update(name for name in names if (parent / name).resolve() == output)
++        return skipped
++
++    shutil.copytree(root, target, ignore=ignore, symlinks=True)
++
++
++def render(entry: Path, composition: str, timing: Path, out_dir: Path, runtime_dir: Path,
++           source_root: Path | None = None, props: Path | None = None) -> dict:
++    entry = entry.resolve()
++    timing = timing.resolve()
++    out_dir = out_dir.resolve()
++    if not entry.is_file():
++        raise ValueError(f"Remotion entry file is missing: {entry}")
++    if not composition.strip():
++        raise ValueError("Remotion composition ID is required")
++    if out_dir.exists() and any(out_dir.iterdir()):
++        raise ValueError(f"Output directory is not empty: {out_dir}")
++    root = (source_root or project_root(entry)).resolve()
++    if not root.is_dir() or not entry.is_relative_to(root):
++        raise ValueError("Entry file must be inside the source project directory")
++    plan = json.loads(timing.read_text(encoding="utf-8"))
++    if not isinstance(plan, dict) or not isinstance(plan.get("scenes"), list) or len(plan["scenes"]) != 1:
++        raise ValueError("Remotion timing plan needs exactly one scene")
++    scene = plan["scenes"][0]
++    if not isinstance(scene, dict):
++        raise ValueError("Remotion scene must be an object")
++    if scene.get("narration") and scene.get("audio_from_visual"):
++        raise ValueError("Choose narration or audio_from_visual for the Remotion render")
++    props = props.resolve() if props else None
++    if props and not props.is_file():
++        raise ValueError(f"Remotion props file is missing: {props}")
++    progress("setup", "Preparing Remotion and FFmpeg")
++    runtime = setup("product-launch-video", runtime_dir, ensure=True, only="remotion")
++    if not runtime["ready"]:
++        raise RuntimeError(f"Video runtime is incomplete: {runtime['missing']}")
++    paths = runtime["paths"]
++    out_dir.parent.mkdir(parents=True, exist_ok=True)
++    render_log = out_dir.with_name(out_dir.name + ".remotion-render.log")
++    with tempfile.TemporaryDirectory(prefix="remotion-video-", dir=out_dir.parent) as scratch:
++        scratch_dir = Path(scratch)
++        clip = scratch_dir / "composition.mp4"
++        env = os.environ.copy()
++        env["PATH"] = str(Path(paths["node"]).parent) + os.pathsep + env.get("PATH", "")
++        command = [paths["remotion"], "render", str(entry), composition, str(clip)]
++        if props:
++            command.append(f"--props={props}")
++        progress("visuals", f"Rendering Remotion composition {composition}")
++        with render_log.open("w", encoding="utf-8") as log:
++            child = subprocess.run(command, cwd=root, env=env, stdout=log, stderr=subprocess.STDOUT)
++        if child.returncode or not clip.is_file():
++            detail = render_log.read_text(encoding="utf-8", errors="replace")[-2500:]
++            raise RuntimeError(f"Remotion render failed ({child.returncode}); see {render_log}: {detail}")
++        clip_info = probe(Path(paths["ffprobe"]), clip)
++        if "video" not in clip_info["streams"] or clip_info["duration"] <= 0:
++            raise RuntimeError("Remotion output has no playable video stream")
++        if "audio" in clip_info["streams"] and not (scene.get("audio_from_visual") or scene.get("narration")):
++            raise ValueError("Remotion output contains audio; choose audio_from_visual with transcript, or provide narration")
++        prepared_scene = {**scene, "visual": str(clip)}
++        if prepared_scene.get("narration"):
++            prepared_scene["narration"] = str((timing.parent / prepared_scene["narration"]).resolve())
++        prepared = {**plan, "scenes": [prepared_scene]}
++        if isinstance(plan.get("music"), dict) and plan["music"].get("file"):
++            prepared["music"] = {**plan["music"], "file": str((timing.parent / plan["music"]["file"]).resolve())}
++        prepared_file = scratch_dir / "prepared-plan.json"
++        prepared_file.write_text(json.dumps(prepared, ensure_ascii=False), encoding="utf-8")
++        result = assemble(prepared_file, out_dir, Path(paths["ffmpeg"]), Path(paths["ffprobe"]))
++        source = out_dir / "source"
++        copy_project(root, source, out_dir)
++        if props and not props.is_relative_to(root):
++            shutil.copy2(props, source / "render-props.json")
++        shutil.copy2(render_log, out_dir / "logs" / "remotion-render.log")
++        manifest = out_dir / "manifest.json"
++        data = json.loads(manifest.read_text(encoding="utf-8"))
++        data.update(renderer="remotion", composition=composition,
++                    sourceEntry=str((source / entry.relative_to(root)).relative_to(out_dir)))
++        manifest.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
++        return result
++
++
++def main() -> int:
++    parser = argparse.ArgumentParser(description=__doc__)
++    parser.add_argument("entry", type=Path)
++    parser.add_argument("composition", help="Registered Remotion composition ID")
++    parser.add_argument("timing", type=Path)
++    parser.add_argument("--out", type=Path, required=True)
++    parser.add_argument("--project-root", type=Path)
++    parser.add_argument("--props", type=Path)
++    parser.add_argument("--runtime-dir", type=Path, default=default_runtime_dir())
++    args = parser.parse_args()
++    try:
++        result = render(args.entry, args.composition, args.timing, args.out, args.runtime_dir,
++                        args.project_root, args.props)
++    except (OSError, ValueError, RuntimeError, json.JSONDecodeError) as error:
++        print(json.dumps({"ready": False, "error": str(error)}))
++        return 1
++    print(json.dumps(result, indent=2))
++    return 0
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())
+diff --git a/src-tauri/resources/video-tools/render_slidev_video.py b/src-tauri/resources/video-tools/render_slidev_video.py
+new file mode 100644
+--- /dev/null
++++ b/src-tauri/resources/video-tools/render_slidev_video.py
+@@ -0,0 +1,114 @@
++#!/usr/bin/env python3
++"""Export a Slidev deck's click states and assemble them into a timed MP4.
++
++The timing JSON uses the assemble_video.py plan schema, except each scene's
++visual is supplied by the exported Slidev frame in order. The number of scenes
++must equal the number of exported click states. Progress is JSON on stderr and
++the final project result is JSON on stdout.
++"""
++
++from __future__ import annotations
++
++import argparse
++import json
++import os
++from pathlib import Path
++import re
++import shutil
++import subprocess
++import sys
++import tempfile
++
++from assemble_video import assemble, progress
++from ensure_video_runtime import default_runtime_dir, setup
++
++
++FRAME = re.compile(r"^(\d+)-(\d+)\.png$")
++
++
++def frame_order(path: Path) -> tuple[int, int]:
++    match = FRAME.fullmatch(path.name)
++    if not match:
++        raise ValueError(f"Unexpected Slidev frame name: {path.name}")
++    return int(match.group(1)), int(match.group(2))
++
++
++def render(deck: Path, timing: Path, out_dir: Path, runtime_dir: Path) -> dict:
++    deck = deck.resolve()
++    timing = timing.resolve()
++    out_dir = out_dir.resolve()
++    if not deck.is_file() or deck.suffix.lower() != ".md":
++        raise ValueError(f"Slidev deck is missing: {deck}")
++    if out_dir.exists() and any(out_dir.iterdir()):
++        raise ValueError(f"Output directory is not empty: {out_dir}")
++    plan = json.loads(timing.read_text(encoding="utf-8"))
++    if not isinstance(plan, dict) or not isinstance(plan.get("scenes"), list):
++        raise ValueError("Timing file needs a scenes array")
++    progress("setup", "Preparing Slidev and FFmpeg")
++    runtime = setup("explainer-video", runtime_dir, ensure=True, only="slidev")
++    if not runtime["ready"]:
++        raise RuntimeError(f"Video runtime is incomplete: {runtime['missing']}")
++    paths = runtime["paths"]
++    out_dir.parent.mkdir(parents=True, exist_ok=True)
++    export_log = out_dir.with_name(out_dir.name + ".slidev-export.log")
++    with tempfile.TemporaryDirectory(prefix="slidev-video-", dir=out_dir.parent) as scratch:
++        scratch_dir = Path(scratch)
++        frames_dir = scratch_dir / "frames"
++        env = os.environ.copy()
++        env["PATH"] = str(Path(paths["node"]).parent) + os.pathsep + env.get("PATH", "")
++        command = [paths["slidev"], "export", str(deck), "--format", "png", "--with-clicks",
++                   "--output", str(frames_dir), "--timeout", "60000"]
++        progress("visuals", "Exporting Slidev click states")
++        with export_log.open("w", encoding="utf-8") as log:
++            result = subprocess.run(command, cwd=deck.parent, env=env, stdout=log, stderr=subprocess.STDOUT)
++        if result.returncode:
++            detail = export_log.read_text(encoding="utf-8", errors="replace")[-2500:]
++            raise RuntimeError(f"Slidev export failed ({result.returncode}); see {export_log}: {detail}")
++        frames = sorted(frames_dir.glob("*.png"), key=frame_order)
++        if len(frames) != len(plan["scenes"]):
++            raise ValueError(f"Slidev exported {len(frames)} click states but timing has {len(plan['scenes'])} scenes")
++        portable_plan = {**plan, "scenes": []}
++        for scene, frame in zip(plan["scenes"], frames):
++            if not isinstance(scene, dict):
++                raise ValueError("Every timed scene must be an object")
++            item = {**scene, "visual": str(frame)}
++            if item.get("narration"):
++                item["narration"] = str((timing.parent / item["narration"]).resolve())
++            portable_plan["scenes"].append(item)
++        if isinstance(plan.get("music"), dict) and plan["music"].get("file"):
++            portable_plan["music"] = {**plan["music"], "file": str((timing.parent / plan["music"]["file"]).resolve())}
++        prepared = scratch_dir / "prepared-plan.json"
++        prepared.write_text(json.dumps(portable_plan, ensure_ascii=False), encoding="utf-8")
++        result = assemble(prepared, out_dir, Path(paths["ffmpeg"]), Path(paths["ffprobe"]))
++        source = out_dir / "source"
++        source.mkdir()
++        shutil.copy2(deck, source / deck.name)
++        if (deck.parent / "public").is_dir():
++            shutil.copytree(deck.parent / "public", source / "public")
++        shutil.copy2(export_log, out_dir / "logs" / "slidev-export.log")
++        manifest = out_dir / "manifest.json"
++        data = json.loads(manifest.read_text(encoding="utf-8"))
++        data["renderer"] = "slidev"
++        data["sourceDeck"] = str((source / deck.name).relative_to(out_dir))
++        manifest.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
++        return result
++
++
++def main() -> int:
++    parser = argparse.ArgumentParser(description=__doc__)
++    parser.add_argument("deck", type=Path)
++    parser.add_argument("timing", type=Path)
++    parser.add_argument("--out", type=Path, required=True)
++    parser.add_argument("--runtime-dir", type=Path, default=default_runtime_dir())
++    args = parser.parse_args()
++    try:
++        result = render(args.deck, args.timing, args.out, args.runtime_dir)
++    except (OSError, ValueError, RuntimeError, json.JSONDecodeError) as error:
++        print(json.dumps({"ready": False, "error": str(error)}))
++        return 1
++    print(json.dumps(result, indent=2))
++    return 0
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())
+diff --git a/src-tauri/resources/video-tools/run_desktop_video_job.py b/src-tauri/resources/video-tools/run_desktop_video_job.py
+new file mode 100644
+--- /dev/null
++++ b/src-tauri/resources/video-tools/run_desktop_video_job.py
+@@ -0,0 +1,214 @@
++#!/usr/bin/env python3
++"""Convert Video Studio form media into a durable video job and run it.
++
++The input wraps the desktop ProjectRequest as {schemaVersion: 1, request: ...}.
++Media arrives as base64; filenames are metadata, never filesystem paths.
++Progress is JSON on stderr and the verified desktop outcome is JSON on stdout.
++"""
++
++from __future__ import annotations
++
++import argparse
++import base64
++import binascii
++import json
++import math
++from pathlib import Path
++import shutil
++import signal
++import subprocess
++import sys
++
++from assemble_video import probe
++from ensure_video_runtime import default_runtime_dir
++from run_video_job import fingerprint, interrupted, media_paths, progress, run_job
++
++
++IMAGE_TYPES = {"image/png": ".png", "image/jpeg": ".jpg", "image/webp": ".webp"}
++AUDIO_TYPES = {".wav", ".mp3", ".m4a", ".flac", ".ogg", ".webm"}
++VIDEO_TYPES = {".mp4", ".webm", ".mov", ".mkv"}
++
++
++def text(value: object, label: str, maximum: int = 1500) -> str:
++    if not isinstance(value, str) or len(value) > maximum:
++        raise ValueError(f"{label} must be text under {maximum} characters")
++    return value
++
++
++def decode(value: object, label: str, maximum: int) -> bytes:
++    if not isinstance(value, str) or len(value) > (maximum + 2) // 3 * 4:
++        raise ValueError(f"{label} is missing or exceeds its media size limit")
++    try:
++        data = base64.b64decode(value, validate=True)
++    except (ValueError, binascii.Error):
++        raise ValueError(f"Invalid base64 for {label}") from None
++    if not data or len(data) > maximum:
++        raise ValueError(f"{label} is empty or exceeds its media size limit")
++    return data
++
++
++def save_asset(asset: object, target: Path, allowed: set[str], maximum: int) -> tuple[Path, dict]:
++    if not isinstance(asset, dict):
++        raise ValueError("Uploaded media must be an object")
++    name = text(asset.get("name"), "Uploaded filename", 300)
++    extension = Path(name.replace("\\", "/")).suffix.lower()
++    if extension not in allowed:
++        raise ValueError(f"Unsupported uploaded media: {name}")
++    target = target.with_suffix(extension)
++    target.parent.mkdir(parents=True, exist_ok=True)
++    target.write_bytes(decode(asset.get("dataBase64"), name, maximum))
++    return target, {"name": name, "mime": str(asset.get("mime", "")), "file": str(target.name)}
++
++
++def prepare_request(payload_file: Path, workspace: Path) -> Path:
++    if payload_file.stat().st_size > 750_000_000:
++        raise ValueError("Desktop request exceeds the 750 MB limit")
++    payload = json.loads(payload_file.read_text(encoding="utf-8"))
++    if not isinstance(payload, dict) or payload.get("schemaVersion") != 1 or not isinstance(payload.get("request"), dict):
++        raise ValueError("Desktop request needs schemaVersion 1 and a request object")
++    request = payload["request"]
++    title = text(request.get("title"), "Title", 160).strip()
++    if not title:
++        raise ValueError("Enter a title")
++    scenes = request.get("scenes")
++    assets = request.get("sourceAssets", [])
++    if not isinstance(scenes, list) or not 1 <= len(scenes) <= 80:
++        raise ValueError("A desktop project needs 1 to 80 scenes")
++    if not isinstance(assets, list) or len(assets) > 80:
++        raise ValueError("A desktop project accepts at most 80 source images")
++    if request.get("aspect") not in ("16:9", "9:16", "1:1", "4:5") or request.get("fps") not in (24, 25, 30, 60):
++        raise ValueError("Choose a supported aspect and frame rate")
++    if workspace.exists() and any(workspace.iterdir()):
++        raise ValueError("Workspace is not empty; resume its original request or choose a new workspace")
++    workspace.mkdir(parents=True, exist_ok=True)
++    inputs = workspace / "inputs"
++    inputs.mkdir()
++    progress("import", "Importing desktop media", artifact=str(workspace))
++    runtime = Path(payload["runtimeDir"]).expanduser().resolve() if payload.get("runtimeDir") else default_runtime_dir()
++    _, ffprobe = media_paths(runtime)
++    original_assets = []
++    for index, asset in enumerate(assets, 1):
++        if not isinstance(asset, dict) or asset.get("mime") not in IMAGE_TYPES:
++            raise ValueError(f"Source image {index} must be PNG, JPEG, or WebP")
++        # Assign extensions from the actual image type, ignoring untrusted paths.
++        asset = {**asset, "name": f"source{IMAGE_TYPES[asset['mime']]}", "originalName": asset.get("name", "")}
++        path, metadata = save_asset(asset, inputs / "originals" / f"image-{index:04}", set(IMAGE_TYPES.values()), 22_000_000)
++        metadata.update(name=text(asset["originalName"], "Image filename", 300), file=str(path.relative_to(inputs)))
++        original_assets.append(metadata)
++    prepared = []
++    desktop_scenes = []
++    seen = set()
++    for index, scene in enumerate(scenes, 1):
++        if not isinstance(scene, dict):
++            raise ValueError(f"Scene {index} must be an object")
++        scene_id = text(scene.get("id"), f"Scene {index} ID", 160).strip()
++        if not scene_id or scene_id in seen:
++            raise ValueError(f"Scene {index} has an empty or duplicate ID")
++        seen.add(scene_id)
++        duration = scene.get("durationSec")
++        if isinstance(duration, bool) or not isinstance(duration, (int, float)) or not math.isfinite(duration) or not 0.5 <= duration <= 120:
++            raise ValueError(f"Scene {index} duration must be 0.5 to 120 seconds")
++        caption = text(scene.get("caption", ""), f"Scene {index} caption")
++        visual_description = text(scene.get("visual", ""), f"Scene {index} visual")
++        source_index = scene.get("sourceAssetIndex")
++        if source_index is not None and (isinstance(source_index, bool) or not isinstance(source_index, int) or not 0 <= source_index < len(assets)):
++            raise ValueError(f"Scene {index} references a missing source image")
++        if scene.get("audioSource") and scene.get("audioWavBase64"):
++            raise ValueError(f"Scene {index} has two narration sources")
++        card = inputs / f"scene-{index:04}.png"
++        card_bytes = decode(scene.get("imagePngBase64"), f"Scene {index} card", 15_000_000)
++        if not card_bytes.startswith(b"\x89PNG\r\n\x1a\n"):
++            raise ValueError(f"Scene {index} card must be PNG")
++        card.write_bytes(card_bytes)
++        visual = card
++        uploads = {}
++        if scene.get("videoSource"):
++            visual, uploads["video"] = save_asset(scene["videoSource"], inputs / f"clip-{index:04}", VIDEO_TYPES, 100_000_000)
++        narration = None
++        if scene.get("audioSource"):
++            narration, uploads["narration"] = save_asset(scene["audioSource"], inputs / f"narration-{index:04}", AUDIO_TYPES, 60_000_000)
++        elif scene.get("audioWavBase64"):
++            narration = inputs / f"narration-{index:04}.wav"
++            wav = decode(scene["audioWavBase64"], f"Scene {index} narration", 45_000_000)
++            if not wav.startswith(b"RIFF") or wav[8:12] != b"WAVE":
++                raise ValueError(f"Scene {index} generated narration must be WAV")
++            narration.write_bytes(wav)
++        item = {"id": scene_id, "visual": visual.name, "duration_sec": duration, "caption": caption}
++        if narration:
++            if not caption.strip():
++                raise ValueError(f"Scene {index} needs its narration transcript")
++            item["narration"] = narration.name
++        elif visual != card and "audio" in probe(ffprobe, visual)["streams"]:
++            if not caption.strip():
++                raise ValueError(f"Scene {index} needs its footage transcript")
++            item["audio_from_visual"] = True
++        prepared.append(item)
++        desktop_scenes.append({**item, "visualDescription": visual_description, "sourceAssetIndex": source_index,
++                               "card": card.name, "uploads": uploads})
++        progress("import", f"Imported scene {index} of {len(scenes)}", scene=index, sceneCount=len(scenes))
++    if sum(scene["duration_sec"] for scene in prepared) > 1800:
++        raise ValueError("The desktop project exceeds 30 minutes")
++    timing = {"title": title, "aspect": request["aspect"], "fps": request["fps"], "scenes": prepared}
++    (inputs / "timing.json").write_text(json.dumps(timing, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
++    metadata = {key: value for key, value in request.items() if key not in ("scenes", "sourceAssets")}
++    metadata.update(scenes=desktop_scenes, sourceAssets=original_assets, payloadSha256=fingerprint(payload_file))
++    (inputs / "desktop.json").write_text(json.dumps(metadata, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
++    job = {"schemaVersion": 1, "route": request.get("jobRoute", "product-launch-video" if request.get("category") == "product" else "explainer-video"),
++           "renderer": "scenes", "timing": "inputs/timing.json", "output": "output", "captions": payload.get("captions", "auto"),
++           "language": request.get("language", "en"), "runtimeDir": str(runtime)}
++    job_path = workspace / "job-request.json"
++    job_path.write_text(json.dumps(job, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
++    return job_path
++
++
++def run_desktop_job(payload_file: Path, workspace: Path, resume: bool = False) -> dict:
++    workspace = workspace.resolve()
++    if resume:
++        metadata = json.loads((workspace / "inputs/desktop.json").read_text(encoding="utf-8"))
++        if metadata.get("payloadSha256") != fingerprint(payload_file):
++            raise ValueError("Resume requires the original desktop request")
++        job_path = workspace / "job-request.json"
++    else:
++        job_path = prepare_request(payload_file, workspace)
++    result = run_job(job_path, resume=resume)
++    output = Path(result["directory"])
++    metadata = json.loads((workspace / "inputs/desktop.json").read_text(encoding="utf-8"))
++    source = output / "source" / "desktop"
++    if not source.exists():
++        shutil.copytree(workspace / "inputs", source)
++    style = output / "style.md"
++    if not style.exists():
++        style.write_text("# Desktop style\n\n" + "\n".join(f"- {key}: {metadata.get(key, '')}" for key in
++                         ("brandPrimary", "brandSurface", "brandText", "headlineFont", "bodyFont", "aspect", "fps")) + "\n", encoding="utf-8")
++    manifest_file = output / "manifest.json"
++    manifest = json.loads(manifest_file.read_text(encoding="utf-8"))
++    manifest.update(desktopSource="source/desktop/desktop.json", style="style.md")
++    manifest_file.write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
++    return {**result, "script": str(output / "script.md"), "storyboard": str(output / "storyboard.md"),
++            "narration": [str(path) for path in sorted((output / "audio").glob("*")) if path.is_file()],
++            "captionsSrt": str(output / "captions.srt"), "captionsVtt": str(output / "captions.vtt"),
++            "sizeBytes": (output / "video.mp4").stat().st_size,
++            "mixedAudio": str(output / "audio.mp3") if (output / "audio.mp3").is_file() else None,
++            "transcript": str(output / "transcript.json") if (output / "transcript.json").is_file() else None}
++
++
++def main() -> int:
++    parser = argparse.ArgumentParser(description=__doc__)
++    parser.add_argument("request", type=Path)
++    parser.add_argument("--workspace", type=Path, required=True)
++    parser.add_argument("--resume", action="store_true")
++    args = parser.parse_args()
++    signal.signal(signal.SIGTERM, interrupted)
++    signal.signal(signal.SIGINT, interrupted)
++    try:
++        result = run_desktop_job(args.request.resolve(), args.workspace, args.resume)
++    except KeyboardInterrupt:
++        result = {"ready": False, "status": "cancelled"}
++    except (OSError, ValueError, RuntimeError, subprocess.TimeoutExpired) as error:
++        result = {"ready": False, "status": "failed", "error": str(error)}
++    print(json.dumps(result))
++    return 0 if result.get("ready") else 1
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())
+diff --git a/src-tauri/resources/video-tools/run_video_job.py b/src-tauri/resources/video-tools/run_video_job.py
+new file mode 100644
+--- /dev/null
++++ b/src-tauri/resources/video-tools/run_video_job.py
+@@ -0,0 +1,344 @@
++#!/usr/bin/env python3
++"""Run a video request through rendering, final-media captions, and review.
++
++Input JSON paths are relative to the request file. Progress is newline-delimited
++JSON on stderr; one result document is printed on stdout. Failed render attempts
++stay beside the requested output. Re-run with --resume to reuse a verified MP4.
++"""
++
++from __future__ import annotations
++
++import argparse
++import hashlib
++import json
++import os
++from pathlib import Path
++import platform
++import shutil
++import signal
++import subprocess
++import sys
++import threading
++import time
++import uuid
++
++from assemble_video import probe
++from ensure_video_runtime import MANIFEST, default_runtime_dir, media_version, resolve_media, resolve_node
++
++
++TOOLS = Path(__file__).resolve().parent
++RENDER_SCRIPTS = {
++    "slidev": "render_slidev_video.py",
++    "remotion": "render_remotion_video.py",
++    "hyperframes": "render_hyperframes_video.py",
++    "scenes": "assemble_video.py",
++}
++ACTIVE_CHILD: subprocess.Popen | None = None
++
++
++def progress(phase: str, message: str, **details: object) -> None:
++    print(json.dumps({"phase": phase, "message": message, **details}), file=sys.stderr, flush=True)
++
++
++def source_path(base: Path, value: object, field: str) -> Path:
++    if not isinstance(value, str) or not value.strip():
++        raise ValueError(f"{field} needs a path")
++    return (base / value).resolve()
++
++
++def request_config(path: Path) -> dict:
++    config = json.loads(path.read_text(encoding="utf-8"))
++    if not isinstance(config, dict) or config.get("schemaVersion") != 1:
++        raise ValueError("Video job needs schemaVersion 1")
++    renderer = config.get("renderer")
++    route = config.get("route")
++    if renderer not in RENDER_SCRIPTS or route not in MANIFEST["routes"]:
++        raise ValueError("Video job has an unknown renderer or route")
++    if renderer != "scenes" and renderer not in MANIFEST["routes"][route]:
++        raise ValueError(f"Renderer {renderer} is unavailable for route {route}")
++    if config.get("captions", "auto") not in ("auto", "plan", "transcribe"):
++        raise ValueError("captions must be auto, plan or transcribe")
++    base = path.parent
++    config["timing"] = source_path(base, config.get("timing"), "timing")
++    config["output"] = source_path(base, config.get("output"), "output")
++    if not config["timing"].is_file():
++        raise ValueError(f"Timing plan is missing: {config['timing']}")
++    if renderer != "scenes":
++        config["source"] = source_path(base, config.get("source"), "source")
++        if not config["source"].is_file():
++            raise ValueError(f"Renderer source is missing: {config['source']}")
++    for key in ("projectRoot", "props", "variables", "runtimeDir"):
++        if config.get(key):
++            config[key] = source_path(base, config[key], key)
++    if renderer == "remotion" and not isinstance(config.get("compositionId"), str):
++        raise ValueError("Remotion job needs compositionId")
++    return config
++
++
++def state_path(output: Path) -> Path:
++    return output.with_name(output.name + ".job-state.json")
++
++
++def write_state(project_path: Path, **state: object) -> None:
++    target = state_path(project_path)
++    target.parent.mkdir(parents=True, exist_ok=True)
++    temporary = target.with_suffix(target.suffix + ".tmp")
++    temporary.write_text(json.dumps(state, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
++    temporary.replace(target)
++
++
++def fingerprint(path: Path) -> str:
++    digest = hashlib.sha256()
++    with path.open("rb") as input_file:
++        while chunk := input_file.read(1024 * 1024):
++            digest.update(chunk)
++    return digest.hexdigest()
++
++
++def stop_child() -> None:
++    child = ACTIVE_CHILD
++    if not child or child.poll() is not None:
++        return
++    if platform.system() == "Windows":
++        try:
++            stopped = subprocess.run(["taskkill", "/T", "/F", "/PID", str(child.pid)],
++                                     capture_output=True, timeout=10).returncode == 0
++        except (OSError, subprocess.TimeoutExpired):
++            stopped = False
++        if not stopped and child.poll() is None:
++            child.terminate()
++    else:
++        try:
++            os.killpg(child.pid, signal.SIGTERM)
++        except ProcessLookupError:
++            return
++        except OSError:
++            child.terminate()
++    try:
++        child.wait(timeout=5)
++    except subprocess.TimeoutExpired:
++        if platform.system() == "Windows":
++            child.kill()
++        else:
++            try:
++                os.killpg(child.pid, signal.SIGKILL)
++            except ProcessLookupError:
++                pass
++            except OSError:
++                child.kill()
++        child.wait(timeout=5)
++
++
++def interrupted(_number: int, _frame: object) -> None:
++    stop_child()
++    raise KeyboardInterrupt
++
++
++def command_result(command: list[str], log: Path) -> dict:
++    global ACTIVE_CHILD
++    output_lines: list[str] = []
++    creationflags = subprocess.CREATE_NEW_PROCESS_GROUP if platform.system() == "Windows" else 0
++    ACTIVE_CHILD = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
++                                    bufsize=1, start_new_session=platform.system() != "Windows",
++                                    creationflags=creationflags, stdin=subprocess.DEVNULL)
++    child = ACTIVE_CHILD
++
++    def read_stdout() -> None:
++        assert child.stdout is not None
++        output_lines.extend(child.stdout)
++
++    def read_stderr() -> None:
++        assert child.stderr is not None
++        with log.open("w", encoding="utf-8") as destination:
++            for line in child.stderr:
++                destination.write(line)
++                destination.flush()
++                print(line, end="", file=sys.stderr, flush=True)
++
++    stdout_thread = threading.Thread(target=read_stdout, daemon=True)
++    stderr_thread = threading.Thread(target=read_stderr, daemon=True)
++    stdout_thread.start()
++    stderr_thread.start()
++    try:
++        code = child.wait()
++        stdout_thread.join()
++        stderr_thread.join()
++    finally:
++        if child.stdout:
++            child.stdout.close()
++        if child.stderr:
++            child.stderr.close()
++        ACTIVE_CHILD = None
++    output = "".join(output_lines)
++    try:
++        result = json.loads(output)
++    except json.JSONDecodeError:
++        raise RuntimeError(f"Tool returned invalid JSON; see {log}: {output[-500:]}") from None
++    if code or not isinstance(result, dict) or not result.get("ready"):
++        detail = result.get("error", output[-500:]) if isinstance(result, dict) else output[-500:]
++        raise RuntimeError(f"Tool failed ({code}); see {log}: {detail}")
++    return result
++
++
++def media_paths(runtime_dir: Path) -> tuple[Path, Path]:
++    ffmpeg, ffprobe = shutil.which("ffmpeg"), shutil.which("ffprobe")
++    if ffmpeg and ffprobe and media_version(ffmpeg) and media_version(ffprobe):
++        return Path(ffmpeg), Path(ffprobe)
++    selected = resolve_node(runtime_dir, ensure=True)
++    if not selected:
++        raise RuntimeError("Node is required to install managed FFmpeg")
++    paths = resolve_media(runtime_dir, *selected, ensure=True)
++    if not paths:
++        raise RuntimeError("FFmpeg and FFprobe could not be prepared")
++    return paths
++
++
++def render_command(config: dict, work: Path, runtime_dir: Path) -> list[str]:
++    renderer = config["renderer"]
++    command = [sys.executable, str(TOOLS / RENDER_SCRIPTS[renderer])]
++    if renderer == "scenes":
++        ffmpeg, ffprobe = media_paths(runtime_dir)
++        command.extend([str(config["timing"]), "--ffmpeg", str(ffmpeg), "--ffprobe", str(ffprobe)])
++    elif renderer == "slidev":
++        command.extend([str(config["source"]), str(config["timing"]), "--runtime-dir", str(runtime_dir)])
++    elif renderer == "remotion":
++        command.extend([str(config["source"]), config["compositionId"], str(config["timing"]),
++                        "--runtime-dir", str(runtime_dir)])
++        if config.get("projectRoot"):
++            command.extend(["--project-root", str(config["projectRoot"])])
++        if config.get("props"):
++            command.extend(["--props", str(config["props"])])
++    else:
++        command.extend([str(config["source"]), str(config["timing"]), "--runtime-dir", str(runtime_dir)])
++        if config.get("projectRoot"):
++            command.extend(["--project-root", str(config["projectRoot"])])
++        if config.get("variables"):
++            command.extend(["--variables", str(config["variables"])])
++    command.extend(["--out", str(work)])
++    return command
++
++
++def should_transcribe(config: dict) -> bool:
++    if config.get("captions") == "transcribe":
++        return True
++    if config.get("captions") == "plan":
++        return False
++    plan = json.loads(config["timing"].read_text(encoding="utf-8"))
++    return any(isinstance(scene, dict) and (scene.get("narration") or scene.get("audio_from_visual"))
++               for scene in plan.get("scenes", []))
++
++
++def verify_render(output: Path, ffprobe: Path) -> float:
++    video = output / "video.mp4"
++    manifest = output / "manifest.json"
++    if not video.is_file() or not manifest.is_file():
++        raise ValueError("Existing project is missing its video or manifest")
++    data = json.loads(manifest.read_text(encoding="utf-8"))
++    measured = probe(ffprobe, video)
++    if data.get("status") != "complete" or "video" not in measured["streams"] or measured["duration"] <= 0:
++        raise ValueError("Existing project render did not verify")
++    return measured["duration"]
++
++
++def run_job(request: Path, resume: bool = False) -> dict:
++    request = request.resolve()
++    config = request_config(request)
++    output = config["output"]
++    runtime_dir = config.get("runtimeDir") or default_runtime_dir()
++    request_hash = fingerprint(request)
++    previous = json.loads(state_path(output).read_text(encoding="utf-8")) if state_path(output).is_file() else None
++    if output.exists() and not resume:
++        raise ValueError(f"Output already exists: {output}; use --resume for the same request")
++    if output.exists() and (not isinstance(previous, dict) or previous.get("requestSha256") != request_hash):
++        raise ValueError("Existing output belongs to a different or untracked request")
++    if output.exists() and previous.get("status") in ("complete", "review_required") and previous.get("videoSha256"):
++        _, ffprobe = media_paths(runtime_dir)
++        duration = verify_render(output, ffprobe)
++        if fingerprint(output / "video.mp4") != previous["videoSha256"]:
++            raise ValueError("Completed video changed after caption timing; use a new output directory")
++        if all((output / name).is_file() for name in ("captions.json", "captions.srt", "captions.vtt")):
++            progress("complete", "Reusing verified complete project", durationSec=duration)
++            return {"ready": True, "status": previous["status"], "directory": str(output),
++                    "video": str(output / "video.mp4"), "durationSec": duration,
++                    "reviewRequired": bool(previous.get("reviewRequired")),
++                    "captions": [str(output / name) for name in ("captions.json", "captions.srt", "captions.vtt")]}
++    output.parent.mkdir(parents=True, exist_ok=True)
++    started = time.time()
++    attempt: Path | None = None
++    write_state(output, status="running", phase="validate", request=str(request), requestSha256=request_hash,
++                output=str(output), startedAt=started)
++    try:
++        progress("validate", "Video request validated", renderer=config["renderer"])
++        if output.exists():
++            _, ffprobe = media_paths(runtime_dir)
++            duration = verify_render(output, ffprobe)
++            progress("render", "Reusing verified video", durationSec=duration)
++        else:
++            work = output.with_name(output.name + f".work-{uuid.uuid4().hex[:8]}")
++            attempt = work
++            progress("render", "Starting renderer", renderer=config["renderer"])
++            write_state(output, status="running", phase="render", request=str(request), requestSha256=request_hash,
++                        output=str(output), attempt=str(work), startedAt=started)
++            result = command_result(render_command(config, work, runtime_dir),
++                                    output.with_name(output.name + ".render.log"))
++            _, ffprobe = media_paths(runtime_dir)
++            duration = verify_render(work, ffprobe)
++            work.rename(output)
++            progress("render", "Video rendered and verified", durationSec=duration)
++        write_state(output, status="running", phase="subtitles", request=str(request), requestSha256=request_hash,
++                    output=str(output), startedAt=started)
++        review_required = False
++        if should_transcribe(config):
++            progress("subtitles", "Timing captions to final speech")
++            command = [sys.executable, str(TOOLS / "transcribe_captions.py"), str(output / "video.mp4"),
++                       "--out", str(output), "--runtime-dir", str(runtime_dir)]
++            if config.get("language"):
++                command.extend(["--language", str(config["language"])])
++            if config.get("transcriptionModel"):
++                command.extend(["--model", str(config["transcriptionModel"])])
++            captions = command_result(command, output / "transcription-job.log")
++            review_required = bool(captions.get("reviewRequired"))
++        manifest = output / "manifest.json"
++        data = json.loads(manifest.read_text(encoding="utf-8"))
++        shutil.copy2(request, output / "request.json")
++        data.update(jobRoute=config["route"], captionSource="local-asr" if review_required else "plan",
++                    reviewRequired=review_required, request="request.json")
++        manifest.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
++        status = "review_required" if review_required else "complete"
++        write_state(output, status=status, phase="complete", request=str(request), requestSha256=request_hash,
++                    output=str(output), durationSec=duration, reviewRequired=review_required,
++                    videoSha256=fingerprint(output / "video.mp4"), startedAt=started, completedAt=time.time())
++        progress("complete", "Video project ready for review" if review_required else "Video project complete",
++                 durationSec=duration, reviewRequired=review_required)
++        return {"ready": True, "status": status, "directory": str(output), "video": str(output / "video.mp4"),
++                "durationSec": duration, "reviewRequired": review_required,
++                "captions": [str(output / name) for name in ("captions.json", "captions.srt", "captions.vtt")]}
++    except BaseException as error:
++        status = "cancelled" if isinstance(error, KeyboardInterrupt) else "failed"
++        write_state(output, status=status, phase="error", request=str(request), requestSha256=request_hash,
++                    output=str(output), attempt=str(attempt) if attempt else None,
++                    error=str(error), startedAt=started, updatedAt=time.time())
++        raise
++
++
++def main() -> int:
++    parser = argparse.ArgumentParser(description=__doc__)
++    parser.add_argument("request", type=Path)
++    parser.add_argument("--resume", action="store_true")
++    args = parser.parse_args()
++    signal.signal(signal.SIGTERM, interrupted)
++    signal.signal(signal.SIGINT, interrupted)
++    try:
++        result = run_job(args.request, args.resume)
++    except KeyboardInterrupt:
++        print(json.dumps({"ready": False, "status": "cancelled"}))
++        return 130
++    except (OSError, ValueError, RuntimeError, subprocess.TimeoutExpired, json.JSONDecodeError) as error:
++        print(json.dumps({"ready": False, "status": "failed", "error": str(error)}))
++        return 1
++    print(json.dumps(result, indent=2))
++    return 0
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())
+diff --git a/src-tauri/resources/video-tools/runtime_requirements.json b/src-tauri/resources/video-tools/runtime_requirements.json
+new file mode 100644
+--- /dev/null
++++ b/src-tauri/resources/video-tools/runtime_requirements.json
+@@ -0,0 +1,41 @@
++{
++  "schemaVersion": 1,
++  "minimumNode": "22.12.0",
++  "routes": {
++    "slide-decks": ["slidev"],
++    "explainer-video": ["slidev", "remotion", "hyperframes"],
++    "product-launch-video": ["remotion", "hyperframes"],
++    "talking-head-video": ["hyperframes"],
++    "avatar-video": ["hyperframes"]
++  },
++  "profiles": {
++    "slidev": {
++      "packages": {
++        "@slidev/cli": "53.0.0",
++        "@slidev/theme-default": "0.25.0",
++        "playwright-chromium": "1.63.0"
++      },
++      "binary": "slidev"
++    },
++    "remotion": {
++      "packages": {
++        "@remotion/cli": "4.0.530",
++        "remotion": "4.0.530",
++        "react": "19.3.0",
++        "react-dom": "19.3.0"
++      },
++      "binary": "remotion",
++      "readyArgs": ["versions"]
++    },
++    "hyperframes": {
++      "packages": {
++        "hyperframes": "0.8.93"
++      },
++      "binary": "hyperframes"
++    }
++  },
++  "mediaPackages": {
++    "ffmpeg-static": "5.3.0",
++    "@derhuerst/ffprobe-static": "5.3.0"
++  }
++}
+diff --git a/src-tauri/resources/video-tools/transcribe_captions.py b/src-tauri/resources/video-tools/transcribe_captions.py
+new file mode 100644
+--- /dev/null
++++ b/src-tauri/resources/video-tools/transcribe_captions.py
+@@ -0,0 +1,210 @@
++#!/usr/bin/env python3
++"""Transcribe final audio/video locally and write timed JSON, SRT and VTT.
++
++HyperFrames supplies measured word timestamps. This tool groups those words
++into readable cues; it does not assert that recognition is error-free.
++Progress is JSON on stderr and the result is JSON on stdout.
++"""
++
++from __future__ import annotations
++
++import argparse
++import json
++import math
++import os
++from pathlib import Path
++import re
++import shutil
++import subprocess
++import sys
++import tempfile
++import time
++
++from ensure_video_runtime import default_runtime_dir, setup
++from write_subtitles import render as render_subtitles, validate as validate_cues
++
++
++END_SENTENCE = re.compile(r"[.!?。！？][\"'”’)]*$")
++NO_SPACE_BEFORE = re.compile(r"^[,.;:!?%。，！？；：、)\]}”’]")
++MAX_WORDS = 8
++MAX_CUE_SECONDS = 3.5
++PAUSE_SECONDS = 0.55
++MAX_TRANSCRIBE_SECONDS = 2 * 60 * 60
++
++
++def progress(phase: str, message: str, **details: object) -> None:
++    print(json.dumps({"phase": phase, "message": message, **details}), file=sys.stderr, flush=True)
++
++
++def media_duration(ffprobe: Path, media: Path) -> float:
++    result = subprocess.run([str(ffprobe), "-v", "error", "-show_entries", "format=duration:stream=codec_type",
++                             "-of", "json", str(media)], capture_output=True, text=True, timeout=60)
++    if result.returncode:
++        raise ValueError(f"Could not inspect media: {result.stderr.strip()}")
++    payload = json.loads(result.stdout)
++    duration = float(payload.get("format", {}).get("duration", 0))
++    streams = {stream.get("codec_type") for stream in payload.get("streams", [])}
++    if not math.isfinite(duration) or duration <= 0 or "audio" not in streams:
++        raise ValueError("Input needs a measurable audio stream")
++    return duration
++
++
++def read_words(path: Path, duration: float) -> list[dict]:
++    payload = json.loads(path.read_text(encoding="utf-8"))
++    raw = payload.get("words") if isinstance(payload, dict) else payload
++    if not isinstance(raw, list):
++        raise ValueError("Transcript needs a word array")
++    words = []
++    previous_start = -1.0
++    for index, item in enumerate(raw, 1):
++        if not isinstance(item, dict):
++            raise ValueError(f"Transcript entry {index} must be an object")
++        if item.get("type") == "spacing":
++            continue
++        start, end, text = item.get("start"), item.get("end"), item.get("text")
++        if any(isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value)
++               for value in (start, end)):
++            raise ValueError(f"Transcript word {index} needs finite timing")
++        if not isinstance(text, str) or not text.strip() or start < 0 or end <= start or start < previous_start:
++            raise ValueError(f"Transcript word {index} has invalid text or timing")
++        if end > duration + 0.1:
++            raise ValueError(f"Transcript word {index} ends after the media")
++        words.append({"start": float(start), "end": min(float(end), duration), "text": text.strip()})
++        previous_start = float(start)
++    if not words:
++        raise ValueError("Transcription returned no spoken words")
++    return words
++
++
++def cue_text(words: list[dict]) -> str:
++    result = ""
++    for word in words:
++        token = word["text"]
++        if not result or NO_SPACE_BEFORE.match(token) or result.endswith(("(", "[", "{", "“", "‘")):
++            result += token
++        elif "\u3400" <= token[0] <= "\u9fff":
++            result += token
++        else:
++            result += " " + token
++    return result
++
++
++def group_words(words: list[dict], duration: float) -> list[dict]:
++    cues = []
++    group: list[dict] = []
++    for word in words:
++        if group and (len(group) >= MAX_WORDS or word["end"] - group[0]["start"] > MAX_CUE_SECONDS
++                      or word["start"] - group[-1]["end"] >= PAUSE_SECONDS
++                      or END_SENTENCE.search(group[-1]["text"])):
++            cues.append({"start": group[0]["start"], "end": group[-1]["end"], "text": cue_text(group)})
++            group = []
++        group.append(word)
++    if group:
++        cues.append({"start": group[0]["start"], "end": group[-1]["end"], "text": cue_text(group)})
++    for index in range(len(cues) - 1):
++        cues[index]["end"] = min(cues[index]["end"], cues[index + 1]["start"])
++    for cue in cues:
++        cue["end"] = min(cue["end"], duration)
++    validate_cues({"duration_sec": duration, "cues": cues})
++    return cues
++
++
++def run_transcriber(binary: Path, media: Path, scratch: Path, log: Path,
++                    model: str, language: str | None) -> Path:
++    command = [str(binary), "transcribe", str(media), "--dir", str(scratch), "--json", "--model", model]
++    if language:
++        command.extend(["--language", language])
++    start = time.monotonic()
++    progress("transcribe", "Transcribing final media")
++    with log.open("w", encoding="utf-8") as output:
++        process = subprocess.Popen(command, stdin=subprocess.DEVNULL, stdout=output, stderr=subprocess.STDOUT)
++        try:
++            while process.poll() is None:
++                if time.monotonic() - start > MAX_TRANSCRIBE_SECONDS:
++                    process.kill()
++                    process.wait()
++                    raise RuntimeError(f"Transcription exceeded two hours; see {log}")
++                try:
++                    process.wait(timeout=10)
++                except subprocess.TimeoutExpired:
++                    progress("transcribe", "Still transcribing", elapsedSeconds=round(time.monotonic() - start))
++        except KeyboardInterrupt:
++            process.kill()
++            process.wait()
++            raise
++    lines = log.read_text(encoding="utf-8", errors="replace").splitlines()
++    if process.returncode:
++        raise RuntimeError(f"Transcription failed ({process.returncode}); see {log}: {' '.join(lines[-8:])}")
++    result = None
++    for line in reversed(lines):
++        if line.startswith("{") and line.endswith("}"):
++            try:
++                result = json.loads(line)
++                break
++            except json.JSONDecodeError:
++                continue
++    if not isinstance(result, dict) or not result.get("ok"):
++        raise RuntimeError(f"Transcription returned no success result; see {log}")
++    reported_path = result.get("transcriptPath")
++    transcript = Path(reported_path).resolve() if isinstance(reported_path, str) else scratch / "transcript.json"
++    if not transcript.is_file() or not transcript.is_relative_to(scratch.resolve()):
++        raise RuntimeError("Transcription result points outside its workspace")
++    return transcript
++
++
++def transcribe(media: Path, out_dir: Path, runtime_dir: Path, model: str | None, language: str | None) -> dict:
++    media = media.resolve()
++    out_dir = out_dir.resolve()
++    if not media.is_file():
++        raise ValueError(f"Media is missing: {media}")
++    model = model or ("large-v3" if language and not language.lower().startswith("en") else "small.en")
++    if language and not language.lower().startswith("en") and model.endswith(".en"):
++        raise ValueError("Non-English speech needs the multilingual large-v3 model")
++    progress("setup", "Preparing local transcription tools")
++    runtime = setup("talking-head-video", runtime_dir, ensure=True, only="hyperframes")
++    if not runtime["ready"]:
++        raise RuntimeError(f"Transcription runtime is incomplete: {runtime['missing']}")
++    paths = runtime["paths"]
++    duration = media_duration(Path(paths["ffprobe"]), media)
++    out_dir.mkdir(parents=True, exist_ok=True)
++    log = out_dir / "transcribe.log"
++    with tempfile.TemporaryDirectory(prefix="transcribe-", dir=out_dir) as scratch:
++        transcript = run_transcriber(Path(paths["hyperframes"]), media, Path(scratch), log, model, language)
++        words = read_words(transcript, duration)
++        cues = group_words(words, duration)
++        payload = {"duration_sec": duration, "cues": cues, "review_required": True,
++                   "source": "local-asr", "model": model, "language": language}
++        outputs = {
++            "transcript.json": json.dumps(words, indent=2, ensure_ascii=False) + "\n",
++            "captions.json": json.dumps(payload, indent=2, ensure_ascii=False) + "\n",
++            "captions.srt": render_subtitles(cues),
++            "captions.vtt": render_subtitles(cues, webvtt=True),
++        }
++        for name, content in outputs.items():
++            (out_dir / name).write_text(content, encoding="utf-8")
++    progress("complete", "Timed captions ready for review", cueCount=len(cues))
++    return {"ready": True, "directory": str(out_dir), "durationSec": duration, "cueCount": len(cues),
++            "captions": ["captions.json", "captions.srt", "captions.vtt"], "transcript": "transcript.json",
++            "reviewRequired": True}
++
++
++def main() -> int:
++    parser = argparse.ArgumentParser(description=__doc__)
++    parser.add_argument("media", type=Path, help="Final MP4 or audio file")
++    parser.add_argument("--out", type=Path, required=True, help="Project directory for transcript and captions")
++    parser.add_argument("--runtime-dir", type=Path, default=default_runtime_dir())
++    parser.add_argument("--model", choices=["tiny.en", "base.en", "small.en", "medium.en", "large-v3"],
++                        help="Defaults to small.en for English or large-v3 for other languages")
++    parser.add_argument("--language", help="Speech language code such as en, es, or ja")
++    args = parser.parse_args()
++    try:
++        result = transcribe(args.media, args.out, args.runtime_dir, args.model, args.language)
++    except (OSError, ValueError, RuntimeError, subprocess.TimeoutExpired, json.JSONDecodeError) as error:
++        print(json.dumps({"ready": False, "error": str(error)}))
++        return 1
++    print(json.dumps(result, indent=2))
++    return 0
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())
+diff --git a/src-tauri/resources/video-tools/write_subtitles.py b/src-tauri/resources/video-tools/write_subtitles.py
+new file mode 100644
+--- /dev/null
++++ b/src-tauri/resources/video-tools/write_subtitles.py
+@@ -0,0 +1,80 @@
++#!/usr/bin/env python3
++"""Export SRT and WebVTT from measured, absolute-time caption cues.
++
++Input JSON: {"duration_sec": 12.4, "cues": [
++  {"start": 0.2, "end": 2.1, "text": "Hello world"}
++]}
++Times are seconds on the final video timeline. Make cues from final audio or
++reviewed scene timing; this tool never guesses speech alignment.
++"""
++
++import argparse
++import json
++import math
++from pathlib import Path
++
++
++def stamp(seconds, separator):
++    milliseconds = round(seconds * 1000)
++    hours, rest = divmod(milliseconds, 3_600_000)
++    minutes, rest = divmod(rest, 60_000)
++    secs, millis = divmod(rest, 1000)
++    return f"{hours:02}:{minutes:02}:{secs:02}{separator}{millis:03}"
++
++
++def validate(data):
++    if not isinstance(data, dict) or not isinstance(data.get("cues"), list):
++        raise ValueError("input must contain a cues array")
++    duration = data.get("duration_sec")
++    if isinstance(duration, bool) or not isinstance(duration, (int, float)) or not math.isfinite(duration) or duration <= 0:
++        raise ValueError("duration_sec must be a positive finite number")
++    previous_end = 0.0
++    for index, cue in enumerate(data["cues"], 1):
++        if not isinstance(cue, dict):
++            raise ValueError(f"cue {index} must be an object")
++        start, end, words = cue.get("start"), cue.get("end"), cue.get("text")
++        if any(isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) for value in (start, end)):
++            raise ValueError(f"cue {index} needs finite numeric start and end")
++        if start < previous_end - 0.0005 or end <= start:
++            raise ValueError(f"cue {index} overlaps the previous cue or has invalid timing")
++        if end > duration + 0.0005:
++            raise ValueError(f"cue {index} ends after duration_sec")
++        if not isinstance(words, str) or not words.strip():
++            raise ValueError(f"cue {index} needs nonempty text")
++        if "-->" in words or "\x00" in words:
++            raise ValueError(f"cue {index} has invalid subtitle text")
++        previous_end = end
++    if not data["cues"]:
++        raise ValueError("cues must not be empty")
++    return data["cues"]
++
++
++def render(cues, webvtt=False):
++    sep = "." if webvtt else ","
++    blocks = []
++    for index, cue in enumerate(cues, 1):
++        timing = f"{stamp(cue['start'], sep)} --> {stamp(cue['end'], sep)}"
++        body = cue["text"].strip().replace("\r\n", "\n").replace("\r", "\n")
++        blocks.append(f"{timing}\n{body}" if webvtt else f"{index}\n{timing}\n{body}")
++    return ("WEBVTT\n\n" if webvtt else "") + "\n\n".join(blocks) + "\n"
++
++
++def main():
++    parser = argparse.ArgumentParser(description=__doc__)
++    parser.add_argument("cues_json", type=Path)
++    parser.add_argument("--out", required=True, type=Path, help="Output stem or .srt/.vtt path")
++    args = parser.parse_args()
++    try:
++        cues = validate(json.loads(args.cues_json.read_text(encoding="utf-8")))
++    except (OSError, json.JSONDecodeError, ValueError) as exc:
++        parser.error(str(exc))
++    stem = args.out.with_suffix("") if args.out.suffix.lower() in (".srt", ".vtt") else args.out
++    stem.parent.mkdir(parents=True, exist_ok=True)
++    for suffix, webvtt in ((".srt", False), (".vtt", True)):
++        target = stem.with_suffix(suffix)
++        target.write_text(render(cues, webvtt), encoding="utf-8")
++        print(target)
++
++
++if __name__ == "__main__":
++    main()

@@ -2,3 +2,4 @@ kokoro-onnx
 soundfile
 espeakng-loader
 misaki
+imageio-ffmpeg

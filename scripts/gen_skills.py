@@ -34,8 +34,12 @@ TOKEN = re.compile(r"\{\{(ref|doc|sibling|asset):([^}|]+?)(?:\|([^}]+))?\}\}")
 # Tool trees are generated too, so the standalone install works alone.
 TOOL_COPIES = [
     ("course-creator/tools/kokoro", "voice-narration/tools/kokoro"),
+    ("course-creator/tools/kokoro", "explainer-video/tools/kokoro"),
+    ("course-creator/tools/kokoro", "product-launch-video/tools/kokoro"),
+    ("course-creator/tools/kokoro", "talking-head-video/tools/kokoro"),
+    ("course-creator/tools/kokoro", "avatar-video/tools/kokoro"),
 ]
-TOOL_IGNORE = {"models", ".venv", "__pycache__", "node_modules"}
+TOOL_IGNORE = {"models", ".venv", ".tooling", "__pycache__", "node_modules"}
 
 
 def load_manifest() -> dict:
@@ -134,6 +138,9 @@ def build() -> dict[Path, str]:
                 out[dest / Path(rel).relative_to("files")] = resolve_tokens(
                     s.read_text(), mode, caps, modules, depth=1
                 )
+            for rel in spec.get("shared_tools", []):
+                s = shared / "tools" / rel
+                out[dest / "tools" / rel] = s.read_text()
             # Libraries ship verbatim -- they are source text, not templates.
             for name in spec.get("library", []):
                 for p in sorted((shared / "library" / name).rglob("*")):
@@ -161,7 +168,7 @@ def sync_tools() -> list[Path]:
 def check_tools() -> list[str]:
     bad = []
     for src_rel, dest_rel in TOOL_COPIES:
-        for name in ("generate.py", "start.sh", "README.md", "requirements.txt"):
+        for name in ("generate.py", "start.py", "start.sh", "ensure_uv.sh", "download_models.sh", "README.md", "requirements.txt"):
             s, d = REPO / src_rel / name, REPO / dest_rel / name
             if not d.exists():
                 bad.append(f"missing   {dest_rel}/{name}")

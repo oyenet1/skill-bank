@@ -1,15 +1,38 @@
 # Kokoro TTS — local course narration (CPU, offline). Two ways to run.
 
 ## Option A — native (fastest, no sudo needed)
+On Windows, macOS and Linux, use the Python entry point:
+```text
+python3 start.py --sample
+python3 start.py --text "Welcome to chapter one" --out ../../assets/audio/ch1-intro.mp3 --voice af_bella
+# On Windows use: py -3 start.py ...
+```
+`start.py` installs `uv` privately if missing, creates a Python 3.12 virtual
+environment, installs requirements, and downloads models with size and SHA-256
+checks. Windows uses PowerShell for the uv installer; macOS and Linux use `sh`.
+No distribution package manager or shell profile change is needed. An existing
+`uv` on `PATH` is reused. MP3 output uses system FFmpeg when present or the
+bundled `imageio-ffmpeg` executable. The default runtime location is the user
+data directory (`LOCALAPPDATA`, `~/Library/Application Support`, or
+`XDG_DATA_HOME`). Set `SKILL_BANK_KOKORO_HOME` to override it. This also lets
+the skill run from a read-only AppImage resource directory. `--sample` writes
+`kokoro_sample.mp3` to that runtime directory. First setup requires network
+access and disk space.
+
+On macOS and Linux, the shell wrapper remains available:
 ```bash
-cd course-creator/tools/kokoro
+cd <installed-skill>/tools/kokoro
 ./start.sh --sample
 # sample -> ../../assets/audio/kokoro_sample.mp3
 ./start.sh --text "Welcome to chapter one" --out ../../assets/audio/ch1-intro.mp3 --voice af_bella
 ./start.sh --text-file lesson.txt --out ../../assets/audio/lesson.mp3 --voice af_sky --speed 1.0
 ```
-`start.sh` creates `.venv` (Python 3.12 via uv), installs `requirements.txt`,
-downloads models (~350MB, once) into `models/`, then runs `generate.py`.
+`start.sh` installs `uv` locally when it is missing, creates `.venv` (Python
+3.12 managed by uv), installs `requirements.txt`, verifies and downloads the
+models (~350MB, once) into `models/`, then runs `generate.py`. This needs
+`bash`, `curl`, network access for the first setup, and enough free disk space.
+The uv installer does not edit your shell profile. Existing models are checked
+against pinned file sizes and SHA-256 hashes before reuse.
 
 Direct use without the wrapper:
 ```bash
@@ -42,6 +65,8 @@ exits. To clean up docker leftovers (containers/network):
 ## Files
 - `generate.py` — CLI generator (native + docker entrypoint)
 - `start.sh` — native setup + run
+- `start.py` — cross-platform setup + run
+- `ensure_uv.sh` — local uv setup when missing
 - `stop.sh` — tear down docker leftovers (native needs no stop)
 - `download_models.sh` — fetch/refresh `models/` (resume-safe)
 - `Dockerfile`, `docker-compose.yml`, `docker-entrypoint.sh` — container path

@@ -9,6 +9,10 @@ Accept a topic brief, a lesson, a concept, a story, or existing course files.
 Produce only the requested deck, storyboard or slide PDF. A deck does not require
 written notes or a video.
 
+Before building, read [preflight](references/preflight.md) and run
+`python3 tools/ensure_video_runtime.py slide-decks` from this skill directory.
+Use the verified executable paths in its JSON result for Slidev and exports.
+
 ## 1. Intake
 
 Read [intake](references/intake.md). Resolve palette, type and imagery from [brand](references/brand.md).

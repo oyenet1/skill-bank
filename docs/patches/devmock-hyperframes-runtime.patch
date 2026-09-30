@@ -1,0 +1,128 @@
+--- a/src-tauri/src/video_runtime_requirements.json
++++ b/src-tauri/src/video_runtime_requirements.json
+@@ -3,8 +3,10 @@
+   "minimumNode": "22.12.0",
+   "routes": {
+     "slide-decks": ["slidev"],
+-    "explainer-video": ["slidev", "remotion"],
+-    "product-launch-video": ["remotion"]
++    "explainer-video": ["slidev", "remotion", "hyperframes"],
++    "product-launch-video": ["remotion", "hyperframes"],
++    "talking-head-video": ["hyperframes"],
++    "avatar-video": ["hyperframes"]
+   },
+   "profiles": {
+     "slidev": {
+@@ -23,6 +25,12 @@
+         "react-dom": "19.3.0"
+       },
+       "binary": "remotion"
++    },
++    "hyperframes": {
++      "packages": {
++        "hyperframes": "0.8.93"
++      },
++      "binary": "hyperframes"
+     }
+   },
+   "mediaPackages": {
+--- a/src-tauri/src/video_runtime.rs
++++ b/src-tauri/src/video_runtime.rs
+@@ -416,6 +416,22 @@
+         .ok()
+         .filter(|output| output.status.success())
+         .is_some_and(|output| Path::new(String::from_utf8_lossy(&output.stdout).trim()).is_file())
++}
++
++fn hyperframes_browser_ready(profile: &Path, binary: &Path, node: &Path) -> bool {
++    let mut command = Command::new(binary);
++    command.current_dir(profile).args(["browser", "path"]);
++    tool_environment(&mut command, node);
++    command
++        .output()
++        .ok()
++        .filter(|output| output.status.success())
++        .and_then(|output| {
++            String::from_utf8(output.stdout)
++                .ok()
++                .and_then(|stdout| stdout.lines().last().map(str::to_owned))
++        })
++        .is_some_and(|path| Path::new(path.trim()).is_file())
+ }
+ 
+ fn ensure_profile(
+@@ -490,6 +506,21 @@
+         )?;
+         fs::write(profile.join(".browser-ready"), "verified\n").map_err(|e| e.to_string())?;
+     }
++    if name == "hyperframes" && !hyperframes_browser_ready(&profile, &binary, node) {
++        progress(reporter, "browser", "Installing HyperFrames browser");
++        run_tool(
++            &binary,
++            &["browser", "ensure"],
++            &profile,
++            node,
++            &profile.join("browser-install.log"),
++            reporter,
++            state,
++        )?;
++        if !hyperframes_browser_ready(&profile, &binary, node) {
++            return Err("HyperFrames browser did not verify".into());
++        }
++    }
+     Ok(binary)
+ }
+ 
+@@ -623,15 +654,17 @@
+     #[test]
+     #[ignore = "set VIDEO_RUNTIME_SMOKE_DIR to a private runtime directory; may download browsers"]
+     fn installed_profiles_smoke() {
+-        let runtime = PathBuf::from(std::env::var("VIDEO_RUNTIME_SMOKE_DIR").expect("runtime directory"));
++        let runtime =
++            PathBuf::from(std::env::var("VIDEO_RUNTIME_SMOKE_DIR").expect("runtime directory"));
+         let manifest = requirements().unwrap();
+         let minimum = version_tuple(&manifest.minimum_node).unwrap();
+         let state = RuntimeState::default();
+         let reporter = |_event: RuntimeProgress| {};
+         let (node, npm) = resolve_node(&runtime, minimum, &reporter, &state).unwrap();
+-        for name in ["slidev", "remotion"] {
++        for name in ["slidev", "remotion", "hyperframes"] {
+             let spec = manifest.profiles.get(name).unwrap();
+-            let binary = ensure_profile(name, spec, &runtime, &node, &npm, &reporter, &state).unwrap();
++            let binary =
++                ensure_profile(name, spec, &runtime, &node, &npm, &reporter, &state).unwrap();
+             assert!(binary.is_file());
+         }
+     }
+--- a/src/engine/videoRuntime.ts
++++ b/src/engine/videoRuntime.ts
+@@ -1,6 +1,6 @@
+ import { Channel, invoke, isTauri } from '@tauri-apps/api/core';
+ 
+-export type VideoRuntimeRoute = 'slide-decks' | 'explainer-video' | 'product-launch-video';
++export type VideoRuntimeRoute = 'slide-decks' | 'explainer-video' | 'product-launch-video' | 'talking-head-video' | 'avatar-video';
+ 
+ export type VideoRuntimeProgress = {
+   phase: string;
+--- a/src/components/VideoStudio.vue
++++ b/src/components/VideoStudio.vue
+@@ -409,7 +409,9 @@
+   runtimeSetupError.value = '';
+   runtimeSetupResult.value = null;
+   runtimeSetupMessage.value = 'Checking video tools…';
+-  const route = plan.value?.category === 'product' ? 'product-launch-video' : 'explainer-video';
++  const route = kind.value?.id === 'talking-head' ? 'talking-head-video'
++    : plan.value?.category === 'product' || ['product-promo', 'launch-video', 'product-film', 'unboxing-demo'].includes(kind.value?.id ?? '')
++      ? 'product-launch-video' : 'explainer-video';
+   try {
+     runtimeSetupResult.value = await prepareVideoRuntime(route, (event) => {
+       const size = event.totalBytes ? ` (${Math.round((event.downloadedBytes ?? 0) / event.totalBytes * 100)}%)` : '';
+@@ -1209,7 +1211,7 @@
+               <p v-if="renderError && currentWorkspace" class="break-all text-[11px] text-muted">Partial project and logs: {{ currentWorkspace }}</p>
+               <details v-if="isTauri()" class="rounded-lg border border-default bg-muted/30 p-3">
+                 <summary class="cursor-pointer text-xs font-medium text-highlighted">Advanced video tools</summary>
+-                <p class="mt-2 text-[11px] text-muted">Prepare Slidev and Remotion for the video skill workflows. The current Render project action uses the local scene renderer.</p>
++                <p class="mt-2 text-[11px] text-muted">Prepare Slidev, Remotion, and HyperFrames for the video skill workflows. The current Render project action uses the local scene renderer.</p>
+                 <div class="mt-2 flex items-center gap-2">
+                   <UButton label="Prepare tools" icon="i-lucide-download" color="neutral" variant="soft" size="xs" :loading="runtimeSetupRunning" :disabled="runtimeSetupRunning" @click="prepareAdvancedRuntime" />
+                   <UButton v-if="runtimeSetupRunning" label="Cancel setup" color="error" variant="ghost" size="xs" @click="cancelVideoRuntime" />

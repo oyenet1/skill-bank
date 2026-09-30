@@ -45,7 +45,10 @@ Always name the chosen voice explicitly in the working brief
 
 ## 4. Delivery of the audio
 
-- Produce editable UTF-8 **script text** and one **WAV**.
+- Produce editable UTF-8 **voiceover text** (`.txt`), a working **WAV**, and the
+  delivery **MP3**.
+- Convert the verified WAV to MP3 with the preflight FFmpeg:
+  `ffmpeg -y -i voice.wav -codec:a libmp3lame -q:a 2 voice.mp3`.
 - A supplied recording always takes priority over synthesis when the request
   says to use it.
 - Inspect the WAV before claiming it exists: duration, silence at either end,

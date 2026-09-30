@@ -1,6 +1,6 @@
 ---
 name: product-launch-video
-description: Create a motion-led product launch ad or screenshot-based product demo in Remotion from supplied screenshots, product details, a website, or a repository. Grounds every claim in real screens, resolves the brand profile, asks for platform and ending, and renders at 1080p or above. Use when the deliverable is a promotional product video.
+description: Create a motion-led product launch ad or screenshot-based product demo in Remotion or HyperFrames from supplied screenshots, product details, a website, or a repository. Grounds every claim in real screens, resolves the brand profile, asks for platform, renderer and ending, and delivers the video, the audio and the voiceover text. Use when the deliverable is a promotional product video.
 ---
 
 # Product Launch Video
@@ -12,6 +12,12 @@ request is workable. Ask only for a missing decision that changes the
 deliverable; infer ordinary defaults and label unverified details.
 
 Produce the requested video, not an unrelated course or marketing campaign.
+
+Before building, read [preflight](references/preflight.md) and run
+`python3 tools/ensure_video_runtime.py product-launch-video --renderer <renderer>`
+from this skill directory, where `<renderer>` is `remotion` (default) or
+`hyperframes`. Use the verified executable paths in its JSON result for the
+chosen renderer and FFmpeg; report any setup failure before promising a render.
 
 ## 1. Establish what is true
 
@@ -66,20 +72,53 @@ unobserved click result.
 Write `style.md` before coding: palette and fonts (from `brand.md`), tone, canvas
 and safe areas, frame examples, screenshot treatment, caption placement, and an
 effects bible. Record `## Delivery`: category, platform, aspect, master
-resolution, delivery resolution and fps. **Floor is 1080p; render a 4K master
-when the platform accepts it.**
+resolution, delivery resolution, renderer and fps. **Render a 4K master when the
+platform accepts it, then downscale — 1080p is the default delivery, 720p the
+smallest accepted, never below.**
 
-Build an editable Remotion project. Put screenshots and brand assets in its
-public folder and reference them through current Remotion asset APIs. Keep shots
-as reusable components, and keep timing in data where practical. Confirm current
-syntax and rendering options against installed guidance and official docs before
-implementing.
+Ask once: **Remotion or HyperFrames?** Remotion (default) is a React project with
+the larger ecosystem and the more mature Lambda path. HyperFrames is the
+Apache-2.0 alternative — plain HTML + CSS + GSAP, no build step, no per-seat or
+per-render licence — choose it when the deliverable must ship without a
+source-available licence review or the handover must be editable by a
+non-developer. Both render the same screens, crops and callouts — see
+[video](references/video.md) §9. Record the choice as `Renderer:` in `style.md`.
+
+**Remotion** — build an editable Remotion project. Put screenshots and brand
+assets in its public folder and reference them through current Remotion asset
+APIs. Keep shots as reusable components, and keep timing in data where practical.
+Confirm current syntax and rendering options against installed guidance and
+official docs before implementing.
+
+Write a one-scene timing plan and run
+`python3 tools/render_remotion_video.py src/index.ts <composition-id> timing.json --out <project-dir>`
+from the Remotion project. The adapter prepares Remotion and FFmpeg, renders the
+composition, packages timed captions and audio, and copies editable source.
+If the composition already has audio, choose `audio_from_visual: true` with its
+transcript or supply `narration` to replace it; the adapter rejects an
+unspecified audio source instead of silently discarding it.
+
+**HyperFrames** — build a plain-HTML composition instead. Screenshots are plain
+`<img>` elements; zoom, pan and callouts are GSAP tweens on a timeline created
+paused and registered on `window.__timelines["<composition-id>"]`; timing lives
+in `data-start` / `data-duration` / `data-track-index` on slots that carry
+`class="clip"`. Keep to the determinism rules — no wall clocks, no unseeded
+randomness, no render-time network fetches. Preview and render through the
+HyperFrames CLI.
+
+Write a one-scene timing plan and run
+`python3 tools/render_hyperframes_video.py index.html timing.json --out <project-dir>`.
+The adapter prepares HyperFrames and FFmpeg, renders the HTML composition,
+packages captions and audio, and copies source assets. Set
+`audio_from_visual: true` with a transcript for embedded audio, or supply
+`narration` to replace it.
 
 Draw from [objects](references/objects.md). **Zoom in on form filling and typing**, keep the
 cursor visible, and pair the moment with `typing`, `click`, `alert` and `success`
 SFX. Highlight the hook phrase as it appears. One concept per scene. Generate any
 narration with [voice](references/voice.md) and let it run in the background while the visuals
-are built — it is the timing master.
+are built — it is the timing master. The standalone skill ships
+`tools/kokoro/start.py` for local narration.
 
 With stills alone, describe the result as a **screenshot-based product demo**
 rather than live captured interaction.
@@ -94,9 +133,40 @@ URL, offer and brand consistency. Record any unverified claim left out and any
 render limitation. Keep source screenshot filenames and their use in the asset
 manifest so the owner can replace a screen later.
 
+Export `captions.srt` and `captions.vtt` from final audio or reviewed video
+timing. Save measured absolute-time cues as `captions.json` with
+`duration_sec` (final video duration) and a `cues` array of `{ "start": seconds, "end": seconds,
+"text": string }`, then run
+`python tools/write_subtitles.py captions.json --out captions`. Check both
+subtitle files against the final MP4 after any timing edit. Do not use estimated
+storyboard durations as proof of speech alignment.
+For spoken audio without reviewed word cues, run
+`python3 tools/transcribe_captions.py <project-dir>/video.mp4 --out <project-dir> --language <code>`
+after the final mix. Review its word-level transcript against the actual speech
+and revise wrong words before delivery; rerun after audio changes.
+
+If the renderer produces separate scene files, write a scene plan and run
+`python3 tools/assemble_video.py plan.json --out <project-dir>`. Point each
+`visual` to a rendered image or clip; supply `narration` and transcript text in
+`caption`, or set `audio_from_visual: true` with a transcript for footage sound.
+Use reviewed scene-relative `cues` where one caption per scene is too coarse.
+The assembler exports a 1080p delivery MP4, optional mixed-audio MP3, imported
+assets, and timed captions; review the final picture and timing before delivery.
+Retain a separate 4K master when required and export the reusable voiceover
+MP3/WAV through [voice](references/voice.md). Keep the renderer's editable source project
+alongside this package.
+For a music bed, add plan-level `music: {"file": "audio/bed.wav", "volume": 0.12}`
+and listen to the final mix under speech; the assembler does not auto-duck it.
+
+**Deliver three outputs** — see [video](references/video.md) §14. The **video** (MP4 at the master
+resolution, downscaled to delivery), the **audio** (the voiceover as MP3,
+converted from the verified WAV), and the **voiceover text** (timed SRT, or plain
+TXT when only the read is needed).
+
 Keep `product-brief.md`, `script.md`, `storyboard.md`, `style.md`,
-`assets/manifest.json`, the Remotion source project and the rendered MP4 together
-so later edits can be made selectively.
+`assets/manifest.json`, `captions.json`, `captions.srt`, `captions.vtt`, the MP3
+and voiceover text, the renderer's editable source project and the rendered MP4
+together so later edits can be made selectively.
 
 ## Standalone output
 

@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "minimumNode": "22.12.0",
+  "routes": {
+    "slide-decks": ["slidev"],
+    "explainer-video": ["slidev", "remotion", "hyperframes"],
+    "product-launch-video": ["remotion", "hyperframes"],
+    "talking-head-video": ["hyperframes"],
+    "avatar-video": ["hyperframes"]
+  },
+  "profiles": {
+    "slidev": {
+      "packages": {
+        "@slidev/cli": "53.0.0",
+        "@slidev/theme-default": "0.25.0",
+        "playwright-chromium": "1.63.0"
+      },
+      "binary": "slidev"
+    },
+    "remotion": {
+      "packages": {
+        "@remotion/cli": "4.0.530",
+        "remotion": "4.0.530",
+        "react": "19.3.0",
+        "react-dom": "19.3.0"
+      },
+      "binary": "remotion",
+      "readyArgs": ["versions"]
+    },
+    "hyperframes": {
+      "packages": {
+        "hyperframes": "0.8.93"
+      },
+      "binary": "hyperframes"
+    }
+  },
+  "mediaPackages": {
+    "ffmpeg-static": "5.3.0",
+    "@derhuerst/ffprobe-static": "5.3.0"
+  }
+}

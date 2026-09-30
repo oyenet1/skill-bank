@@ -8,7 +8,7 @@ metadata:
 
 # Course Creator
 
-Help a teacher build one useful part of a course at a time. A course is **sections → chapters → lessons → concepts**. Each later concept depends only on knowledge already taught or introduced immediately before its use. Preserve the teacher's choices about audience, subject, delivery, materials, and which asset to make next. This parent skill contains the focused subskills below; read the relevant subskill for each requested output. Top-level `curriculum-map`, `content-authoring`, `visual-assets`, `slide-decks`, `explainer-video`, `voice-narration`, `marketing-copy`, and `product-launch-video` remain independent entry points when installed separately.
+Help a teacher build one useful part of a course at a time. A course is **sections → chapters → lessons → concepts**. Each later concept depends only on knowledge already taught or introduced immediately before its use. Preserve the teacher's choices about audience, subject, delivery, materials, and which asset to make next. This parent skill contains the focused subskills below; read the relevant subskill for each requested output. Top-level `curriculum-map`, `content-authoring`, `visual-assets`, `slide-decks`, `explainer-video`, `voice-narration`, `marketing-copy`, `product-launch-video`, `talking-head-video`, and `avatar-video` remain independent entry points when installed separately.
 
 ## Choose one action
 
@@ -24,6 +24,8 @@ Identify the requested action and target before generating anything. Ask only fo
 | Create an educational video or CapCut handoff | Produce the selected lesson video artifacts and editing directions | [explainer video](subskills/course-creator-explainer-video/SKILL.md) |
 | Sell a course or skill | Write only the requested hook, listing, page, post, email, or promotional script | [marketing copy](subskills/course-creator-marketing-copy/SKILL.md) |
 | Launch a product with a Remotion ad or screenshot demo | Build a source-grounded product video from real screens and product information | [product launch](subskills/course-creator-product-launch-video/SKILL.md) |
+| Caption or package a talking-head or interview clip | Add captions or designed graphic overlays to existing footage, leaving it untouched | [talking head](subskills/course-creator-talking-head-video/SKILL.md) |
+| Generate a presenter from a script | Produce an AI avatar, talking-photo or dubbed clip, then caption it | [avatar video](subskills/course-creator-avatar-video/SKILL.md) |
 
 If a request names several outputs, read only the relevant subskills and perform those actions in dependency order using shared IDs, text, and assets. Each subskill also works alone from a suitable supplied brief or existing artifact: a narration script need not wait for slides, and slides need not wait for a video. Register actual outputs in the map; mark affected downstream outputs as needing refresh after a source change unless the teacher requested regeneration. Nested subskills are instructions carried inside this parent package and are selected through this table; the separate top-level skills support direct installation and invocation.
 
@@ -42,7 +44,8 @@ For programming courses, also read [technical profile](references/technical-prof
 ## Video and media contract
 
 - Each lesson can have its own editable Slidev deck, produced when requested. Written lesson, notes, slide handout PDF, online notes page, optional Kokoro narration, Remotion video, and CapCut handoff are distinct outputs that may also be combined. For visual outputs, inspect the [bundled images and icons](references/bundled-assets.md), use suitable ones in the teaching material, and keep selected copies inside the course.
-- For every video creation request, load the relevant installed video skills before production. In environments with a video entrypoint skill, read it first; for Remotion output use its creation, markup, audio, caption, and rendering guidance as needed. The teacher's explicit renderer choice controls the deliverable. Check current official documentation for library-specific commands and APIs.
+- For every video creation request, load the relevant installed video skills before production. In environments with a video entrypoint skill, read it first; for Remotion or HyperFrames output use its creation, markup, audio, caption, and rendering guidance as needed. The teacher's explicit renderer choice controls the deliverable. Check current official documentation for library-specific commands and APIs.
+- An existing talking-head or interview clip is packaged **on top of** the supplied footage and is never regenerated or altered. An avatar or presenter video depends on a hosted provider; when it is unauthenticated, deliver the script, the narration and the storyboard, and report the blocked render rather than faking it.
 - Write a course-level visual identity and a concrete `style.md` for **each** video before authoring scenes. Record palette, fonts, tone, frame dimensions and layout, presenter placement, visual examples, and an effects bible: each effect's purpose, entry, exit, timing, and use conditions. Keep the Slidev deck, Remotion scenes, and CapCut directions aligned with that style.
 - When teacher audio or footage is supplied, use it to set scene and caption timing. Text alone yields timed captions and a narration script; generate synthetic voice only on request. Provide editable Remotion source and render MP4 when rendering is available. A CapCut Desktop request also gets separate media and a timecoded editing guide.
 

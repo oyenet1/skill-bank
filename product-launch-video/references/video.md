@@ -40,13 +40,15 @@ One question, or skip it when the request already carries the purpose.
 | Website embed | 16:9 | 3840×2160 | 1920×1080 |
 | Presentation / projector | 16:9 | 3840×2160 | 1920×1080 |
 
-**Export policy.** Floor is **1080p**; never deliver below it. Render a **4K
-master** whenever the platform accepts it, then downscale for delivery. Frame
-rate 30fps unless the requester asks otherwise; 60fps for fast motion or
-screen recordings that must stay legible.
+**Export policy.** The resolution ladder is **4K master** — rendered whenever the
+platform accepts it, then downscaled — → **1080p delivery (the default)** →
+**720p delivery (the smallest accepted)**. Use 720p only when file size or
+bandwidth demands it; **never deliver below 720p**. Frame rate 30fps unless the
+requester asks otherwise; 60fps for fast motion or screen recordings that must
+stay legible.
 
 Record the resolved `Category`, `Platform`, `Aspect`, `Master`, `Delivery`,
-`fps` and `Watermark` in the `## Delivery` block of `style.md`.
+`Renderer`, `fps` and `Watermark` in the `## Delivery` block of `style.md`.
 
 ## 3. Audio mode — ask which of these
 
@@ -141,10 +143,46 @@ the rest; if the request already carries one, use it.
 7. Start the voice track immediately and let it generate **in the background**
    while the visuals are authored — it is the timing master, so its beat lengths
    drive the scene durations.
-8. Build the scenes (Slidev for motion graphics, Remotion for product demo).
+8. Choose the renderer for the category — Slidev, Remotion or HyperFrames (see
+   §9) — and build the scenes.
 9. Layer sound, then render, then inspect.
+10. Deliver the three outputs (see §14): the video, the audio and the voiceover
+    text.
 
-## 9. Motion graphics — build in Slidev
+When a desktop host provides `request.json`, run
+`python3 tools/run_video_job.py request.json` from this skill directory after
+the source composition or scene plan exists. Relay its JSON progress to the UI;
+use `--resume` after a failed stage. A result with `status: "review_required"`
+needs transcript and caption review before approval. The request shape and
+state files are documented in the repository's `docs/video-job-contract.md`.
+
+## 9. Build the visuals — Slidev, Remotion or HyperFrames
+
+The renderer follows the category. Ask the requester once — "Remotion or
+HyperFrames?" — only for a demo or an ad; every other category uses its default.
+
+| Category | Renderer | Why |
+|---|---|---|
+| `motion-graphic`, `explainer-lesson`, `slideshow-montage` | **Slidev** | real animation primitives (`v-click`, `v-motion`, `v-mark`), Mermaid diagrams, code highlighting |
+| `screencast-demo`, `launch-ad` | **Remotion** (default) or **HyperFrames** | real screens, animated crops and callouts |
+| `footage-overlay` | **Remotion** (default) or **HyperFrames**, or a compositor | graphic overlays on the supplied footage |
+
+**Remotion vs HyperFrames.** Both render video from web code with headless
+Chrome and FFmpeg, frame by frame, and both render locally or on AWS Lambda.
+
+- **Remotion** (default) — a React/TSX project. Pick it for the larger ecosystem
+  (charts, Three.js, transitions, captions), and because its local Lambda path is
+  the more mature one.
+- **HyperFrames** — HTML + CSS + GSAP compositions with no build step. Pick it
+  when the deliverable must ship without a source-available license review
+  (HyperFrames is Apache-2.0, with no per-seat or per-render cost), when the
+  author is an AI agent, or when a plain-HTML composition is easier to hand over
+  than a React project.
+
+Only one renderer is installed and used per video. Record the choice as
+`Renderer: remotion` or `Renderer: hyperframes` in `style.md` → `## Delivery`.
+
+### 9a. Slidev — motion graphics, lessons, slideshows
 
 For `motion-graphic`, `explainer-lesson` and `slideshow-montage`, author the
 visuals as a **Slidev deck**. It gives real animation primitives instead of
@@ -170,6 +208,36 @@ click step is one narrative step.
 | **Recorded** | Playwright drives the deck against a timing schedule and records the browser | real `v-motion` easing and continuous movement must survive |
 
 Always render at the **master** resolution from §2, never at the export default.
+
+### 9b. Remotion — demos and ads
+
+Build an editable Remotion project. Put screenshots, footage and brand assets in
+its `public/` folder and reference them through the current asset APIs. Keep each
+shot as a reusable component and keep timing in data where practical. Confirm
+the syntax and render options against the installed Remotion guidance before
+implementing. Render locally for one video; reach for Lambda only when a batch
+makes it worthwhile. Retain the source project as a deliverable.
+
+### 9c. HyperFrames — the HTML alternative
+
+Build a HyperFrames composition instead of a React project when the licence or
+the handover favours it. A composition is a plain HTML file whose timing lives in
+`data-*` attributes and whose motion is a seekable GSAP timeline:
+
+- give every visible slot `class="clip"` with an `id`, `data-start`,
+  `data-duration` and `data-track-index`;
+- create the timeline **paused** and register it on
+  `window.__timelines["<composition-id>"]` under the same id as the root;
+- keep to the determinism rules — no wall clocks, no unseeded randomness, no
+  render-time network fetches.
+
+Use the same screenshots and copy as the Remotion path. Preview and render
+through the CLI (`hyperframes preview`, `hyperframes render --quality looks`) at
+the master resolution, and inspect each scene before delivery. The composition
+HTML **and** the rendered file are the editable source. When a port from an
+existing Remotion project is needed rather than a new build, the
+`remotion-to-hyperframes` skill translates roughly 80% mechanically and flags
+what it cannot.
 
 ## 10. Sound design
 
@@ -267,3 +335,28 @@ run — see [code](code.md). Lint it before it goes into the demo, not after.
 
 **When the demo teaches a system**, prefer a real architectural diagram over
 prose — see the diagram rules and the Mermaid kinds in [objects](objects.md).
+
+## 14. Outputs — three deliverables
+
+Every video delivers **three outputs**, not one. Keep them together in the
+project folder so a later edit stays selective.
+
+| Output | File | Source |
+|---|---|---|
+| **Video** | `<name>.mp4` | the render, at the master resolution, downscaled to delivery (1080p default, 720p floor) |
+| **Audio** | `<name>.mp3` | the voiceover track, exported alongside the working WAV |
+| **Voiceover text** | `<name>.srt` **or** `<name>.txt` | the narration: timed cues when it must line up with the audio, plain text otherwise |
+
+- **Audio.** Narration is its own deliverable (see [voice](voice.md)). Export the
+  voiceover as **MP3** as well as the working WAV, so it can be reused or re-cut
+  without the video. When the video also carries music or SFX, export the mixed
+  track as a second MP3.
+- **Voiceover text.** Ship the narration as timed **SRT** when the timing matters,
+  or as plain **TXT** when only the read is needed. For a narrated video the
+  voiceover text and the captions are the same text — use one source.
+- **Captions** remain separate and are still required where the audio mode or the
+  category calls for them: `captions.srt`, `captions.vtt` and `captions.json`.
+
+A `silent` video still delivers the video and the text; its audio output is the
+music or ambient bed as MP3, or it is omitted when the video is genuinely silent.
+State the omission rather than inventing an empty track.

@@ -9,21 +9,19 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 VENV="$HERE/.venv"
 AUDIO_DIR="$HERE/../../assets/audio"
 
-command -v uv >/dev/null || { echo "error: 'uv' not found. Install from https://docs.astral.sh/uv/"; exit 1; }
+UV_BIN="$(bash "$HERE/ensure_uv.sh")"
 
 if [ ! -x "$VENV/bin/python" ]; then
   echo "creating venv (Python 3.12)..."
-  uv venv "$VENV" --python 3.12
+  "$UV_BIN" venv "$VENV" --python 3.12
 fi
-echo "installing requirements..."
-VIRTUAL_ENV="$VENV" uv pip install -r "$HERE/requirements.txt"
+if [ ! -f "$VENV/.requirements-installed" ] || ! cmp -s "$HERE/requirements.txt" "$VENV/.requirements-installed"; then
+  echo "installing requirements..."
+  VIRTUAL_ENV="$VENV" "$UV_BIN" pip install -r "$HERE/requirements.txt"
+  cp "$HERE/requirements.txt" "$VENV/.requirements-installed"
+fi
 
-if [ ! -s "$HERE/models/kokoro-v1.0.onnx" ] || [ ! -s "$HERE/models/voices-v1.0.bin" ]; then
-  echo "downloading models..."
-  bash "$HERE/download_models.sh" "$HERE/models"
-else
-  echo "models present, skipping download."
-fi
+bash "$HERE/download_models.sh" "$HERE/models"
 
 run_gen() { "$VENV/bin/python" "$HERE/generate.py" --models-dir "$HERE/models" "$@"; }
 

@@ -40,11 +40,13 @@ capabilities:
     standalone: slide-decks
     bundle: course-creator-slide-decks
     modules: [intake, brand, objects, preflight, slidev, code]
+    shared_tools: [ensure_video_runtime.py, runtime_requirements.json]
 
   explainer-video:
     standalone: explainer-video
     bundle: course-creator-explainer-video
     modules: [intake, brand, video, voice, preflight, objects, slidev, code, prompts]
+    shared_tools: [write_subtitles.py, review_captions.py, transcribe_captions.py, assemble_video.py, render_slidev_video.py, render_remotion_video.py, render_hyperframes_video.py, run_video_job.py, run_desktop_video_job.py, ensure_video_runtime.py, runtime_requirements.json]
 
   voice-narration:
     standalone: voice-narration
@@ -63,5 +65,18 @@ capabilities:
     standalone: product-launch-video
     bundle: course-creator-product-launch-video
     modules: [intake, brand, video, voice, preflight, objects, slidev, code, prompts]
+    shared_tools: [write_subtitles.py, review_captions.py, transcribe_captions.py, assemble_video.py, render_remotion_video.py, render_hyperframes_video.py, run_video_job.py, run_desktop_video_job.py, ensure_video_runtime.py, runtime_requirements.json]
     ships:
       - files/references/workflow.md
+
+  talking-head-video:
+    standalone: talking-head-video
+    bundle: course-creator-talking-head-video
+    modules: [intake, brand, video, voice, preflight, objects, code]
+    shared_tools: [write_subtitles.py, review_captions.py, transcribe_captions.py, assemble_video.py, render_hyperframes_video.py, run_video_job.py, run_desktop_video_job.py, ensure_video_runtime.py, runtime_requirements.json]
+
+  avatar-video:
+    standalone: avatar-video
+    bundle: course-creator-avatar-video
+    modules: [intake, brand, video, voice, preflight, objects, code]
+    shared_tools: [write_subtitles.py, review_captions.py, transcribe_captions.py, assemble_video.py, render_hyperframes_video.py, run_video_job.py, run_desktop_video_job.py, ensure_video_runtime.py, runtime_requirements.json]

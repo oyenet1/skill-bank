@@ -28,7 +28,7 @@ the result is reproducible.
 ## 2. Generate
 
 Read the bundled tool guide at ../../tools/kokoro/README.md and run its local
-`start.sh` with `--text-file`, `--out` and an available `--voice`. The first run
+`start.py` with `--text-file`, `--out path/to/narration.wav` and an available `--voice`. The first run
 prepares its environment and models. Check current official Kokoro ONNX
 documentation when API behaviour matters.
 

@@ -22,7 +22,8 @@ matters:
 3. **Platform** — ask once. It derives aspect ratio and resolution.
 4. **Audio mode** — `silent` / `voiceover` / `music` / `full`.
 5. **Voiceover** *(optional)* — a supplied recording is the timing master;
-   otherwise generate with [voice](references/voice.md).
+   otherwise generate with [voice](references/voice.md). The standalone skill ships
+   `tools/kokoro/start.py` for local narration.
 6. **Ending** — main CTA, logo sting, takeaway, QR, contact, or next video.
 7. **Assets** — logo, SVGs, screenshots, footage, charts. Collect up front.
 8. **Per-category inputs** — headline and key points, or topic and learning
@@ -33,9 +34,13 @@ a recommended pick each. Do not re-ask what the request already states.
 
 ## 2. Preflight
 
-Read [preflight](references/preflight.md) and confirm the toolchain before promising a render.
-Report gaps up front. Never claim an output exists if the tool that makes it is
-missing.
+Read [preflight](references/preflight.md) and run
+`python3 tools/ensure_video_runtime.py explainer-video` from this skill
+directory. Choose the renderer first (§4) and pass `--renderer remotion` or
+`--renderer hyperframes` when the category is a demo or an ad. Use the verified
+executable paths in its JSON result for Slidev, Remotion, HyperFrames and FFmpeg.
+Report setup failures up front. Never claim an output exists if the tool that
+makes it is missing.
 
 ## 3. Write before you build
 
@@ -52,16 +57,35 @@ once, so write it deliberately rather than letting the first scene double as it.
 Record the cover line in `style.md`.
 
 Resolve `## Delivery` in `style.md` from §2 of [video](references/video.md): category, platform,
-aspect, master resolution, delivery resolution and fps. **Export floor is 1080p;
-render a 4K master whenever the platform accepts it and downscale for delivery.**
+aspect, master resolution, delivery resolution, renderer and fps. **Render a 4K
+master whenever the platform accepts it, then downscale — 1080p is the default
+delivery, 720p the smallest accepted, never below.**
 
 ## 4. Build
 
 | Category | Build in |
 |---|---|
 | `motion-graphic`, `explainer-lesson`, `slideshow-montage` | **Slidev** — see §5 |
-| `screencast-demo`, `launch-ad` | **Remotion** — real screens, animated crops and callouts |
-| `footage-overlay` | Remotion or a compositor over the supplied footage |
+| `screencast-demo`, `launch-ad` | **Remotion** (default) or **HyperFrames** — real screens, animated crops and callouts |
+| `footage-overlay` | **Remotion** (default) or **HyperFrames**, or a compositor over the supplied footage |
+
+Ask once, and only for a demo or an ad: **Remotion or HyperFrames?** Both render
+video from web code with headless Chrome and FFmpeg. Remotion is the default — a
+React project with the larger ecosystem and the more mature Lambda path.
+HyperFrames is the Apache-2.0 alternative — plain HTML + CSS + GSAP, no build
+step, no per-seat or per-render licence — for a deliverable that must ship
+without a source-available licence review or a handover a non-developer can edit.
+See [video](references/video.md) §9. Record the choice as `Renderer:` in `style.md` → `## Delivery`.
+
+For a Remotion composition, write a one-scene timing plan and run
+`python3 tools/render_remotion_video.py src/index.ts <composition-id> timing.json --out <project-dir>`.
+It prepares the renderer, renders the composition, packages the MP4 and timed
+captions, and copies the editable project source. Set `audio_from_visual: true`
+with a transcript to keep audio already rendered by Remotion, or provide
+`narration` to replace it. Review the final mix and captions.
+For HyperFrames, use the same one-scene plan with
+`python3 tools/render_hyperframes_video.py index.html timing.json --out <project-dir>`.
+This retains the HTML composition and its local assets with the finished video.
 
 Draw from the object library in [objects](references/objects.md) before hand-building a visual.
 Download or draw anything missing — never leave a gap. Copy selected assets into
@@ -98,6 +122,29 @@ with `ffmpeg` at the storyboard's per-step durations, or by driving the deck wit
 Playwright on a timing schedule and recording it when `v-motion` easing must
 survive. Render at the master resolution, not the export default.
 
+For the stepped path, write a timing JSON with one scene per exported click
+state, then run
+`python3 tools/render_slidev_video.py slides.md timing.json --out <project-dir>`.
+This prepares Slidev and FFmpeg, exports each click state, joins it with measured
+scene audio and captions, and keeps the deck source with the resulting MP4.
+The number and order of timing scenes must match the exported frames. Use the
+recorded path when continuous motion is essential; PNG states hold each frame
+and do not preserve in-between easing.
+
+When scenes are rendered as separate images or clips, write a scene plan and run
+`python3 tools/assemble_video.py plan.json --out <project-dir>` to join them
+with measured narration or footage audio. Each scene needs `visual` and either
+`duration_sec` or a measurable audio/video duration; add `narration` plus its
+transcript in `caption`, or `audio_from_visual: true` plus a transcript for
+footage sound. Use `cues` for reviewed timing within a scene. The tool writes a
+1080p delivery MP4, optional mixed-audio MP3, imported assets, a manifest, and
+SRT/VTT/JSON captions. Retain a separate 4K master when required and export the
+reusable voiceover MP3/WAV through [voice](references/voice.md).
+Add a plan-level `music: {"file": "audio/bed.wav", "volume": 0.12}` only when
+the chosen audio mode calls for it; listen and adjust its level under speech.
+Inspect its finished video and correct any cue that does not follow speech.
+Keep the editable Slidev, Remotion or HyperFrames source with the project.
+
 ### 6. Sound
 
 Plan it in `style.md`. Use a small named SFX set — `typing`, `click`, `alert`,
@@ -124,10 +171,31 @@ authored — it is the timing master. Render, then inspect the actual output:
 opening frame, each scene, transitions, final CTA, captions against final audio,
 audio sync, legibility at delivery size, and that every referenced asset exists.
 
+Export `captions.srt` and `captions.vtt` with every video, including silent videos
+whose on-screen text carries the message. Time cues against the final audio or
+reviewed video timeline; storyboard estimates are not speech alignment. Save the
+measured cue data as `captions.json` and run
+`python tools/write_subtitles.py captions.json --out captions`. The input has
+`duration_sec` (the final video duration) and a `cues` array
+of `{ "start": seconds, "end": seconds, "text": string }`. Check the exported
+files against the final MP4 after any timing edit.
+For spoken audio without reviewed word cues, run
+`python3 tools/transcribe_captions.py <project-dir>/video.mp4 --out <project-dir> --language <code>`
+after the final mix. It transcribes locally, groups measured words into cues,
+and replaces the SRT/VTT/JSON exports. Review recognition against the script
+and listen through every cue before delivery; rerun after audio changes.
+
+**Deliver three outputs** — see [video](references/video.md) §14. The **video** (MP4 at the
+master resolution, downscaled to delivery), the **audio** (the voiceover as MP3,
+converted from the verified WAV), and the **voiceover text** (timed SRT, or plain
+TXT when only the read is needed). Keep the editable source, the WAV, the
+captions and the rendered files together.
+
 ## 9. Report
 
-State the category, platform, resolutions, renderer, output paths, the voice and
-SFX used, and every render limitation or unverified claim you left out.
+State the category, platform, resolutions, renderer, the three outputs (MP4,
+MP3 and SRT/TXT), their paths, the voice and SFX used, and every render
+limitation or unverified claim you left out.
 
 
 
