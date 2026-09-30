@@ -38,7 +38,7 @@ capabilities:
     standalone: visual-assets
     bundle: course-creator-assets
     modules: [intake, brand, objects, generated-assets]
-    shared_tools: [network_tls.py, generate_image_asset.py]
+    shared_tools: [bootstrap_uv.py, uv_wheels.json, network_tls.py, generate_image_asset.py]
 
   content-authoring:
     standalone: content-authoring
@@ -49,7 +49,7 @@ capabilities:
     standalone: slide-decks
     bundle: course-creator-slide-decks
     modules: [intake, brand, objects, preflight, slidev, code]
-    shared_tools: [network_tls.py, ensure_video_runtime.py, runtime_requirements.json]
+    shared_tools: [bootstrap_uv.py, uv_wheels.json, network_tls.py, ensure_video_runtime.py, runtime_requirements.json]
     bootstrap:
       routes: [slide-decks]
       associated: [visual-assets, explainer-video]
@@ -58,7 +58,7 @@ capabilities:
     standalone: explainer-video
     bundle: course-creator-explainer-video
     modules: [intake, brand, video, voice, preflight, generated-assets, objects, slidev, code, prompts]
-    shared_tools: [network_tls.py, generate_image_asset.py, write_subtitles.py, review_captions.py, transcribe_captions.py, ensure_python_runtime.py, transcribe_with_faster_whisper.py, assemble_video.py, render_slidev_video.py, render_remotion_video.py, render_hyperframes_video.py, run_video_job.py, run_desktop_video_job.py, author_desktop_video.py, desktop_fonts.py, render_desktop_sources.py, ensure_video_runtime.py, runtime_requirements.json]
+    shared_tools: [bootstrap_uv.py, uv_wheels.json, network_tls.py, generate_image_asset.py, write_subtitles.py, review_captions.py, transcribe_captions.py, ensure_python_runtime.py, transcribe_with_faster_whisper.py, assemble_video.py, render_slidev_video.py, render_remotion_video.py, render_hyperframes_video.py, run_video_job.py, run_desktop_video_job.py, author_desktop_video.py, desktop_fonts.py, render_desktop_sources.py, ensure_video_runtime.py, runtime_requirements.json]
     bootstrap:
       routes: [explainer-video]
       voice: true
@@ -86,7 +86,7 @@ capabilities:
     standalone: product-launch-video
     bundle: course-creator-product-launch-video
     modules: [intake, brand, video, voice, preflight, generated-assets, objects, slidev, code, prompts]
-    shared_tools: [network_tls.py, generate_image_asset.py, write_subtitles.py, review_captions.py, transcribe_captions.py, ensure_python_runtime.py, transcribe_with_faster_whisper.py, assemble_video.py, render_remotion_video.py, render_hyperframes_video.py, run_video_job.py, run_desktop_video_job.py, author_desktop_video.py, desktop_fonts.py, render_desktop_sources.py, ensure_video_runtime.py, runtime_requirements.json]
+    shared_tools: [bootstrap_uv.py, uv_wheels.json, network_tls.py, generate_image_asset.py, write_subtitles.py, review_captions.py, transcribe_captions.py, ensure_python_runtime.py, transcribe_with_faster_whisper.py, assemble_video.py, render_remotion_video.py, render_hyperframes_video.py, run_video_job.py, run_desktop_video_job.py, author_desktop_video.py, desktop_fonts.py, render_desktop_sources.py, ensure_video_runtime.py, runtime_requirements.json]
     bootstrap:
       routes: [product-launch-video]
       voice: true
@@ -99,7 +99,7 @@ capabilities:
     standalone: talking-head-video
     bundle: course-creator-talking-head-video
     modules: [intake, brand, video, voice, preflight, generated-assets, objects, code]
-    shared_tools: [network_tls.py, generate_image_asset.py, write_subtitles.py, review_captions.py, transcribe_captions.py, ensure_python_runtime.py, transcribe_with_faster_whisper.py, assemble_video.py, render_hyperframes_video.py, run_video_job.py, run_desktop_video_job.py, author_desktop_video.py, desktop_fonts.py, render_desktop_sources.py, ensure_video_runtime.py, runtime_requirements.json]
+    shared_tools: [bootstrap_uv.py, uv_wheels.json, network_tls.py, generate_image_asset.py, write_subtitles.py, review_captions.py, transcribe_captions.py, ensure_python_runtime.py, transcribe_with_faster_whisper.py, assemble_video.py, render_hyperframes_video.py, run_video_job.py, run_desktop_video_job.py, author_desktop_video.py, desktop_fonts.py, render_desktop_sources.py, ensure_video_runtime.py, runtime_requirements.json]
     bootstrap:
       routes: [talking-head-video]
       voice: true
@@ -110,7 +110,7 @@ capabilities:
     standalone: avatar-video
     bundle: course-creator-avatar-video
     modules: [intake, brand, video, voice, preflight, generated-assets, objects, code]
-    shared_tools: [network_tls.py, avatar_ensure.py, avatar_runtime.py, avatar_generate.py, avatar_infer_worker.py, avatar_provider.py, prepare_avatar_job.py, generate_image_asset.py, avatar_models.json, avatar_probe.py, avatar_pin.py, avatar_download.py, write_subtitles.py, review_captions.py, transcribe_captions.py, ensure_python_runtime.py, transcribe_with_faster_whisper.py, assemble_video.py, render_hyperframes_video.py, run_video_job.py, run_desktop_video_job.py, author_desktop_video.py, desktop_fonts.py, render_desktop_sources.py, ensure_video_runtime.py, runtime_requirements.json]
+    shared_tools: [bootstrap_uv.py, uv_wheels.json, network_tls.py, avatar_ensure.py, avatar_runtime.py, avatar_generate.py, avatar_infer_worker.py, avatar_provider.py, prepare_avatar_job.py, generate_image_asset.py, avatar_models.json, avatar_probe.py, avatar_pin.py, avatar_download.py, write_subtitles.py, review_captions.py, transcribe_captions.py, ensure_python_runtime.py, transcribe_with_faster_whisper.py, assemble_video.py, render_hyperframes_video.py, run_video_job.py, run_desktop_video_job.py, author_desktop_video.py, desktop_fonts.py, render_desktop_sources.py, ensure_video_runtime.py, runtime_requirements.json]
     bootstrap:
       routes: [avatar-video]
       voice: true

@@ -14,6 +14,7 @@ import tempfile
 import sys
 import urllib.request
 from network_tls import tls_context
+from bootstrap_uv import install_pinned_uv
 
 from ensure_video_runtime import MANIFEST, default_runtime_dir, progress
 
@@ -43,23 +44,29 @@ def ensure_uv(runtime: Path, *, minimum_version: tuple[int, ...] | None = None, 
     target.parent.mkdir(parents=True, exist_ok=True)
     suffix = ".ps1" if platform.system() == "Windows" else ".sh"
     progress("setup", "Installing private Python manager")
-    with tempfile.TemporaryDirectory(prefix="python-manager-", dir=target.parent) as scratch:
-        installer = Path(scratch) / ("install" + suffix)
-        with urllib.request.urlopen("https://astral.sh/uv/install" + suffix, timeout=60, context=tls_context()) as response, installer.open("wb") as output:
-            shutil.copyfileobj(response, output)
-        env = os.environ.copy()
-        env.update(UV_INSTALL_DIR=str(target.parent), UV_NO_MODIFY_PATH="1")
-        if suffix == ".ps1":
-            shell = shutil.which("powershell.exe") or shutil.which("pwsh.exe")
-            if not shell:
-                raise RuntimeError("PowerShell is required to install the private Python manager")
-            command = [shell, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(installer)]
-        else:
-            command = ["sh", str(installer)]
-        if runner:
-            runner(command, env)
-        else:
-            subprocess.run(command, env=env, check=True, stdout=subprocess.DEVNULL)
+    try:
+        with tempfile.TemporaryDirectory(prefix="python-manager-", dir=target.parent) as scratch:
+            installer = Path(scratch) / ("install" + suffix)
+            with urllib.request.urlopen("https://astral.sh/uv/install" + suffix, timeout=60, context=tls_context()) as response, installer.open("wb") as output:
+                shutil.copyfileobj(response, output)
+            env = os.environ.copy()
+            env.update(UV_INSTALL_DIR=str(target.parent), UV_NO_MODIFY_PATH="1")
+            if suffix == ".ps1":
+                shell = shutil.which("powershell.exe") or shutil.which("pwsh.exe")
+                if not shell:
+                    raise RuntimeError("PowerShell is required to install the private Python manager")
+                command = [shell, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(installer)]
+            else:
+                command = ["sh", str(installer)]
+            if runner:
+                runner(command, env)
+            else:
+                subprocess.run(command, env=env, check=True, stdout=subprocess.DEVNULL)
+            if not target.is_file() or not usable(target):
+                raise RuntimeError("Standalone Python manager installation did not verify")
+    except (OSError, RuntimeError, subprocess.CalledProcessError) as error:
+        progress("setup", "Standalone installer unavailable; using verified PyPI wheel", reason=type(error).__name__)
+        install_pinned_uv(target)
     if not target.is_file() or not usable(target):
         raise RuntimeError("Private Python manager installation did not verify")
     return target

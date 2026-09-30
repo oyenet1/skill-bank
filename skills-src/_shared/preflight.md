@@ -17,15 +17,18 @@ architecture, then prepares the private runtime and the associated skills:
 | Windows (PowerShell) | `powershell -ExecutionPolicy Bypass -File tools\setup.ps1` |
 | Windows (Command Prompt) | `tools\setup.cmd` |
 
-The launcher runs `tools/bootstrap.py`, which reads the shipped
+The launcher reuses Python 3.10+ when available. Otherwise it prepares a private
+UV/Python 3.12 runtime, then runs `tools/bootstrap.py`. Its final JSON includes
+`pythonExecutable`; use that absolute interpreter path for later Python tools
+when no system Python exists. The bootstrap reads the shipped
 `tools/dependencies.json` and:
 
 1. installs missing Node, FFmpeg/FFprobe, the selected renderers and Chromium;
 2. prepares Kokoro narration and local speech recognition where the skill needs
    them;
-3. installs any associated sibling skill that is not already present in the
-   skills directory, or prints the exact `npx skills add` command when `npx` is
-   unavailable.
+3. installs missing associated siblings into the selected skills directory from
+   the bundled, hash-verified source snapshot. It needs neither npx nor Git and
+   preserves existing skill folders and user edits.
 
 Add `--check` to report the plan and install nothing, `--yes` to run without an
 interactive prompt, or `--no-skills` to prepare runtimes only. Unsupported
@@ -47,7 +50,9 @@ binary for another platform.
 
 Run from the installed skill directory, or give the absolute path to its bundled
 `tools/ensure_video_runtime.py`. `--check` reports status without installing.
-The setup needs Python 3.10+ and a network connection on first install. Confirm
+The setup needs a network connection on first install. Unix hosts need curl or
+wget plus standard system utilities; Windows uses PowerShell. Missing Python is
+prepared privately. With missing Python, `--check` reports it without downloading. Confirm
 `bun` separately if a supplied project requires it.
 
 **When the route offers a renderer choice** — the demo and ad categories build

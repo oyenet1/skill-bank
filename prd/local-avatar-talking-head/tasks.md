@@ -69,7 +69,7 @@
 Source integration is implemented in Skill Bank and devmock, including searchable
 backend selection, model/licence consent, native detection without Python,
 private environments, offline inference, fallback assets, scene handoff, provenance
-and original-request resume. All 101 Python tests passed. Tests include actual media packaging with
+and original-request resume. All 136 Python tests passed. Tests include actual media packaging with
 stubbed inference and actual Linux process-tree cancellation. The configured
 app type check now includes Vue components and passes. Missing storyboard actions
 and obsolete component sizes found by the full check were fixed and tested. Native Rust was

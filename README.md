@@ -143,10 +143,11 @@ The launcher runs `tools/bootstrap.py`, which reads the shipped
    into the private user data directory;
 2. prepares Kokoro narration and local speech recognition where the skill needs
    them;
-3. installs any associated skill that is not already in the skills directory —
-   for example, `explainer-video` offers `voice-narration`,
-   `product-launch-video`, `slide-decks` and `visual-assets` — or prints the
-   exact `npx skills add` command when `npx` is unavailable.
+3. installs missing associated skills from its bundled, hash-verified source
+   snapshot into the exact requested directory. For example, `explainer-video`
+   installs `voice-narration`, `product-launch-video`, `slide-decks` and
+   `visual-assets`. No npx or Git is needed for these sibling installations;
+   existing skills and user edits are preserved.
 
 Use `--check` to report the plan and install nothing, `--yes` to run without an
 interactive prompt, `--no-skills` to prepare runtimes only, and `--target DIR`

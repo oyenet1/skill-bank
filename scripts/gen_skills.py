@@ -17,6 +17,10 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import base64
+import hashlib
+import io
+import zipfile
 import json
 import re
 import shutil
@@ -44,7 +48,7 @@ TOOL_IGNORE = {"models", ".venv", ".tooling", "__pycache__", "node_modules"}
 
 # A capability with a `bootstrap:` manifest block ships these first-use files
 # plus a generated tools/dependencies.json next to them.
-BOOTSTRAP_TOOLS = ["bootstrap.py", "setup.sh", "setup.cmd", "setup.ps1"]
+BOOTSTRAP_TOOLS = ["bootstrap.py", "setup.sh", "setup.cmd", "setup.ps1", "uv_wheels.json", "install_sibling_skill.py"]
 DEFAULT_SKILL_REPO = "oyenet1/agent-skills"
 
 
@@ -132,8 +136,9 @@ def build() -> dict[Path, str]:
     modules = man["modules"]
     shared = SRC / man["shared_dir"]
     out: dict[Path, str] = {
-        REPO / "course-creator/tools/kokoro/network_tls.py":
-            (shared / "tools/network_tls.py").read_text(),
+        REPO / "course-creator/tools/kokoro" / name:
+            (shared / "tools" / name).read_text()
+        for name in ("network_tls.py", "bootstrap_uv.py", "uv_wheels.json")
     }
 
     for cap_id, spec in caps.items():
@@ -180,6 +185,39 @@ def build() -> dict[Path, str]:
                     if p.is_file():
                         rel = p.relative_to(shared / "library" / name)
                         out[dest / "references" / "library" / name / rel] = p.read_text()
+    # Freeze one compact source snapshot before adding payloads, avoiding
+    # recursive copies. Every installed sibling receives the same snapshot.
+    standalone_names = {spec["standalone"] for spec in caps.values() if spec.get("standalone")}
+    files = {str(path.relative_to(REPO)).replace("\\", "/"): content
+             for path, content in out.items()
+             if path.relative_to(REPO).parts[0] in standalone_names}
+    for src_rel, dest_rel in TOOL_COPIES:
+        src = REPO / src_rel
+        for path in sorted(src.rglob("*")):
+            relative = path.relative_to(src)
+            if (not path.is_file() or any(part in TOOL_IGNORE for part in relative.parts)
+                    or path.suffix in (".onnx", ".bin", ".pyc")):
+                continue
+            key = (Path(dest_rel) / relative).as_posix()
+            # Shared helpers are emitted before the mirror copy is synchronized.
+            canonical = out.get(path)
+            files[key] = canonical if canonical is not None else path.read_text()
+    stream = io.BytesIO()
+    with zipfile.ZipFile(stream, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+        for name, content in sorted(files.items()):
+            info = zipfile.ZipInfo(name, date_time=(1980, 1, 1, 0, 0, 0))
+            info.compress_type = zipfile.ZIP_DEFLATED
+            info.create_system = 3
+            info.external_attr = 0o100644 << 16
+            archive.writestr(info, content.encode("utf-8"))
+    snapshot = stream.getvalue()
+    payload = json.dumps({"schemaVersion": 1, "skills": sorted(standalone_names),
+                          "sha256": hashlib.sha256(snapshot).hexdigest(),
+                          "zipBase64": base64.b64encode(snapshot).decode()}, separators=(",", ":")) + "\n"
+    for spec in caps.values():
+        if spec.get("bootstrap"):
+            for target in (REPO / spec["standalone"], REPO / "course-creator/subskills" / spec["bundle"]):
+                out[target / "tools/sibling_skills.json"] = payload
     return out
 
 
@@ -201,7 +239,7 @@ def sync_tools() -> list[Path]:
 def check_tools() -> list[str]:
     bad = []
     for src_rel, dest_rel in TOOL_COPIES:
-        for name in ("network_tls.py", "generate.py", "start.py", "start.sh", "ensure_uv.sh", "download_models.sh", "README.md", "requirements.txt"):
+        for name in ("network_tls.py", "bootstrap_uv.py", "uv_wheels.json", "generate.py", "start.py", "start.sh", "ensure_uv.sh", "download_models.sh", "README.md", "requirements.txt"):
             s, d = REPO / src_rel / name, REPO / dest_rel / name
             if not d.exists():
                 bad.append(f"missing   {dest_rel}/{name}")

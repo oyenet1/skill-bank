@@ -3,8 +3,8 @@
 
 Detects the operating system and CPU architecture, prepares the private video
 runtime (Node, FFmpeg/FFprobe, Slidev/Remotion/HyperFrames, Chromium, Kokoro
-and speech models) and offers to install the associated sibling skills that are
-not present yet.
+and speech models) and installs missing associated sibling skills from its
+bundled source snapshot. No npx or Git is needed to install these siblings.
 
 Usage:
     python3 tools/bootstrap.py                 # plan, confirm, then install
@@ -97,12 +97,13 @@ def skill_steps(spec: dict[str, object], skills_dir: Path, install: bool) -> lis
     associated = [name for name in (spec.get("associated") or []) if not sibling_installed(skills_dir, name)]
     if not associated:
         return []
-    repo = str(spec.get("repo") or "")
-    npx = shutil.which("npx")
+    installer = HERE / "install_sibling_skill.py"
+    available = installer.is_file() and (HERE / "sibling_skills.json").is_file()
     steps: list[dict[str, object]] = []
     for name in associated:
-        command = [npx or "npx", "skills", "add", f"{repo}@{name}", "-g"]
-        steps.append({"kind": "skill", "name": name, "command": command, "available": bool(npx) and bool(repo), "install": install})
+        command = [sys.executable, str(installer), name, "--target", str(skills_dir)]
+        steps.append({"kind": "skill", "name": name, "command": command,
+                      "available": available, "install": install})
     return steps
 
 
@@ -118,7 +119,7 @@ def summarize(steps: list[dict[str, object]]) -> str:
     for step in steps:
         kind, name = step["kind"], step["name"]
         if kind == "skill" and not step.get("available"):
-            lines.append(f"  sibling skill {name}: install with `npx skills add` (npx not found)")
+            lines.append(f"  sibling skill {name}: bundled snapshot is missing")
         else:
             lines.append(f"  {kind}: {name}")
     return "\n".join(lines)
@@ -137,9 +138,9 @@ def run_step(step: dict[str, object]) -> dict[str, object]:
     kind, name = step["kind"], step["name"]
     command = list(step["command"])  # type: ignore[arg-type]
     if kind == "skill" and not step.get("available"):
-        # No npx or registry: report the exact command the requester can run.
+        # An incomplete skill copy must not silently claim dependency readiness.
         return {"kind": kind, "name": name, "ok": False, "prompt": " ".join(command),
-                "reason": "npx is not available; run the command manually"}
+                "reason": "The installed skill is missing its bundled sibling snapshot; reinstall the complete skill"}
     progress(kind, f"Preparing {name}")
     try:
         result = subprocess.run(windows_argv(command), capture_output=True, text=True)
@@ -179,6 +180,7 @@ def main() -> int:
     steps = plan["steps"]
 
     base = {"skill": spec.get("skill"), "os": machine, "skillsDir": str(skills_dir),
+            "pythonExecutable": sys.executable,
             "steps": [{"kind": s["kind"], "name": s["name"]} for s in steps]}
     if args.check:
         base["ready"] = machine["supported"]
@@ -195,7 +197,7 @@ def main() -> int:
     results = [run_step(step) for step in steps]
     failed = [r for r in results if not r["ok"]]
     prompts = [r["prompt"] for r in failed if r.get("prompt")]
-    ready = not any(r["kind"] in ("runtime", "transcription", "voice") for r in failed)
+    ready = not failed
     print(json.dumps({**base, "ready": ready, "results": results, "prompts": prompts}, indent=2))
     return 0 if ready else 1
 

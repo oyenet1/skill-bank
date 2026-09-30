@@ -4,7 +4,7 @@ use serde::Serialize;
 use serde_json::{json, Value};
 use std::{
     fs::{self, File},
-    io::{BufRead, BufReader, Write},
+    io::{BufRead, BufReader, Read, Write},
     path::{Path, PathBuf},
     process::{Child, Command, Stdio},
     sync::{
@@ -225,6 +225,120 @@ fn execute(
     result
 }
 
+fn install_uv_wheel(
+    target: &Path,
+    client: &reqwest::blocking::Client,
+    channel: &Channel<SkillJobProgress>,
+    state: &SkillJobState,
+) -> Result<(), String> {
+    use sha2::{Digest, Sha256};
+    let pins: Value = serde_json::from_str(include_str!("../resources/video-tools/uv_wheels.json"))
+        .map_err(|e| e.to_string())?;
+    let os = std::env::consts::OS;
+    let os = if os == "macos" { "darwin" } else { os };
+    let arch = std::env::consts::ARCH;
+    let key = if cfg!(target_env = "musl") && os == "linux" && arch == "x86_64" {
+        "linux-musl-x86_64".to_string()
+    } else {
+        format!("{os}-{arch}")
+    };
+    let spec = &pins["platforms"][&key];
+    let url = spec["url"]
+        .as_str()
+        .ok_or_else(|| format!("No prebuilt Python manager for {key}"))?;
+    let expected_size = spec["size"].as_u64().ok_or("Invalid Python manager size")?;
+    let expected_hash = spec["sha256"]
+        .as_str()
+        .ok_or("Invalid Python manager digest")?;
+    let version = pins["version"]
+        .as_str()
+        .ok_or("Invalid Python manager version")?;
+    let mut response = client
+        .get(url)
+        .send()
+        .and_then(reqwest::blocking::Response::error_for_status)
+        .map_err(|e| format!("Could not download the private Python manager wheel: {e}"))?;
+    let mut bytes = Vec::new();
+    let mut block = [0_u8; 65536];
+    loop {
+        checked_cancel(state)?;
+        let count = response.read(&mut block).map_err(|e| e.to_string())?;
+        if count == 0 {
+            break;
+        }
+        if bytes.len() as u64 + count as u64 > expected_size {
+            return Err("Python manager wheel exceeds its pinned size".into());
+        }
+        bytes.extend_from_slice(&block[..count]);
+    }
+    if bytes.len() as u64 != expected_size
+        || format!("{:x}", Sha256::digest(&bytes)) != expected_hash
+    {
+        return Err("Python manager wheel failed pinned SHA-256 verification".into());
+    }
+    checked_cancel(state)?;
+    let mut wheel = zip::ZipArchive::new(std::io::Cursor::new(bytes)).map_err(|e| e.to_string())?;
+    let binary = if cfg!(windows) { "uv.exe" } else { "uv" };
+    let member = format!("uv-{version}.data/scripts/{binary}");
+    let staged = target.with_extension("download-part");
+    let install = (|| -> Result<(), String> {
+        {
+            let mut entry = wheel.by_name(&member).map_err(|e| e.to_string())?;
+            if entry.size() == 0 || entry.size() > 150_000_000 {
+                return Err("Python manager binary has an invalid size".into());
+            }
+            let mut output = File::create(&staged).map_err(|e| e.to_string())?;
+            std::io::copy(&mut entry, &mut output).map_err(|e| e.to_string())?;
+        }
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            fs::set_permissions(&staged, fs::Permissions::from_mode(0o755))
+                .map_err(|e| e.to_string())?;
+        }
+        let mut command = Command::new(&staged);
+        configure_process(&mut command);
+        let output = command
+            .arg("--version")
+            .output()
+            .map_err(|e| e.to_string())?;
+        if !output.status.success()
+            || !String::from_utf8_lossy(&output.stdout).starts_with(&format!("uv {version}"))
+        {
+            return Err("Private Python manager binary did not verify".into());
+        }
+        for name in ["LICENSE-APACHE", "LICENSE-MIT"] {
+            let mut entry = wheel
+                .by_name(&format!("uv-{version}.dist-info/licenses/{name}"))
+                .map_err(|e| e.to_string())?;
+            if entry.size() > 100_000 {
+                return Err("Python manager license is unexpectedly large".into());
+            }
+            let mut output = File::create(target.with_file_name(format!("uv-{name}")))
+                .map_err(|e| e.to_string())?;
+            std::io::copy(&mut entry, &mut output).map_err(|e| e.to_string())?;
+        }
+        checked_cancel(state)?;
+        if target.exists() {
+            fs::remove_file(target).map_err(|e| e.to_string())?;
+        }
+        fs::rename(&staged, target).map_err(|e| e.to_string())?;
+        Ok(())
+    })();
+    if install.is_err() {
+        let _ = fs::remove_file(&staged);
+    }
+    install?;
+    report(
+        channel,
+        "setup",
+        1,
+        "Verified private Python manager from PyPI",
+        Some(target),
+    );
+    Ok(())
+}
+
 fn ensure_uv(
     data: &Path,
     job: &Path,
@@ -263,29 +377,46 @@ fn ensure_uv(
         .timeout(Duration::from_secs(60))
         .build()
         .map_err(|e| e.to_string())?;
-    let bytes = client
-        .get(format!("https://astral.sh/uv/install.{extension}"))
-        .send()
-        .and_then(reqwest::blocking::Response::error_for_status)
-        .map_err(|e| format!("Could not download the Python manager: {e}"))?
-        .bytes()
-        .map_err(|e| e.to_string())?;
-    checked_cancel(state)?;
-    fs::write(&installer, bytes).map_err(|e| e.to_string())?;
-    let mut command;
-    if cfg!(windows) {
-        command = Command::new("powershell.exe");
+    let standalone = (|| -> Result<(), String> {
+        let bytes = client
+            .get(format!("https://astral.sh/uv/install.{extension}"))
+            .send()
+            .and_then(reqwest::blocking::Response::error_for_status)
+            .map_err(|e| format!("Could not download the Python manager: {e}"))?
+            .bytes()
+            .map_err(|e| e.to_string())?;
+        checked_cancel(state)?;
+        fs::write(&installer, bytes).map_err(|e| e.to_string())?;
+        let mut command;
+        if cfg!(windows) {
+            command = Command::new("powershell.exe");
+            command
+                .args(["-NoProfile", "-ExecutionPolicy", "Bypass", "-File"])
+                .arg(&installer);
+        } else {
+            command = Command::new("sh");
+            command.arg(&installer);
+        }
         command
-            .args(["-NoProfile", "-ExecutionPolicy", "Bypass", "-File"])
-            .arg(&installer);
-    } else {
-        command = Command::new("sh");
-        command.arg(&installer);
+            .env("UV_INSTALL_DIR", &tools)
+            .env("UV_NO_MODIFY_PATH", "1");
+        execute(&mut command, job, "python-manager-install", channel, state)?;
+        if !target.is_file() {
+            return Err("Standalone Python manager installation did not verify".into());
+        }
+        Ok(())
+    })();
+    if standalone.is_err() {
+        checked_cancel(state)?;
+        report(
+            channel,
+            "setup",
+            1,
+            "Standalone installer unavailable; using verified PyPI wheel",
+            None,
+        );
+        install_uv_wheel(&target, &client, channel, state)?;
     }
-    command
-        .env("UV_INSTALL_DIR", &tools)
-        .env("UV_NO_MODIFY_PATH", "1");
-    execute(&mut command, job, "python-manager-install", channel, state)?;
     if !target.is_file() {
         return Err("Python manager installation did not verify".into());
     }

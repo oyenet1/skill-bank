@@ -83,6 +83,13 @@ def install(skill: str, target: Path, runtime_dir: Path | None = None, resume: b
         tool = destination / "tools/kokoro/start.py"
         print("Preparing local narration...", flush=True)
         subprocess.run([sys.executable, str(tool)], check=True)
+    dependencies = destination / "tools/dependencies.json"
+    if dependencies.is_file():
+        spec = json.loads(dependencies.read_text(encoding="utf-8"))
+        for sibling in spec.get("associated", []):
+            print(f"Preparing associated skill {sibling}...", flush=True)
+            subprocess.run([sys.executable, str(destination / "tools/install_sibling_skill.py"),
+                            sibling, "--target", str(destination.parent)], check=True)
     if skill == "avatar-video":
         # Presenter backends are optional. Capability detection never installs
         # models; local narration above makes the editable fallback usable.

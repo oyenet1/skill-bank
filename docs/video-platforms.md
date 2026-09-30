@@ -34,10 +34,10 @@ and CPU, then runs `tools/bootstrap.py`, which reads the generated
 `bootstrap.py` verifies the host against the same `x64`/`arm64` table as
 `ensure_video_runtime.py`, prepares the private runtime (Node, FFmpeg/FFprobe,
 the selected renderers, Chromium, and Kokoro or speech models where the skill
-needs them), then offers the associated standalone skills that are missing from
+needs them), then installs the associated standalone skills that are missing from
 the skills directory:
 
-| Skill | Associated skills offered |
+| Skill | Associated skills installed |
 |---|---|
 | `slide-decks` | `visual-assets`, `explainer-video` |
 | `explainer-video` | `voice-narration`, `product-launch-video`, `slide-decks`, `visual-assets` |
@@ -46,10 +46,14 @@ the skills directory:
 | `avatar-video` | `talking-head-video`, `voice-narration` |
 | `voice-narration` | `explainer-video`, `product-launch-video` |
 
-A sibling is installed with `npx skills add oyenet1/agent-skills@<name> -g`
-unless the target directory already contains it. When `npx` is unavailable the
-bootstrap prints that exact command instead of failing, and the runtime setup it
-did complete still stands. Bundle subskills prepare their renderer runtime but
+A sibling is installed from the generated `tools/sibling_skills.json` snapshot
+using the bundled Python installer. No system npx, Git, remote clone or agent
+configuration override is needed. `--target` selects the exact root; existing
+skills are preserved, incomplete destinations are refused, and a failed sibling
+installation prevents setup from claiming readiness. Each installed sibling
+receives the same snapshot so its future first-use setup can prepare its own
+associated skills. The snapshot excludes model files, virtual environments,
+binary runtime caches and recursive copies of itself. Bundle subskills prepare their renderer runtime but
 do not install siblings or narration — the `course-creator` bundle already ships
 them and its parent `tools/kokoro` path prepares narration. `--check` reports
 the plan without installing, `--yes` skips the prompt, and `--no-skills`
@@ -96,3 +100,36 @@ enabled. Missing optional stores preserve the default trust configuration;
 network failures remain visible and retryable. Authenticated image API requests
 reject redirects, while public model/runtime downloads may follow CDN redirects.
 This is covered by source tests; macOS cold installation still needs a real host.
+
+## Private Python manager fallback
+
+If the standalone UV installer is unavailable, the shared Python/Kokoro helpers
+and native desktop runner use the pinned UV 0.12.13 PyPI wheel. The registry in
+`uv_wheels.json` records official artifact URL, exact size and SHA-256 for Linux
+x86_64 (glibc/musl), Linux ARM64, macOS Intel/Apple Silicon and Windows x64/ARM64.
+Only the known executable and its licenses are copied into private app data.
+This path requires neither system pip nor package compilation. Unknown platforms
+receive an explicit unsupported reason. The private executable is checked before
+use. Failed or cancelled installer execution does not override cancellation.
+
+A cold Linux check actually exercised an HTTP 403 installer failure, successful
+verified wheel installation, and subsequent private Python 3.12.14 download and
+execution. Native Tauri and Windows/macOS execution remain unverified because app
+builds are deferred and those test hosts are unavailable.
+
+## Launching without a system Python
+
+The Unix/PowerShell launchers check Python's version before running the bootstrap.
+When no suitable interpreter exists, they privately prepare UV and Python 3.12,
+then run the same bootstrap. Windows uses native PowerShell HTTPS/ZIP/SHA-256
+facilities; Unix uses curl or wget, a SHA-256 verifier and unzip when available,
+or the official standalone installer when unzip is absent. The registry supplies
+exact wheel hashes and sizes. No global pip or compiler is needed. `--check`
+reports missing Python without installing anything. The bootstrap JSON returns
+`pythonExecutable` so follow-up tools can use the private interpreter explicitly.
+
+The no-Python Unix path was exercised with Python and UV excluded from PATH. It
+installed the verified wheel, downloaded Python 3.12.14 and ran the bootstrap CLI
+at `/tmp/skill-bank-no-python-launcher-o564ekfp`. Tests cover read-only checks,
+rejecting old Python, argument preservation and exit codes. Windows/PowerShell
+and macOS native execution remain unverified on this Linux host.

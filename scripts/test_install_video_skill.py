@@ -1,6 +1,7 @@
 """The installer can retry prerequisite setup after a partial install."""
 
 from pathlib import Path
+import json
 import subprocess
 import tempfile
 import unittest
@@ -10,6 +11,22 @@ from scripts.install_video_skill import REPO, ROUTES, VOICE_SKILLS, check_avatar
 
 
 class InstallVideoSkillTests(unittest.TestCase):
+    def test_install_prepares_associated_skills_in_the_exact_target(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            source = root / "source/explainer-video"
+            (source / "tools/kokoro").mkdir(parents=True)
+            (source / "SKILL.md").write_text("---\nname: explainer-video\n---\n")
+            (source / "tools/dependencies.json").write_text(json.dumps({"associated": ["voice-narration", "visual-assets"]}))
+            target = root / "skills with spaces"
+            with mock.patch("scripts.install_video_skill.REPO", root / "source"), mock.patch("scripts.install_video_skill.subprocess.run") as run:
+                install("explainer-video", target)
+            commands = [call.args[0] for call in run.call_args_list]
+            associated = [command for command in commands if Path(command[1]).name == "install_sibling_skill.py"]
+            self.assertEqual([command[2] for command in associated], ["voice-narration", "visual-assets"])
+            self.assertTrue(all(command[3:] == ["--target", str(target)] for command in associated))
+            self.assertNotIn("npx", str(associated))
+
     def test_avatar_install_keeps_fallback_when_hosted_provider_is_missing(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)

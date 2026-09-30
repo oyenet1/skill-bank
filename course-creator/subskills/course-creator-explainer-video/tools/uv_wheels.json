@@ -1,0 +1,47 @@
+{
+  "version": "0.12.13",
+  "platforms": {
+    "linux-x86_64": {
+      "filename": "uv-0.12.13-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl",
+      "url": "https://files.pythonhosted.org/packages/0c/31/f774e18ea9282f63fb3a4f83db8b818b860fb10efda1d295e4547e993bf8/uv-0.12.13-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl",
+      "size": 20029009,
+      "sha256": "5312891392eb5b72eaca9b880e85fe3e706a2b11342e59f7a5cf0304d14d5cc5"
+    },
+    "linux-aarch64": {
+      "filename": "uv-0.12.13-py3-none-manylinux_2_17_aarch64.manylinux2014_aarch64.musllinux_1_1_aarch64.whl",
+      "url": "https://files.pythonhosted.org/packages/6a/94/0b1156a245e6ce20d68fa401c34a18d304d7dd0be0569345e62459e34821/uv-0.12.13-py3-none-manylinux_2_17_aarch64.manylinux2014_aarch64.musllinux_1_1_aarch64.whl",
+      "size": 21699128,
+      "sha256": "891aff3e186cd5844102750372304e9ca20edffc50cb39a14cd047ea3416de75"
+    },
+    "linux-musl-x86_64": {
+      "filename": "uv-0.12.13-py3-none-musllinux_1_1_x86_64.whl",
+      "url": "https://files.pythonhosted.org/packages/10/bd/1e34c94b846965cb9dbd94da9fffd22f4ebaa3896307b13394cc960a3047/uv-0.12.13-py3-none-musllinux_1_1_x86_64.whl",
+      "size": 22903874,
+      "sha256": "15f368be55e87109391a31c50846e81086b9792ccb43a1731774e961ea0641b7"
+    },
+    "darwin-x86_64": {
+      "filename": "uv-0.12.13-py3-none-macosx_10_12_x86_64.whl",
+      "url": "https://files.pythonhosted.org/packages/7b/e9/de1916ac6602c226838aa1eee1033ce68138427399c63f9b47a5a1fa3dba/uv-0.12.13-py3-none-macosx_10_12_x86_64.whl",
+      "size": 20486403,
+      "sha256": "ac7f135750b7419283029edb93453b4d41c7d7ff90f9b3860a6e474ddf98f016"
+    },
+    "darwin-aarch64": {
+      "filename": "uv-0.12.13-py3-none-macosx_11_0_arm64.whl",
+      "url": "https://files.pythonhosted.org/packages/2a/33/ef14dc7c9c4cfaf0c3a4aed5a298b76b5dea94c75b233f7620c49c9b2e09/uv-0.12.13-py3-none-macosx_11_0_arm64.whl",
+      "size": 16796030,
+      "sha256": "f86e5f02883c2e7a21bf522f4aa520c20d4f779d9a3368fbd6cdfe4a8f9549b5"
+    },
+    "windows-x86_64": {
+      "filename": "uv-0.12.13-py3-none-win_amd64.whl",
+      "url": "https://files.pythonhosted.org/packages/69/1b/f40b1ad51226c2ae8707aa124f3b31f9b176a00482048dadd42d9b953d1e/uv-0.12.13-py3-none-win_amd64.whl",
+      "size": 17708127,
+      "sha256": "3efae0a910a25e18732f38ac1ef7b02e23f47b7fe67735039921fceff01d518c"
+    },
+    "windows-aarch64": {
+      "filename": "uv-0.12.13-py3-none-win_arm64.whl",
+      "url": "https://files.pythonhosted.org/packages/af/c8/d7629ecca85ee889bf8375730435e8c2dd920071a55c1d797e60200816e8/uv-0.12.13-py3-none-win_arm64.whl",
+      "size": 18913765,
+      "sha256": "ad61c396a57caac8b351429294e44ee52a1ecb1629b95d6898bd7c63ed3c13f3"
+    }
+  }
+}

@@ -74,13 +74,16 @@ class PlanBuilding(unittest.TestCase):
             skills = Path(temp)
             (skills / "voice-narration").mkdir()
             (skills / "voice-narration" / "SKILL.md").write_text("---\nname: voice-narration\n---\n")
-            with mock.patch("shutil.which", return_value="/usr/bin/npx"):
+            with mock.patch.object(bootstrap, "HERE", REPO / "explainer-video/tools"):
                 steps = bootstrap.skill_steps(self.SPEC, skills, install=True)
         self.assertEqual([s["name"] for s in steps], ["product-launch-video"])
-        self.assertEqual(steps[0]["command"][:3], ["/usr/bin/npx", "skills", "add"])
-        self.assertEqual(steps[0]["command"][3], "oyenet1/agent-skills@product-launch-video")
+        self.assertEqual(steps[0]["command"][0], sys.executable)
+        self.assertEqual(Path(steps[0]["command"][1]).name, "install_sibling_skill.py")
+        self.assertEqual(steps[0]["command"][2], "product-launch-video")
+        self.assertTrue(steps[0]["available"])
+        self.assertEqual(steps[0]["command"][3:], ["--target", str(skills)])
 
-    def test_missing_npx_marks_the_step_unavailable(self):
+    def test_missing_snapshot_marks_the_step_unavailable(self):
         with tempfile.TemporaryDirectory() as temp, mock.patch("shutil.which", return_value=None):
             steps = bootstrap.skill_steps(self.SPEC, Path(temp), install=True)
         self.assertTrue(all(not s["available"] for s in steps))
@@ -92,7 +95,8 @@ class PlanBuilding(unittest.TestCase):
             result = bootstrap.run_step(step)
         run.assert_not_called()
         self.assertFalse(result["ok"])
-        self.assertIn("npx skills add", result["prompt"])
+        self.assertIn("install_sibling_skill.py", result["prompt"])
+        self.assertIn("bundled sibling snapshot", result["reason"])
 
 
 class WindowsLaunchers(unittest.TestCase):

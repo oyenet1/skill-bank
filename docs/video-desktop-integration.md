@@ -40,7 +40,7 @@ Hosted presenter authentication and native platform verification remain unfinish
 
 | Area | Current evidence | Required implementation |
 |---|---|---|
-| Skill install | Each video route ships `runtime_requirements.json`, `ensure_video_runtime.py`, and a cross-platform `bootstrap.py` with `setup.sh`/`setup.cmd`/`setup.ps1` and a generated `tools/dependencies.json`. The launcher detects OS/arch, prepares the private runtime, and offers the associated skills. `scripts/install_video_skill.py` copies and prepares one skill immediately and can resume failed setup with `--resume`. Every route declared to use Kokoro now ships its bootstrap files. `npx skills add` itself has no install hook, so first use runs the launcher. | Desktops continue to use their native setup phase; standalone skills use the bundled first-use bootstrap. |
+| Skill install | Each video route ships `runtime_requirements.json`, `ensure_video_runtime.py`, and a cross-platform `bootstrap.py` with `setup.sh`/`setup.cmd`/`setup.ps1` and a generated `tools/dependencies.json`. The launcher detects OS/arch, prepares the private runtime, and installs missing associated skills from the bundled snapshot. `scripts/install_video_skill.py` copies and prepares one skill immediately and can resume failed setup with `--resume`. Every route declared to use Kokoro now ships its bootstrap files. `npx skills add` itself has no install hook, so first use runs the launcher. | Desktops continue to use their native setup phase; standalone skills use the bundled first-use bootstrap. |
 | Preflight | The bundled setup reports JSON status and executable paths and now checks the installed Remotion/HyperFrames browser instead of trusting a marker. The desktop app now uses the shared renderer manifest, includes HyperFrames browser setup, and launches Windows npm tools through Node. | Verify managed Node/browser installation on every supported platform. |
 | Voice | Kokoro's Python entry point now bootstraps `uv`/Python/packages and verifies pinned model files on Windows, macOS, and Linux; voice skill asks for WAV. | Show model download progress in the desktop UI and handle unsupported languages before job start. |
 | Avatar provider | Dispatcher prefers verified local photo generation, then authenticated native HeyGen/Windows WSL, then editable fallback. Desktop local models require consent. | Verify actual GPU inference and hosted desktop authentication. |
@@ -101,7 +101,7 @@ Dependency installation belongs to the desktop host or the bundled first-use
 installer, since these skills are instruction files rather than executable
 packages. The bundled launcher now detects OS/arch and reads one manifest for
 the selected route, checks versions, installs missing runtimes to a private user
-data directory, verifies binaries, and offers the associated sibling skills.
+data directory, verifies binaries, and installs missing associated sibling skills from the bundled snapshot.
 The desktop host now has a matching native setup command and a manual
 **Prepare tools** action. The authored renderer runner also
 prepares the selected engine before rendering. Keep optional engines separate:

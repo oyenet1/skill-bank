@@ -23,6 +23,7 @@ import urllib.request
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 from network_tls import tls_context
+from bootstrap_uv import install_pinned_uv
 
 
 def runtime_dir() -> Path:
@@ -73,19 +74,26 @@ def ensure_uv() -> Path:
     suffix = ".ps1" if os.name == "nt" else ".sh"
     url = f"https://astral.sh/uv/install{suffix}"
     progress("uv", "Installing private uv runtime")
-    with tempfile.TemporaryDirectory(prefix="kokoro-uv-") as scratch:
-        installer = Path(scratch) / ("install" + suffix)
-        with urllib.request.urlopen(url, timeout=30, context=tls_context()) as response, installer.open("wb") as output:
-            shutil.copyfileobj(response, output)
-        env = os.environ.copy()
-        env.update(UV_INSTALL_DIR=str(UV.parent), UV_NO_MODIFY_PATH="1")
-        if os.name == "nt":
-            powershell = shutil.which("powershell.exe") or shutil.which("pwsh.exe")
-            if not powershell:
-                raise RuntimeError("PowerShell is required for the Windows uv installer")
-            run([powershell, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", installer], env=env)
-        else:
-            run(["sh", installer], env=env)
+    try:
+        with tempfile.TemporaryDirectory(prefix="kokoro-uv-") as scratch:
+            installer = Path(scratch) / ("install" + suffix)
+            with urllib.request.urlopen(url, timeout=30, context=tls_context()) as response, installer.open("wb") as output:
+                shutil.copyfileobj(response, output)
+            env = os.environ.copy()
+            env.update(UV_INSTALL_DIR=str(UV.parent), UV_NO_MODIFY_PATH="1")
+            if os.name == "nt":
+                powershell = shutil.which("powershell.exe") or shutil.which("pwsh.exe")
+                if not powershell:
+                    raise RuntimeError("PowerShell is required for the Windows uv installer")
+                run([powershell, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", installer], env=env)
+            else:
+                run(["sh", installer], env=env)
+            if not UV.is_file():
+                raise RuntimeError("Standalone Python manager installation did not verify")
+            run([UV, "--version"])
+    except (OSError, RuntimeError, subprocess.CalledProcessError) as error:
+        progress("uv", "Standalone installer unavailable; using verified PyPI wheel", reason=type(error).__name__)
+        install_pinned_uv(UV)
     if not UV.is_file():
         raise RuntimeError(f"uv installer did not create {UV}")
     run([UV, "--version"])
