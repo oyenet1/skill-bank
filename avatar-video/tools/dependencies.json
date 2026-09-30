@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "skill": "avatar-video",
+  "capability": "avatar-video",
+  "repo": "oyenet1/agent-skills",
+  "routes": [
+    "avatar-video"
+  ],
+  "voice": true,
+  "transcription": true,
+  "associated": [
+    "talking-head-video",
+    "voice-narration"
+  ]
+}

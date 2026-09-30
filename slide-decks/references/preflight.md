@@ -6,6 +6,32 @@ data directory, verifies them, and prints machine-readable JSON with exact
 executable paths. Use those paths for subsequent commands. It does not change
 global npm packages or the user's shell profile.
 
+## First use — one launcher per OS
+
+Run the launcher for the host operating system. It detects the OS and CPU
+architecture, then prepares the private runtime and the associated skills:
+
+| OS | Command |
+|---|---|
+| Linux, macOS | `sh tools/setup.sh` |
+| Windows (PowerShell) | `powershell -ExecutionPolicy Bypass -File tools\setup.ps1` |
+| Windows (Command Prompt) | `tools\setup.cmd` |
+
+The launcher runs `tools/bootstrap.py`, which reads the shipped
+`tools/dependencies.json` and:
+
+1. installs missing Node, FFmpeg/FFprobe, the selected renderers and Chromium;
+2. prepares Kokoro narration and local speech recognition where the skill needs
+   them;
+3. installs any associated sibling skill that is not already present in the
+   skills directory, or prints the exact `npx skills add` command when `npx` is
+   unavailable.
+
+Add `--check` to report the plan and install nothing, `--yes` to run without an
+interactive prompt, or `--no-skills` to prepare runtimes only. Unsupported
+OS/architecture combinations report the missing runtime instead of choosing a
+binary for another platform.
+
 ## Check per deliverable
 
 | Deliverable | Requires | Check |

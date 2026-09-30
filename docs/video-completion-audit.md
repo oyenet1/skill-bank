@@ -7,7 +7,7 @@ App builds remain disabled at the requester's instruction.
 | Requirement | Authoritative evidence | Status |
 |---|---|---|
 | Explain skill workflow and duration guidance | `video-desktop-integration.md`, generated skill intake/preflight/generation instructions | Documented. Initial target: 30 seconds–3 minutes; longer teaching material in 5–10 minute chapters. 30 minutes is a limit, not a benchmark. |
-| Automatically prepare missing tools | Shared runtime manifest/installers, Kokoro bootstrap, managed ASR first use, desktop host provisioning | Implemented; managed ASR and authored renderer setup exercised on Linux. Generic skill managers require the bundled first-use preflight; they do not offer an install hook. |
+| Automatically prepare missing tools | Shared runtime manifest/installers, cross-platform `bootstrap.py` launchers (`setup.sh`/`.cmd`/`.ps1`), Kokoro bootstrap, managed ASR first use, desktop host provisioning | Implemented; the bootstrap detects OS/arch, prepares the runtime, and offers associated sibling skills, with `--check` for a read-only plan. Managed ASR and authored renderer setup exercised on Linux. Generic skill managers have no install hook, so the first-use launcher performs setup. |
 | Script and editable storyboard | Desktop template draft, configured AI writer, `videoAi.test.ts`, importer/exported project | Implemented. Provider planning requires configured credentials/local service; no live provider planning claim is made from parser tests. |
 | User form/media input | Video Studio with searchable menus, uploaded source images, narration and footage; importer tests | Implemented and source-checked. Native form interactions require a built host to verify. |
 | Generate supporting visual assets | Shared `generate_image_asset.py`, native command, VideoAssetPanel, frontend and PNG/provider tests | Implemented with cached PNGs and provenance. No paid OpenAI request was made; account/model access remains unverified. Real product/portrait inputs remain required. |
@@ -21,13 +21,14 @@ App builds remain disabled at the requester's instruction.
 
 ## Verification completed
 
-- 109 Python tests pass, including actual media importer/renderer handoff and
-  process-tree cancellation; provider/image inference tests use explicit stubs.
+- 122 Python tests pass, including OS/arch bootstrap planning and launcher
+  emission, actual media importer/renderer handoff, and process-tree
+  cancellation; provider/image inference tests use explicit stubs.
 - Seven frontend tests pass for storyboard parsing, image generation/cancellation,
   and actual storyboard store actions.
 - Both full Vue checking and the configured type check pass. The configured check
   now includes Vue and TSX, preventing previously missed component errors.
-- All 403 generated skill files match their sources.
+- All 463 generated skill files match their sources.
 - Shared download TLS loads distro CA bundles and macOS system Keychain roots
   for managed Python. Regression checks retain certificate/hostname verification
   and tolerate missing optional stores. A live Hugging Face HTTPS request passed

@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "skill": "slide-decks",
+  "capability": "slide-decks",
+  "repo": "oyenet1/agent-skills",
+  "routes": [
+    "slide-decks"
+  ],
+  "voice": false,
+  "transcription": false,
+  "associated": [
+    "visual-assets",
+    "explainer-video"
+  ]
+}

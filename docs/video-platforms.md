@@ -18,6 +18,43 @@ network access. The installer reports unsupported OS/CPU combinations and
 failed binary verification explicitly. Hosted avatar jobs still require a
 HeyGen account; on Windows the installer checks a native CLI first, then WSL.
 
+## First-use bootstrap
+
+Each runtime-backed skill ships one cross-platform entry point, so an install
+made by any skill manager can finish its own setup. The launcher detects the OS
+and CPU, then runs `tools/bootstrap.py`, which reads the generated
+`tools/dependencies.json`:
+
+| OS | Launcher |
+|---|---|
+| Linux, macOS | `sh tools/setup.sh` |
+| Windows (PowerShell) | `powershell -ExecutionPolicy Bypass -File tools\setup.ps1` |
+| Windows (Command Prompt) | `tools\setup.cmd` |
+
+`bootstrap.py` verifies the host against the same `x64`/`arm64` table as
+`ensure_video_runtime.py`, prepares the private runtime (Node, FFmpeg/FFprobe,
+the selected renderers, Chromium, and Kokoro or speech models where the skill
+needs them), then offers the associated standalone skills that are missing from
+the skills directory:
+
+| Skill | Associated skills offered |
+|---|---|
+| `slide-decks` | `visual-assets`, `explainer-video` |
+| `explainer-video` | `voice-narration`, `product-launch-video`, `slide-decks`, `visual-assets` |
+| `product-launch-video` | `explainer-video`, `voice-narration` |
+| `talking-head-video` | `avatar-video`, `explainer-video`, `product-launch-video` |
+| `avatar-video` | `talking-head-video`, `voice-narration` |
+| `voice-narration` | `explainer-video`, `product-launch-video` |
+
+A sibling is installed with `npx skills add oyenet1/agent-skills@<name> -g`
+unless the target directory already contains it. When `npx` is unavailable the
+bootstrap prints that exact command instead of failing, and the runtime setup it
+did complete still stands. Bundle subskills prepare their renderer runtime but
+do not install siblings or narration — the `course-creator` bundle already ships
+them and its parent `tools/kokoro` path prepares narration. `--check` reports
+the plan without installing, `--yes` skips the prompt, and `--no-skills`
+prepares runtimes only.
+
 The shared `tools/ensure_video_runtime.py` and Kokoro `tools/kokoro/start.py`
 can be called from a Tauri command and their standard-error JSON progress can
 are relayed to a frontend channel. The Tauri source now wires the Python job

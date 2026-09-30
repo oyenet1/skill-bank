@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "skill": "course-creator-talking-head-video",
+  "capability": "talking-head-video",
+  "repo": "oyenet1/agent-skills",
+  "routes": [
+    "talking-head-video"
+  ],
+  "voice": false,
+  "transcription": true,
+  "associated": []
+}

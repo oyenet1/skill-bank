@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "skill": "talking-head-video",
+  "capability": "talking-head-video",
+  "repo": "oyenet1/agent-skills",
+  "routes": [
+    "talking-head-video"
+  ],
+  "voice": true,
+  "transcription": true,
+  "associated": [
+    "avatar-video",
+    "explainer-video",
+    "product-launch-video"
+  ]
+}

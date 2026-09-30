@@ -20,6 +20,13 @@ modules:
 
 # prompts/ is copied as references/prompts/ for capabilities that list "prompts".
 
+# A capability with a `bootstrap:` block ships the cross-platform first-use
+# installer (tools/bootstrap.py plus setup.sh/.cmd/.ps1) and a generated
+# tools/dependencies.json. `routes` are ensure_video_runtime.py routes;
+# `voice` adds the Kokoro narration step; `transcription` adds local speech
+# recognition; `associated` lists standalone sibling skills to install if the
+# target directory does not already contain them.
+
 capabilities:
 
   map:
@@ -43,17 +50,29 @@ capabilities:
     bundle: course-creator-slide-decks
     modules: [intake, brand, objects, preflight, slidev, code]
     shared_tools: [network_tls.py, ensure_video_runtime.py, runtime_requirements.json]
+    bootstrap:
+      routes: [slide-decks]
+      associated: [visual-assets, explainer-video]
 
   explainer-video:
     standalone: explainer-video
     bundle: course-creator-explainer-video
     modules: [intake, brand, video, voice, preflight, generated-assets, objects, slidev, code, prompts]
     shared_tools: [network_tls.py, generate_image_asset.py, write_subtitles.py, review_captions.py, transcribe_captions.py, ensure_python_runtime.py, transcribe_with_faster_whisper.py, assemble_video.py, render_slidev_video.py, render_remotion_video.py, render_hyperframes_video.py, run_video_job.py, run_desktop_video_job.py, author_desktop_video.py, desktop_fonts.py, render_desktop_sources.py, ensure_video_runtime.py, runtime_requirements.json]
+    bootstrap:
+      routes: [explainer-video]
+      voice: true
+      transcription: true
+      associated: [voice-narration, product-launch-video, slide-decks, visual-assets]
 
   voice-narration:
     standalone: voice-narration
     bundle: course-creator-voice-narration
     modules: [intake, brand, voice, preflight]
+    bootstrap:
+      routes: []
+      voice: true
+      associated: [explainer-video, product-launch-video]
 
   marketing-copy:
     standalone: marketing-copy
@@ -68,6 +87,11 @@ capabilities:
     bundle: course-creator-product-launch-video
     modules: [intake, brand, video, voice, preflight, generated-assets, objects, slidev, code, prompts]
     shared_tools: [network_tls.py, generate_image_asset.py, write_subtitles.py, review_captions.py, transcribe_captions.py, ensure_python_runtime.py, transcribe_with_faster_whisper.py, assemble_video.py, render_remotion_video.py, render_hyperframes_video.py, run_video_job.py, run_desktop_video_job.py, author_desktop_video.py, desktop_fonts.py, render_desktop_sources.py, ensure_video_runtime.py, runtime_requirements.json]
+    bootstrap:
+      routes: [product-launch-video]
+      voice: true
+      transcription: true
+      associated: [explainer-video, voice-narration]
     ships:
       - files/references/workflow.md
 
@@ -76,9 +100,19 @@ capabilities:
     bundle: course-creator-talking-head-video
     modules: [intake, brand, video, voice, preflight, generated-assets, objects, code]
     shared_tools: [network_tls.py, generate_image_asset.py, write_subtitles.py, review_captions.py, transcribe_captions.py, ensure_python_runtime.py, transcribe_with_faster_whisper.py, assemble_video.py, render_hyperframes_video.py, run_video_job.py, run_desktop_video_job.py, author_desktop_video.py, desktop_fonts.py, render_desktop_sources.py, ensure_video_runtime.py, runtime_requirements.json]
+    bootstrap:
+      routes: [talking-head-video]
+      voice: true
+      transcription: true
+      associated: [avatar-video, explainer-video, product-launch-video]
 
   avatar-video:
     standalone: avatar-video
     bundle: course-creator-avatar-video
     modules: [intake, brand, video, voice, preflight, generated-assets, objects, code]
     shared_tools: [network_tls.py, avatar_ensure.py, avatar_runtime.py, avatar_generate.py, avatar_infer_worker.py, avatar_provider.py, prepare_avatar_job.py, generate_image_asset.py, avatar_models.json, avatar_probe.py, avatar_pin.py, avatar_download.py, write_subtitles.py, review_captions.py, transcribe_captions.py, ensure_python_runtime.py, transcribe_with_faster_whisper.py, assemble_video.py, render_hyperframes_video.py, run_video_job.py, run_desktop_video_job.py, author_desktop_video.py, desktop_fonts.py, render_desktop_sources.py, ensure_video_runtime.py, runtime_requirements.json]
+    bootstrap:
+      routes: [avatar-video]
+      voice: true
+      transcription: true
+      associated: [talking-head-video, voice-narration]

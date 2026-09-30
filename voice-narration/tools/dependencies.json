@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "skill": "voice-narration",
+  "capability": "voice-narration",
+  "repo": "oyenet1/agent-skills",
+  "routes": [],
+  "voice": true,
+  "transcription": false,
+  "associated": [
+    "explainer-video",
+    "product-launch-video"
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "skill": "course-creator-voice-narration",
+  "capability": "voice-narration",
+  "repo": "oyenet1/agent-skills",
+  "routes": [],
+  "voice": false,
+  "transcription": false,
+  "associated": []
+}

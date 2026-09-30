@@ -100,6 +100,14 @@ npx skills add oyenet1/agent-skills@visual-assets -g
 npx skills add oyenet1/agent-skills --all
 ```
 
+Installing a video skill is enough to start: its first-use bootstrap downloads
+the runtime it needs and offers the associated skills it can hand off to. To
+pre-pull those siblings explicitly, install them alongside, for example:
+
+```bash
+npx skills add oyenet1/agent-skills@explainer-video oyenet1/agent-skills@voice-narration oyenet1/agent-skills@product-launch-video -g
+```
+
 ## Editing Skills
 
 For the current video production steps, installer gaps, subtitle contract, and
@@ -114,6 +122,37 @@ run `python3 tools/ensure_video_runtime.py product-launch-video` to see the
 verified executable paths. `--check` reports status without installing.
 `npx skills add` copies files and does not run a post-install hook, so setup
 runs when the skill is first used.
+
+### First-use bootstrap on any OS
+
+Every runtime-backed skill ships a small cross-platform bootstrap that detects
+the operating system and CPU architecture, prepares the private runtime, and
+offers to install the associated sibling skills that are not present. Run the
+launcher for the host:
+
+| OS | Command |
+|---|---|
+| Linux, macOS | `sh tools/setup.sh` |
+| Windows (PowerShell) | `powershell -ExecutionPolicy Bypass -File tools\setup.ps1` |
+| Windows (Command Prompt) | `tools\setup.cmd` |
+
+The launcher runs `tools/bootstrap.py`, which reads the shipped
+`tools/dependencies.json` and:
+
+1. installs missing Node, FFmpeg/FFprobe, the selected renderers and Chromium
+   into the private user data directory;
+2. prepares Kokoro narration and local speech recognition where the skill needs
+   them;
+3. installs any associated skill that is not already in the skills directory —
+   for example, `explainer-video` offers `voice-narration`,
+   `product-launch-video`, `slide-decks` and `visual-assets` — or prints the
+   exact `npx skills add` command when `npx` is unavailable.
+
+Use `--check` to report the plan and install nothing, `--yes` to run without an
+interactive prompt, `--no-skills` to prepare runtimes only, and `--target DIR`
+to name the skills directory. Unsupported OS/architecture combinations report
+the missing runtime rather than selecting a binary for another platform. No
+global `npm`/`pip` install is ever performed and PATH is never modified.
 
 The explainer and product launch skills ship `tools/assemble_video.py` for joining rendered scene
 files with narration or footage audio and timed subtitles. See the
@@ -157,6 +196,11 @@ For `avatar-video`, it also checks the hosted HeyGen CLI and authentication.
 That provider step requires a user account; the local script, voice, and
 storyboard fallback remains available if it is not ready.
 
+`install_video_skill.py` prepares the runtime for the one skill you name. The
+associated skills are offered by the first-use bootstrap instead, so an install
+made any way — the installer, `npx skills add`, or a manual copy — can complete
+its own setup.
+
 Skills are generated. The source of truth is [`skills-src/`](./skills-src/); the
 `course-creator/subskills/` folders and the top-level skills are build output.
 **Do not edit generated folders by hand** — the next build overwrites them.
@@ -165,6 +209,7 @@ Skills are generated. The source of truth is [`skills-src/`](./skills-src/); the
 |---|---|
 | `skills-src/manifest.yaml` | which capabilities exist, their names, and which shared modules each ships |
 | `skills-src/<capability>/skill.md` | one capability — frontmatter for both targets, shared craft, `{{mode:…}}` blocks for target-specific text |
+| `skills-src/<capability>/bootstrap` | the capability's `bootstrap:` block also emits `tools/bootstrap.py`, the `setup.sh/.cmd/.ps1` launchers, and `tools/dependencies.json` |
 | `skills-src/_shared/` | the intake modules: `intake`, `brand`, `video`, `voice`, `preflight`, `objects` |
 | `skills-src/_shared/prompts/<category>/` | script and storyboard patterns, one file per pattern |
 | `skills-src/_shared/library/<name>/` | full-text source material shipped verbatim to the capabilities that declare `library:` |

@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "skill": "explainer-video",
+  "capability": "explainer-video",
+  "repo": "oyenet1/agent-skills",
+  "routes": [
+    "explainer-video"
+  ],
+  "voice": true,
+  "transcription": true,
+  "associated": [
+    "voice-narration",
+    "product-launch-video",
+    "slide-decks",
+    "visual-assets"
+  ]
+}

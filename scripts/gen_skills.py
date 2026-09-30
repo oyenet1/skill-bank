@@ -17,6 +17,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import json
 import re
 import shutil
 import sys
@@ -40,6 +41,29 @@ TOOL_COPIES = [
     ("course-creator/tools/kokoro", "avatar-video/tools/kokoro"),
 ]
 TOOL_IGNORE = {"models", ".venv", ".tooling", "__pycache__", "node_modules"}
+
+# A capability with a `bootstrap:` manifest block ships these first-use files
+# plus a generated tools/dependencies.json next to them.
+BOOTSTRAP_TOOLS = ["bootstrap.py", "setup.sh", "setup.cmd", "setup.ps1"]
+DEFAULT_SKILL_REPO = "oyenet1/agent-skills"
+
+
+def dependencies_document(cap_id: str, spec: dict, mode: str) -> dict:
+    boot = spec["bootstrap"]
+    name = spec["standalone"] if mode == "standalone" else spec["bundle"]
+    return {
+        "schemaVersion": 1,
+        "skill": name,
+        "capability": cap_id,
+        "repo": boot.get("repo", DEFAULT_SKILL_REPO),
+        "routes": list(boot.get("routes", [])),
+        # The course-creator bundle ships its siblings and prepares narration
+        # through its own tools; only standalone targets own the full first-use
+        # setup.
+        "voice": bool(boot.get("voice", False)) and mode == "standalone",
+        "transcription": bool(boot.get("transcription", False)),
+        "associated": list(boot.get("associated", [])) if mode == "standalone" else [],
+    }
 
 
 def load_manifest() -> dict:
@@ -144,6 +168,12 @@ def build() -> dict[Path, str]:
             for rel in spec.get("shared_tools", []):
                 s = shared / "tools" / rel
                 out[dest / "tools" / rel] = s.read_text()
+            if spec.get("bootstrap"):
+                for rel in BOOTSTRAP_TOOLS:
+                    out[dest / "tools" / rel] = (shared / "tools" / rel).read_text()
+                out[dest / "tools" / "dependencies.json"] = (
+                    json.dumps(dependencies_document(cap_id, spec, mode), indent=2) + "\n"
+                )
             # Libraries ship verbatim -- they are source text, not templates.
             for name in spec.get("library", []):
                 for p in sorted((shared / "library" / name).rglob("*")):

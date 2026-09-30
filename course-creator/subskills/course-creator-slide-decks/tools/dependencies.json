@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "skill": "course-creator-slide-decks",
+  "capability": "slide-decks",
+  "repo": "oyenet1/agent-skills",
+  "routes": [
+    "slide-decks"
+  ],
+  "voice": false,
+  "transcription": false,
+  "associated": []
+}
