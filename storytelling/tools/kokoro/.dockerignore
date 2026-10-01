@@ -1,0 +1,7 @@
+.venv/
+__pycache__/
+*.pyc
+# models are ~350MB, downloaded by download_models.sh (shared by native + docker)
+models/*.onnx
+models/*.bin
+!models/.gitkeep

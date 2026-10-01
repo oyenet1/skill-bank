@@ -1,0 +1,8 @@
+services:
+  kokoro:
+    build: .
+    image: course-kokoro:latest
+    volumes:
+      - ./models:/models            # shared with native setup, persists downloads
+      - ../../assets/audio:/audio   # generated wavs land here
+    user: "1000:1000"               # write wavs as host user, not root
