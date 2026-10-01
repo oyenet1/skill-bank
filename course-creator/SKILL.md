@@ -62,6 +62,15 @@ For programming courses, also read [technical profile](references/technical-prof
 - Exercises are optional for each lesson. Offer a suitable number when they help, including none. Assignments and other assets are separate actions; do not impose fixed counts.
 - Ground factual content in supplied materials first, then appropriate authoritative sources. Record source links where used. Do not invent source URLs or online page URLs.
 
+## Social media delivery
+
+For public-facing text and video, read the selected subskill's
+`references/social-media.md`. Use a clear hook, complete explanation and payoff,
+mobile-readable objects/flows, reviewed captions and platform-specific formatting.
+Ask for missing audience or publishing choices before dependent production.
+Keep full lessons and internal course plans intact; don't replace teaching depth
+with a teaser. Optimize for shareability without promising viral performance.
+
 ## Video and media contract
 
 - Each lesson can have its own editable Slidev deck, produced when requested. Written lesson, notes, slide handout PDF, online notes page, optional Kokoro narration, Remotion video, and CapCut handoff are distinct outputs that may also be combined. For visual outputs, inspect the [bundled images and icons](references/bundled-assets.md), use suitable ones in the teaching material, and keep selected copies inside the course.

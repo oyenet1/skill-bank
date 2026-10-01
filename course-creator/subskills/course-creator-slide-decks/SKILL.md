@@ -22,6 +22,14 @@ Before building, read [preflight](references/preflight.md) and run
 `python3 tools/ensure_video_runtime.py slide-decks` from this skill directory.
 Use the verified executable paths in its JSON result for Slidev and exports.
 
+## Social media output
+
+Read [social-media](references/social-media.md) before producing audience-facing text or video.
+Resolve the publishing platform and audience, keep the hook and payoff clear,
+and verify mobile readability, captions and the chosen channel's format.
+Ask for missing material choices at intake. Aim for shareability without
+claiming guaranteed viral performance; preserve the requested teaching depth.
+
 ## When storytelling is selected
 
 Follow [storytelling](references/storytelling.md) when the requester selects a storytelling treatment.

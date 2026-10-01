@@ -23,6 +23,8 @@ modules:
   generated-assets: generated-assets.md
   product-capture: product-capture.md
   storytelling: storytelling.md
+  social-media: social-media.md
+  sell-with-story: sell-with-story.md
 
 # prompts/ is copied as references/prompts/ for capabilities that list "prompts".
 
@@ -38,7 +40,7 @@ capabilities:
   storytelling:
     standalone: storytelling
     bundle: course-creator-storytelling
-    modules: [intake, brand, storytelling, objects, slidev, code, generated-assets, voice, preflight]
+    modules: [intake, brand, storytelling, objects, slidev, code, generated-assets, voice, preflight, social-media, sell-with-story]
     shared_tools: [bootstrap_uv.py, uv_wheels.json, network_tls.py, ensure_video_runtime.py, runtime_requirements.json, ensure_python_runtime.py, transcribe_with_faster_whisper.py]
     bootstrap:
       routes: [slide-decks]
@@ -49,13 +51,13 @@ capabilities:
   map:
     standalone: curriculum-map
     bundle: course-creator-map
-    modules: [intake]
+    modules: [intake, social-media]
 
   assets:
     standalone: visual-assets
     bundle: course-creator-assets
     asset_sets: [device-objects]
-    modules: [intake, brand, objects, generated-assets]
+    modules: [intake, brand, objects, generated-assets, social-media]
     shared_tools: [bootstrap_uv.py, uv_wheels.json, network_tls.py, generate_image_asset.py]
     bootstrap:
       routes: []
@@ -64,12 +66,12 @@ capabilities:
   content-authoring:
     standalone: content-authoring
     bundle: course-creator-content-authoring
-    modules: [intake, brand, code, storytelling, objects, slidev]
+    modules: [intake, brand, code, storytelling, objects, slidev, social-media, sell-with-story]
 
   slide-decks:
     standalone: slide-decks
     bundle: course-creator-slide-decks
-    modules: [intake, brand, objects, preflight, slidev, code, storytelling]
+    modules: [intake, brand, objects, preflight, slidev, code, storytelling, social-media, sell-with-story]
     shared_tools: [bootstrap_uv.py, uv_wheels.json, network_tls.py, ensure_video_runtime.py, runtime_requirements.json]
     bootstrap:
       routes: [slide-decks]
@@ -78,7 +80,7 @@ capabilities:
   explainer-video:
     standalone: explainer-video
     bundle: course-creator-explainer-video
-    modules: [intake, brand, video, voice, preflight, generated-assets, product-capture, objects, slidev, code, prompts, storytelling]
+    modules: [intake, brand, video, voice, preflight, generated-assets, product-capture, objects, slidev, code, prompts, storytelling, social-media, sell-with-story]
     shared_tools: [capture_product_screens.py, capture_product_screens.cjs, bootstrap_uv.py, uv_wheels.json, network_tls.py, generate_image_asset.py, write_subtitles.py, review_captions.py, transcribe_captions.py, ensure_python_runtime.py, transcribe_with_faster_whisper.py, assemble_video.py, render_slidev_video.py, render_remotion_video.py, render_hyperframes_video.py, run_video_job.py, run_desktop_video_job.py, author_desktop_video.py, desktop_fonts.py, render_desktop_sources.py, ensure_video_runtime.py, runtime_requirements.json]
     bootstrap:
       routes: [explainer-video]
@@ -89,7 +91,7 @@ capabilities:
   voice-narration:
     standalone: voice-narration
     bundle: course-creator-voice-narration
-    modules: [intake, brand, voice, preflight]
+    modules: [intake, brand, voice, preflight, social-media]
     bootstrap:
       routes: []
       voice: true
@@ -98,7 +100,7 @@ capabilities:
   marketing-copy:
     standalone: marketing-copy
     bundle: course-creator-marketing-copy
-    modules: [intake, brand, storytelling, objects, slidev]
+    modules: [intake, brand, storytelling, objects, slidev, social-media, sell-with-story]
     ships:
       - files/references/marketing-playbook.md
     library: [marketing]
@@ -106,7 +108,7 @@ capabilities:
   product-launch-video:
     standalone: product-launch-video
     bundle: course-creator-product-launch-video
-    modules: [intake, brand, video, voice, preflight, generated-assets, product-capture, objects, slidev, code, prompts, storytelling]
+    modules: [intake, brand, video, voice, preflight, generated-assets, product-capture, objects, slidev, code, prompts, storytelling, social-media, sell-with-story]
     shared_tools: [capture_product_screens.py, capture_product_screens.cjs, bootstrap_uv.py, uv_wheels.json, network_tls.py, generate_image_asset.py, write_subtitles.py, review_captions.py, transcribe_captions.py, ensure_python_runtime.py, transcribe_with_faster_whisper.py, assemble_video.py, render_remotion_video.py, render_hyperframes_video.py, run_video_job.py, run_desktop_video_job.py, author_desktop_video.py, desktop_fonts.py, render_desktop_sources.py, ensure_video_runtime.py, runtime_requirements.json]
     bootstrap:
       routes: [product-launch-video]
@@ -119,7 +121,7 @@ capabilities:
   talking-head-video:
     standalone: talking-head-video
     bundle: course-creator-talking-head-video
-    modules: [intake, brand, video, voice, preflight, generated-assets, objects, code]
+    modules: [intake, brand, video, voice, preflight, generated-assets, objects, code, social-media]
     shared_tools: [bootstrap_uv.py, uv_wheels.json, network_tls.py, generate_image_asset.py, write_subtitles.py, review_captions.py, transcribe_captions.py, ensure_python_runtime.py, transcribe_with_faster_whisper.py, assemble_video.py, render_hyperframes_video.py, run_video_job.py, run_desktop_video_job.py, author_desktop_video.py, desktop_fonts.py, render_desktop_sources.py, ensure_video_runtime.py, runtime_requirements.json]
     bootstrap:
       routes: [talking-head-video]
@@ -130,7 +132,7 @@ capabilities:
   avatar-video:
     standalone: avatar-video
     bundle: course-creator-avatar-video
-    modules: [intake, brand, video, voice, preflight, generated-assets, objects, code]
+    modules: [intake, brand, video, voice, preflight, generated-assets, objects, code, social-media]
     shared_tools: [bootstrap_uv.py, uv_wheels.json, network_tls.py, avatar_ensure.py, avatar_runtime.py, avatar_generate.py, avatar_infer_worker.py, avatar_provider.py, prepare_avatar_job.py, generate_image_asset.py, avatar_models.json, avatar_probe.py, avatar_pin.py, avatar_download.py, write_subtitles.py, review_captions.py, transcribe_captions.py, ensure_python_runtime.py, transcribe_with_faster_whisper.py, assemble_video.py, render_hyperframes_video.py, run_video_job.py, run_desktop_video_job.py, author_desktop_video.py, desktop_fonts.py, render_desktop_sources.py, ensure_video_runtime.py, runtime_requirements.json]
     bootstrap:
       routes: [avatar-video]
@@ -142,6 +144,7 @@ capabilities:
     standalone: motion-graphics-video
     bundle: course-creator-motion-graphics-video
     modules:
+    - social-media
     - intake
     - brand
     - video

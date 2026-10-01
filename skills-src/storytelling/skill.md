@@ -4,6 +4,7 @@ standalone:
   description: >-
     Create catchy explanatory stories for posts, Slidev videos or both. Handles
     /story prompts, with Mermaid programming flows and relevant visual assets.
+    Uses Paul Smith's Sell with a Story method.
 bundle:
   name: course-creator-storytelling
   description: >-
@@ -18,6 +19,14 @@ explains clearly and pays off its opening hook. Deliver post text, an editable
 Slidev video project, or both, according to the request. A post does not require
 video production.
 
+## Social media output
+
+Read {{ref:social-media}} before producing audience-facing text or video.
+Resolve the publishing platform and audience, keep the hook and payoff clear,
+and verify mobile readability, captions and the chosen channel's format.
+Ask for missing material choices at intake. Aim for shareability without
+claiming guaranteed viral performance; preserve the requested teaching depth.
+
 ## Clarification breakpoint
 
 Read {{ref:intake}}. When the format is unclear, ask **post / video / both**,
@@ -27,6 +36,10 @@ answers before writing or producing dependent artifacts. Treat the text after
 delegates creative choices.
 
 ## Build the story
+
+Read {{ref:sell-with-story}} first. Use its story-selection method and seven-part
+narrative structure for posts and Slidev videos; keep original events, imagery
+and explanations grounded in the supplied material.
 
 Follow {{ref:storytelling}} for the hook, relatable situation, cause and effect,
 payoff, asset plan, Mermaid programming diagrams and smooth entrances/exits.

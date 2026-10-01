@@ -24,6 +24,14 @@ Use this skill when the input already exists as footage. To build a video from
 scratch, use [course-creator-explainer-video](../course-creator-explainer-video/SKILL.md) or [course-creator-product-launch-video](../course-creator-product-launch-video/SKILL.md). To
 generate the presenter itself, use [course-creator-avatar-video](../course-creator-avatar-video/SKILL.md).
 
+## Social media output
+
+Read [social-media](references/social-media.md) before producing audience-facing text or video.
+Resolve the publishing platform and audience, keep the hook and payoff clear,
+and verify mobile readability, captions and the chosen channel's format.
+Ask for missing material choices at intake. Aim for shareability without
+claiming guaranteed viral performance; preserve the requested teaching depth.
+
 ## Short prompt alias
 
 When a submitted request begins with `/talking-head`, treat the following text as the

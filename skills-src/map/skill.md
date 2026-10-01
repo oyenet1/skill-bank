@@ -18,6 +18,14 @@ bundle:
 Use a plan file as the ordered source for sections, units, concepts, prerequisites
 and projects, and keep a readable outline beside it.
 
+## Social media output
+
+Read {{ref:social-media}} before producing audience-facing text or video.
+Resolve the publishing platform and audience, keep the hook and payoff clear,
+and verify mobile readability, captions and the chosen channel's format.
+Ask for missing material choices at intake. Aim for shareability without
+claiming guaranteed viral performance; preserve the requested teaching depth.
+
 ## Clarify before production
 
 Read {{ref:intake}} before starting. If missing or ambiguous inputs would change

@@ -27,6 +27,14 @@ Use this skill when the input already exists as footage. To build a video from
 scratch, use {{sibling:explainer-video}} or {{sibling:product-launch-video}}. To
 generate the presenter itself, use {{sibling:avatar-video}}.
 
+## Social media output
+
+Read {{ref:social-media}} before producing audience-facing text or video.
+Resolve the publishing platform and audience, keep the hook and payoff clear,
+and verify mobile readability, captions and the chosen channel's format.
+Ask for missing material choices at intake. Aim for shareability without
+claiming guaranteed viral performance; preserve the requested teaching depth.
+
 ## Short prompt alias
 
 When a submitted request begins with `/talking-head`, treat the following text as the

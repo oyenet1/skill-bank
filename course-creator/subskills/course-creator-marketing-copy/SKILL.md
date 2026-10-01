@@ -12,6 +12,14 @@ exists, the destination, and the channel. Write only the requested asset.
 **Do not start writing until you have read `references/marketing-playbook.md`** —
 it is the house knowledge for every piece this skill produces.
 
+## Social media output
+
+Read [social-media](references/social-media.md) before producing audience-facing text or video.
+Resolve the publishing platform and audience, keep the hook and payoff clear,
+and verify mobile readability, captions and the chosen channel's format.
+Ask for missing material choices at intake. Aim for shareability without
+claiming guaranteed viral performance; preserve the requested teaching depth.
+
 ## When storytelling is selected
 
 Follow [storytelling](references/storytelling.md) when the requester selects a storytelling treatment.

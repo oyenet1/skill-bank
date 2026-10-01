@@ -28,6 +28,14 @@ from this skill directory, where `<renderer>` is `remotion` (default) or
 `hyperframes`. Use the verified executable paths in its JSON result for the
 chosen renderer and FFmpeg; report any setup failure before promising a render.
 
+## Social media output
+
+Read [social-media](references/social-media.md) before producing audience-facing text or video.
+Resolve the publishing platform and audience, keep the hook and payoff clear,
+and verify mobile readability, captions and the chosen channel's format.
+Ask for missing material choices at intake. Aim for shareability without
+claiming guaranteed viral performance; preserve the requested teaching depth.
+
 ## When storytelling is selected
 
 Follow [storytelling](references/storytelling.md) when the requester selects a storytelling treatment.

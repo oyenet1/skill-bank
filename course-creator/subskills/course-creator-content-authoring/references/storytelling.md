@@ -17,6 +17,13 @@ into an assumed video request. Do not install video runtimes for text-only work.
 
 ## Write a catchy story that explains
 
+Use [sell-with-story](sell-with-story.md) as the default method, based on Paul Smith's
+*Sell with a Story*. Select the story for the audience's intended understanding,
+feeling or next action, then structure it as hook → context → challenge → conflict
+→ resolution → lesson → action. Record each storyboard beat's narrative function.
+Apply this same method to ready-to-post text and Slidev video narration, including
+storytelling selected inside other skills. The requester can override the method.
+
 Open with a concrete situation, a surprising question or a recognizable problem
 that the story actually resolves. Introduce a consistent character or object,
 show its goal and obstacle, explain what changes and why, then end with the

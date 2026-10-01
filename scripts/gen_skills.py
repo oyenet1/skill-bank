@@ -289,6 +289,9 @@ def build() -> dict[Path, str]:
     out[REPO / "video-shortcuts/references/intake.md"] = (
         shared / "intake.md"
     ).read_text()
+    out[REPO / "video-shortcuts/references/social-media.md"] = (
+        shared / "social-media.md"
+    ).read_text()
     for alias, spec in shortcuts.items():
         if not re.fullmatch(r"[a-z][a-z0-9-]*", alias):
             raise ValueError(f"invalid video shortcut: {alias}")
@@ -303,6 +306,11 @@ report the missing skill and its install command; do not substitute another
 workflow or claim that production succeeded.
 
 ## Storytelling selection
+
+Make public-facing text and video ready for the selected social platform. Read
+the selected skill's references/social-media.md for hooks, readable visuals,
+caption review and export checks. Ask for missing platform or audience details
+at the clarification breakpoint. Aim for shareability without promising virality.
 
 If storytelling is selected, resolve post / video / both before production and
 load the storytelling skill or this workflow's storytelling reference. Use

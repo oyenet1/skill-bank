@@ -10,6 +10,11 @@ workflow or claim that production succeeded.
 
 ## Storytelling selection
 
+Make public-facing text and video ready for the selected social platform. Read
+the selected skill's references/social-media.md for hooks, readable visuals,
+caption review and export checks. Ask for missing platform or audience details
+at the clarification breakpoint. Aim for shareability without promising virality.
+
 If storytelling is selected, resolve post / video / both before production and
 load the storytelling skill or this workflow's storytelling reference. Use
 Slidev for story videos, relevant visual assets and Mermaid programming flows.

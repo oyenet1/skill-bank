@@ -370,6 +370,23 @@ is deprecated in favor of skills, so the portable router is the shared workflow.
 Claude Code command templates follow its
 [command format](https://github.com/anthropics/claude-code/blob/main/plugins/plugin-dev/skills/command-development/SKILL.md).
 
+### Social-media-ready output
+
+All audience-facing text and video workflows now share a
+[social media output standard](storytelling/references/social-media.md):
+
+- Ask for missing publishing platform, audience, format and length before production.
+- Open with a catchy, accurate hook and deliver a complete explanation and payoff.
+- Format posts for the selected feed, with clear text and relevant CTAs.
+- Keep video objects, Mermaid flows and captions readable on a phone and clear of platform controls.
+- Use smooth purposeful motion and verify the actual export, including sound-off comprehension.
+- Check current official platform requirements before final export.
+
+The goal is retention and shareability. Virality is not guaranteed, and the skills
+do not invent trends, metrics, testimonials or performance. Full tutorials still
+explain the subject; internal source files and course plans retain their purpose.
+No social post is published automatically by this policy.
+
 ### Included object images
 
 `visual-assets` now ships **56 reviewed device/object images** from devmock in
@@ -404,6 +421,12 @@ Use /story explain how water moves through a plant in a 45-second narrated portr
 Use /story explain authentication to beginner programmers; give me both a post and a Slidev video. Ask for missing details.
 ```
 
+The default storytelling method comes from **Paul Smith's Sell with a Story**.
+Select a story for what the audience should understand, feel or do, then follow
+**hook → context → challenge → conflict → resolution → lesson → action**.
+The [working framework](storytelling/references/sell-with-story.md) applies that
+method to original posts, Slidev scenes and programming explanations. Narrative
+functions can share a beat; this does not impose seven slides on every story.
 Stories open with a relatable problem or curiosity hook, explain what happens
 and why, and finish with a clear payoff. Illustrative stories stay labelled;
 product claims and real customer results need evidence.

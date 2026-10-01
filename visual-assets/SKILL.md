@@ -17,6 +17,14 @@ Use `--check` for a read-only readiness check. If prerequisites are missing, rer
 Resolve the object or image the work needs, place it where the project can use it,
 and record where it came from. The object vocabulary is in [objects](references/objects.md).
 
+## Social media output
+
+Read [social-media](references/social-media.md) before producing audience-facing text or video.
+Resolve the publishing platform and audience, keep the hook and payoff clear,
+and verify mobile readability, captions and the chosen channel's format.
+Ask for missing material choices at intake. Aim for shareability without
+claiming guaranteed viral performance; preserve the requested teaching depth.
+
 ## Clarify before production
 
 Read [intake](references/intake.md) before starting. If missing or ambiguous inputs would change

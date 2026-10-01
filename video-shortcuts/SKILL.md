@@ -31,12 +31,19 @@ which output is intended; do not select a different workflow silently.
 
 ## Storytelling mode
 
+For every shortcut, read [social media output](references/social-media.md).
+Make the chosen output ready for its social destination, with a strong hook,
+mobile readability and a complete payoff. Ask for missing important publishing
+details before production. Aim for shareability; do not guarantee viral reach.
+
 `/story` selects storytelling. If another shortcut explicitly requests a
 storytelling treatment, load the storytelling skill or the selected skill's
 storytelling reference before production. Resolve post / video / both first.
 Story videos use Slidev, assets that show the objects being discussed, Mermaid
 programming flows and smooth entrances/exits. Posts do not need video choices
 or runtime setup.
+The default narrative method is Paul Smith's *Sell with a Story*: hook, context,
+challenge, conflict, resolution, lesson and action, applied to original material.
 
 ## Clarification breakpoint
 

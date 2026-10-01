@@ -19,6 +19,14 @@ as given, or write one from a brief when asked. A supplied recording always wins
 when the request is to use that recording. Narration stands alone: never produce
 slides, captions or video as a side effect.
 
+## Social media output
+
+Read [social-media](references/social-media.md) before producing audience-facing text or video.
+Resolve the publishing platform and audience, keep the hook and payoff clear,
+and verify mobile readability, captions and the chosen channel's format.
+Ask for missing material choices at intake. Aim for shareability without
+claiming guaranteed viral performance; preserve the requested teaching depth.
+
 ## Short prompt alias
 
 When a submitted request begins with `/narration`, treat the following text as the

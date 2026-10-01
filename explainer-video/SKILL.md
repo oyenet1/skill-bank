@@ -19,6 +19,14 @@ actual existing assets — a Slidev deck can guide the design but is not require
 Work from real material; never invent a UI state, a metric, a testimonial or a
 click result.
 
+## Social media output
+
+Read [social-media](references/social-media.md) before producing audience-facing text or video.
+Resolve the publishing platform and audience, keep the hook and payoff clear,
+and verify mobile readability, captions and the chosen channel's format.
+Ask for missing material choices at intake. Aim for shareability without
+claiming guaranteed viral performance; preserve the requested teaching depth.
+
 ## When storytelling is selected
 
 Follow [storytelling](references/storytelling.md) when the requester selects a storytelling treatment.

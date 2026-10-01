@@ -3,6 +3,11 @@
 Run this before producing anything. The goal is a complete working brief without
 dragging the requester through a drip of single questions.
 
+Text and video intended for posting are social-media-ready by default. Resolve
+the target platform, audience and format when they affect the result; ask and
+wait rather than silently choosing them. Optimize the hook, readability, payoff
+and shareability without promising that any content will go viral.
+
 ## The three states of every input
 
 | State | Behaviour |
