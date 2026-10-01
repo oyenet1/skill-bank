@@ -1,6 +1,6 @@
 ---
 name: explainer-video
-description: Produce an explainer, lesson or motion-graphics video from any brief, script, slides, audio, narration or footage. Asks for the video category, platform, audio mode and ending, resolves the brand profile, builds the visuals in Slidev, Remotion or HyperFrames, layers sound effects, and delivers the video, the audio and the voiceover text. Use for video work that does not require a full course.
+description: Handles /tutorial prompts delivered by the host. Produce an explainer, lesson or motion-graphics video from any brief, script, slides, audio, narration or footage. Asks for the video category, platform, audio mode and ending, resolves the brand profile, builds the visuals in Slidev, Remotion or HyperFrames, layers sound effects, and delivers the video, the audio and the voiceover text. Use for video work that does not require a full course.
 ---
 
 # Explainer Video
@@ -18,6 +18,12 @@ Produce the requested video and nothing else. Start from the supplied brief and
 actual existing assets — a Slidev deck can guide the design but is not required.
 Work from real material; never invent a UI state, a metric, a testimonial or a
 click result.
+
+## Short prompt alias
+
+When a submitted request begins with `/tutorial`, treat the following text as the
+brief for this skill. Follow the clarification breakpoint below before dependent
+production. A host may require a native command adapter to deliver slash input.
 
 ## Clarify before production
 

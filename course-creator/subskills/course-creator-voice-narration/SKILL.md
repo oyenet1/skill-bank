@@ -19,6 +19,12 @@ as given, or write one from a brief when asked. A supplied recording always wins
 when the request is to use that recording. Narration stands alone: never produce
 slides, captions or video as a side effect.
 
+## Short prompt alias
+
+When a submitted request begins with `/narration`, treat the following text as the
+brief for this skill. Follow the clarification breakpoint below before dependent
+production. A host may require a native command adapter to deliver slash input.
+
 ## Clarify before production
 
 Read [intake](references/intake.md) before starting. If missing or ambiguous inputs would change

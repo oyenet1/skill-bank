@@ -24,6 +24,12 @@ Use this skill when the input already exists as footage. To build a video from
 scratch, use [course-creator-explainer-video](../course-creator-explainer-video/SKILL.md) or [course-creator-product-launch-video](../course-creator-product-launch-video/SKILL.md). To
 generate the presenter itself, use [course-creator-avatar-video](../course-creator-avatar-video/SKILL.md).
 
+## Short prompt alias
+
+When a submitted request begins with `/talking-head`, treat the following text as the
+brief for this skill. Follow the clarification breakpoint below before dependent
+production. A host may require a native command adapter to deliver slash input.
+
 ## Clarify before production
 
 Read [intake](references/intake.md) before starting. If missing or ambiguous inputs would change

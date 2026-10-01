@@ -1,6 +1,6 @@
 ---
 name: motion-graphics-video
-description: 'Generate editable motion graphics videos: kinetic typography, animated diagrams, charts, process flows, logo reveals, titles and visual concept explanations. Use for animation-led videos from a brief or script, with optional narration.'
+description: 'Handles /motion-graphics prompts delivered by the host. Generate editable motion graphics videos: kinetic typography, animated diagrams, charts, process flows, logo reveals, titles and visual concept explanations. Use for animation-led videos from a brief or script, with optional narration.'
 ---
 
 # Motion Graphics Video
@@ -17,6 +17,12 @@ Use `--check` for a read-only readiness check. If prerequisites are missing, rer
 Turn a brief, script or verified data into an animation-led video. Motion should
 explain relationships, sequence, emphasis or change. Deliver an actual rendered
 MP4 and editable source when the runtime works; report failures explicitly.
+
+## Short prompt alias
+
+When a submitted request begins with `/motion-graphics`, treat the following text as the
+brief for this skill. Follow the clarification breakpoint below before dependent
+production. A host may require a native command adapter to deliver slash input.
 
 ## Clarify before production
 

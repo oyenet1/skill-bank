@@ -1,6 +1,6 @@
 ---
 name: product-launch-video
-description: Create a motion-led product launch ad or screenshot-based product demo in Remotion or HyperFrames from supplied screenshots, product details, a website, or a repository. Grounds every claim in real screens, resolves the brand profile, asks for platform, renderer and ending, and delivers the video, the audio and the voiceover text. Use when the deliverable is a promotional product video.
+description: Handles /product-launch prompts delivered by the host. Create a motion-led product launch ad or screenshot-based product demo in Remotion or HyperFrames from supplied screenshots, product details, a website, or a repository. Grounds every claim in real screens, resolves the brand profile, asks for platform, renderer and ending, and delivers the video, the audio and the voiceover text. Use when the deliverable is a promotional product video.
 ---
 
 # Product Launch Video
@@ -27,6 +27,12 @@ Before building, read [preflight](references/preflight.md) and run
 from this skill directory, where `<renderer>` is `remotion` (default) or
 `hyperframes`. Use the verified executable paths in its JSON result for the
 chosen renderer and FFmpeg; report any setup failure before promising a render.
+
+## Short prompt alias
+
+When a submitted request begins with `/product-launch`, treat the following text as the
+brief for this skill. Follow the clarification breakpoint below before dependent
+production. A host may require a native command adapter to deliver slash input.
 
 ## Clarify before production
 

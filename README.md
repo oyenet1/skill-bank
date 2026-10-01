@@ -145,7 +145,7 @@ npx skills list -g
 
 ### Complete installable skill catalog
 
-All thirteen top-level skills can be installed independently. Use
+All fourteen top-level skills, including the `video-shortcuts` router, can be installed independently. Use
 `npx skills add oyenet1/skill-bank --skill NAME -g -a codex` with any name below.
 Omit `-a codex` to choose another supported agent.
 
@@ -164,6 +164,7 @@ Omit `-a codex` to choose another supported agent.
 | `talking-head-video` | `avatar-video`, `explainer-video`, `product-launch-video` |
 | `avatar-video` | `talking-head-video`, `voice-narration` |
 | `course-creator` | All eleven course subskills already bundled; no separate sibling copies |
+| `video-shortcuts` | Router only; install the six matching video/narration skills alongside it |
 
 The associated graph is resolved recursively, including dependencies of
 dependencies. `npx skills add` itself copies only the selected skill; its
@@ -234,15 +235,16 @@ Use talking-head-video to caption my recorded presentation.
 
 ### Which video skill should I install?
 
-| Exact skill name | Use it for |
+| Skill | What it does |
 |---|---|
-| `explainer-video` | Explainers, tutorials and educational walkthroughs |
-| `product-launch-video` | Product ads, launch promos and demos using real product screens |
-| `motion-graphics-video` | Animated text, diagrams, charts and logo reveals |
-| `talking-head-video` | Captions and graphic overlays on an existing recording |
-| `avatar-video` | A generated presenter or talking photo from a script |
+| `explainer-video` | Explainers, tutorials and walkthroughs |
+| `product-launch-video` | Product adverts, promos and demos |
+| `motion-graphics-video` | Animated text, charts, diagrams and logo reveals |
+| `talking-head-video` | Captions and overlays on existing footage |
+| `avatar-video` | Generated presenters and talking photos |
 | `voice-narration` | Speech audio from text |
-| `slide-decks` | Presentation slides, including slides used in a video |
+
+For presentation slides, use the supporting `slide-decks` skill.
 
 For general explainers, start with `explainer-video`. For product advertising,
 start with `product-launch-video`. You do not need every skill.
@@ -267,6 +269,104 @@ npx skills add . --skill explainer-video -g -a codex
 
 Start a new agent session after replacing an installed skill so its updated
 instructions are loaded.
+
+### Install the six video and narration skills together
+
+For Codex, run one command:
+
+```sh
+npx skills add oyenet1/skill-bank --skill explainer-video --skill product-launch-video --skill motion-graphics-video --skill talking-head-video --skill avatar-video --skill voice-narration -g -a codex
+```
+
+To use this checkout's latest changes before they are pushed, run the same
+command from the repository root with `.` instead of `oyenet1/skill-bank`.
+To install every skill in the repository, including non-video skills:
+
+```sh
+npx skills add oyenet1/skill-bank --skill '*' -g -a codex
+```
+
+`-g` makes the skills available across projects; omit it for the current project.
+Start a new Codex session after installation. Skill files install first;
+required renderer and narration runtimes are prepared on first use. Avatar
+backends have their own hardware or provider requirements.
+
+### Use each video skill
+
+Name the skill in your request and supply any files or URLs it needs:
+
+| Skill | Example request |
+|---|---|
+| `explainer-video` | Use explainer-video to make a 60-second beginner explanation of solar panels for YouTube, with English narration. |
+| `product-launch-video` | Use product-launch-video to make a 30-second Instagram advert for my app at [product URL], using real product screens. |
+| `motion-graphics-video` | Use motion-graphics-video to animate these three steps in a 20-second portrait video: sign up, choose a plan, book a room. |
+| `talking-head-video` | Use talking-head-video to add readable captions and key-point overlays to [recording path]. |
+| `avatar-video` | Use avatar-video to make a presenter video from [script path], using [presenter photo path]. |
+| `voice-narration` | Use voice-narration to read [script path] in British English with a male voice and export MP3. |
+
+Replace bracketed placeholders with real URLs or file paths. Missing important
+choices should trigger clarification before production. Add "ask me for missing
+details before starting" to make that preference explicit, or "choose for me"
+to delegate choices. You can combine skills in one request, for example:
+"Use product-launch-video and voice-narration to make a narrated advert for
+[product URL]. Ask me for missing details before starting."
+
+### Shortcuts followed by your prompt
+
+The portable `video-shortcuts` skill routes short prompts across coding agents:
+
+| Shortcut | Production skill | Example |
+|---|---|---|
+| `/tutorial` | `explainer-video` | `/tutorial explain solar energy to beginners` |
+| `/product-launch` | `product-launch-video` | `/product-launch promote my app at [URL]` |
+| `/motion-graphics` | `motion-graphics-video` | `/motion-graphics animate these three steps` |
+| `/talking-head` | `talking-head-video` | `/talking-head caption [video path]` |
+| `/avatar` | `avatar-video` | `/avatar use [photo] to present [script]` |
+| `/narration` | `voice-narration` | `/narration read [script] in British English` |
+
+Each shortcut has a **clarification breakpoint**: use details in your prompt or
+previous answers, ask a batch of questions for missing important inputs, and
+wait before scripts, storyboards, authoring or rendering. Video questions cover
+subject/product, purpose, audience, platform/layout, duration and audio; source
+files, language, voice and CTA are asked where relevant. Complete prompts proceed
+directly. Say "choose for me" to delegate creative choices.
+
+Install all skills, including the router, for your agent:
+
+```sh
+npx skills add oyenet1/skill-bank --skill '*' -g
+```
+
+The installer lets you choose the agent. Use `.` instead of `oyenet1/skill-bank`
+from this checkout to try unpublished changes. Restart the agent after installing.
+
+**Portable invocation:** if your host treats custom `/` commands as unknown,
+send `Use /tutorial explain solar energy to beginners` as ordinary prompt text,
+or explicitly invoke `video-shortcuts` followed by `/tutorial` and your prompt.
+The router and production skills use Markdown instructions, not a Codex-only API.
+A skill install does not automatically register commands in every host menu.
+
+**Native slash adapters:** this repository ships command templates for Claude Code
+and Codex. Install matching production skills first, then from the repository root:
+
+```sh
+# Claude Code: /tutorial followed by your prompt
+python3 scripts/install_video_shortcuts.py --host claude
+
+# Codex: /prompts:tutorial followed by your prompt
+python3 scripts/install_video_shortcuts.py --host codex
+```
+
+All six shortcuts install together. Restart the agent to load them. Existing
+conflicting command files are preserved unless you explicitly pass `--overwrite`.
+`--target PATH` installs into a different command directory. Other coding agents
+can use portable prompt aliases or adapt `commands/claude/` to their documented
+command format; native registration is specific to the host.
+
+Codex's [custom prompt mechanism](https://learn.chatgpt.com/docs/custom-prompts)
+is deprecated in favor of skills, so the portable router is the shared workflow.
+Claude Code command templates follow its
+[command format](https://github.com/anthropics/claude-code/blob/main/plugins/plugin-dev/skills/command-development/SKILL.md).
 
 ### Automatic product screenshots
 

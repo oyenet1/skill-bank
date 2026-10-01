@@ -1,6 +1,6 @@
 ---
 name: avatar-video
-description: 'Generate a presenter video from a script when there is no camera: an AI avatar reads it, a still photo is animated into a lip-synced talking clip, or an existing clip is translated and dubbed. Uses a verified local photo presenter or an authenticated HeyGen provider with an editable fallback, captions the result locally, and delivers the video, the audio and the voiceover text.'
+description: 'Handles /avatar prompts delivered by the host. Generate a presenter video from a script when there is no camera: an AI avatar reads it, a still photo is animated into a lip-synced talking clip, or an existing clip is translated and dubbed. Uses a verified local photo presenter or an authenticated HeyGen provider with an editable fallback, captions the result locally, and delivers the video, the audio and the voiceover text.'
 ---
 
 # Avatar Video
@@ -32,6 +32,12 @@ clearly when unavailable instead of silently changing providers.
 
 To package footage the requester already has, use `talking-head-video`
 instead — that path is local end to end.
+
+## Short prompt alias
+
+When a submitted request begins with `/avatar`, treat the following text as the
+brief for this skill. Follow the clarification breakpoint below before dependent
+production. A host may require a native command adapter to deliver slash input.
 
 ## Clarify before production
 

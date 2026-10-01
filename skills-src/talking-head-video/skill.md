@@ -2,6 +2,7 @@
 standalone:
   name: talking-head-video
   description: >-
+    Handles /talking-head prompts delivered by the host.
     Package an existing talking-head, interview or podcast clip with captions or
     designed graphic overlays, leaving the footage itself untouched. Transcribes
     locally, builds the overlays in HyperFrames, and delivers the video, the audio
@@ -25,6 +26,12 @@ on top.
 Use this skill when the input already exists as footage. To build a video from
 scratch, use {{sibling:explainer-video}} or {{sibling:product-launch-video}}. To
 generate the presenter itself, use {{sibling:avatar-video}}.
+
+## Short prompt alias
+
+When a submitted request begins with `/talking-head`, treat the following text as the
+brief for this skill. Follow the clarification breakpoint below before dependent
+production. A host may require a native command adapter to deliver slash input.
 
 ## Clarify before production
 

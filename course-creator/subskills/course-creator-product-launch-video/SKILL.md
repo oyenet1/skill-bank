@@ -28,6 +28,12 @@ from this skill directory, where `<renderer>` is `remotion` (default) or
 `hyperframes`. Use the verified executable paths in its JSON result for the
 chosen renderer and FFmpeg; report any setup failure before promising a render.
 
+## Short prompt alias
+
+When a submitted request begins with `/product-launch`, treat the following text as the
+brief for this skill. Follow the clarification breakpoint below before dependent
+production. A host may require a native command adapter to deliver slash input.
+
 ## Clarify before production
 
 Read [intake](references/intake.md) before starting. If missing or ambiguous inputs would change

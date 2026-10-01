@@ -18,6 +18,12 @@ Turn a brief, script or verified data into an animation-led video. Motion should
 explain relationships, sequence, emphasis or change. Deliver an actual rendered
 MP4 and editable source when the runtime works; report failures explicitly.
 
+## Short prompt alias
+
+When a submitted request begins with `/motion-graphics`, treat the following text as the
+brief for this skill. Follow the clarification breakpoint below before dependent
+production. A host may require a native command adapter to deliver slash input.
+
 ## Clarify before production
 
 Read [intake](references/intake.md) before starting. If missing or ambiguous inputs would change

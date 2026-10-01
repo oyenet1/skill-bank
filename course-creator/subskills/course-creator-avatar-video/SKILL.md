@@ -33,6 +33,12 @@ clearly when unavailable instead of silently changing providers.
 To package footage the requester already has, use [course-creator-talking-head-video](../course-creator-talking-head-video/SKILL.md)
 instead — that path is local end to end.
 
+## Short prompt alias
+
+When a submitted request begins with `/avatar`, treat the following text as the
+brief for this skill. Follow the clarification breakpoint below before dependent
+production. A host may require a native command adapter to deliver slash input.
+
 ## Clarify before production
 
 Read [intake](references/intake.md) before starting. If missing or ambiguous inputs would change

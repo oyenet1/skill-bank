@@ -16,7 +16,8 @@ One question, or skip it when the request already carries the purpose.
 | longer lesson with a learning outcome | `explainer-lesson` |
 | images on a beat | `slideshow-montage` |
 
-**When the purpose is unclear, use `motion-graphic`.** Most requests are one.
+**When the purpose is unclear, ask and wait.** A default category is a
+recommendation, not an answer; use it only when the requester delegates the choice.
 
 | Category | What it is |
 |---|---|

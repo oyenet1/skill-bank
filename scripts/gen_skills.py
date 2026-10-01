@@ -256,6 +256,56 @@ def build() -> dict[Path, str]:
                 out[target / "tools/sibling_skills.json"] = payload
     if parent_boot:
         out[REPO / "course-creator/tools/sibling_skills.json"] = payload
+    # Host command adapters stay separate from the installable skill payload.
+    shortcuts = json.loads((shared / "video-shortcuts.json").read_text())
+    router = (shared / "video-shortcuts.md").read_text()
+    routes = "\n".join(
+        f"| `/{alias}` | `{spec['skill']}` | {spec['description']} |"
+        for alias, spec in shortcuts.items()
+    )
+    out[REPO / "video-shortcuts/SKILL.md"] = router.replace("{{routes}}", routes)
+    out[REPO / "video-shortcuts/references/intake.md"] = (
+        shared / "intake.md"
+    ).read_text()
+    for alias, spec in shortcuts.items():
+        if not re.fullmatch(r"[a-z][a-z0-9-]*", alias):
+            raise ValueError(f"invalid video shortcut: {alias}")
+        if spec["skill"] not in standalone_names:
+            raise ValueError(f"unknown shortcut skill: {spec['skill']}")
+        frontmatter = yaml.safe_dump({
+            "description": spec["description"], "argument-hint": "[your prompt]"
+        }, sort_keys=False).strip()
+        body = f"""Use the installed `{spec['skill']}` skill for the request below. Load its
+SKILL.md and references/intake.md before production. If it is not installed,
+report the missing skill and its install command; do not substitute another
+workflow or claim that production succeeded.
+
+## Clarification breakpoint
+
+Treat the text after the shortcut as the brief. Use details already supplied in
+the prompt, previous answers or attached materials. Before writing a script,
+storyboard, composition or rendering, ask one concise batch for any missing or
+ambiguous details that materially affect the result. For video, check topic or
+product, purpose, audience, platform or aspect ratio, duration and audio mode.
+Ask for relevant source files, language, accent, voice and CTA only when needed
+for this workflow. Narration alone does not need a video platform or aspect.
+
+Offer recommended answers and allow free text. Wait for the answers; do not
+resolve unanswered questions through a timer or silent defaults. If no question
+tool exists, ask in a normal message and end the turn. If only some questions
+are answered, keep the remaining material questions pending. Read-only research
+may continue independently; dependent production waits. When the brief is
+complete, proceed. Explicit "choose for me" delegates choices, but never fills
+missing product identity, source files, credentials, evidence or CTA links.
+
+## Request
+
+$ARGUMENTS
+"""
+        for host in ("codex", "claude"):
+            out[REPO / "commands" / host / f"{alias}.md"] = (
+                f"---\n{frontmatter}\n---\n\n{body}"
+            )
     return out
 
 

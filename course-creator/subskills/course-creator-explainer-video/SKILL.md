@@ -19,6 +19,12 @@ actual existing assets — a Slidev deck can guide the design but is not require
 Work from real material; never invent a UI state, a metric, a testimonial or a
 click result.
 
+## Short prompt alias
+
+When a submitted request begins with `/tutorial`, treat the following text as the
+brief for this skill. Follow the clarification breakpoint below before dependent
+production. A host may require a native command adapter to deliver slash input.
+
 ## Clarify before production
 
 Read [intake](references/intake.md) before starting. If missing or ambiguous inputs would change

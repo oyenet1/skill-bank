@@ -1,0 +1,8 @@
+{
+  "tutorial": {"skill": "explainer-video", "description": "Create an explainer or tutorial video"},
+  "product-launch": {"skill": "product-launch-video", "description": "Create a product advert, promo or demo"},
+  "motion-graphics": {"skill": "motion-graphics-video", "description": "Animate text, charts, diagrams or a logo"},
+  "talking-head": {"skill": "talking-head-video", "description": "Caption and add overlays to existing footage"},
+  "avatar": {"skill": "avatar-video", "description": "Generate a presenter or talking photo"},
+  "narration": {"skill": "voice-narration", "description": "Generate speech audio from a script"}
+}

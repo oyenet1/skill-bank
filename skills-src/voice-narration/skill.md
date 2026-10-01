@@ -2,6 +2,7 @@
 standalone:
   name: voice-narration
   description: >-
+    Handles /narration prompts delivered by the host.
     Generate clean WAV narration from any supplied script using local Kokoro TTS.
     Works for courses, podcasts, ads, walkthroughs, or any text. Accepts a script
     or writes one from a brief, asks for language, accent and voice, and verifies
@@ -21,6 +22,12 @@ Turn any supplied script into editable UTF-8 text and one WAV. Accept a script
 as given, or write one from a brief when asked. A supplied recording always wins
 when the request is to use that recording. Narration stands alone: never produce
 slides, captions or video as a side effect.
+
+## Short prompt alias
+
+When a submitted request begins with `/narration`, treat the following text as the
+brief for this skill. Follow the clarification breakpoint below before dependent
+production. A host may require a native command adapter to deliver slash input.
 
 ## Clarify before production
 
