@@ -24,6 +24,14 @@ Before building, read {{ref:preflight}} and run
 `python3 tools/ensure_video_runtime.py slide-decks` from this skill directory.
 Use the verified executable paths in its JSON result for Slidev and exports.
 
+## Clarify before production
+
+Read {{ref:intake}} before starting. If missing or ambiguous inputs would change
+the result, ask a concise batch of questions and wait for answers. Offer
+recommended choices; apply them only when the requester selects them or
+explicitly asks you to choose. Use details already supplied rather than asking
+again. Continue directly when the brief is complete.
+
 ## 1. Intake
 
 Read {{ref:intake}}. Resolve palette, type and imagery from {{ref:brand}}.

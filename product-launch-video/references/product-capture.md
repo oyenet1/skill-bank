@@ -74,7 +74,7 @@ python3 tools/capture_product_screens.py capture-plan.json --out captures
 Use `--headed` for user-assisted MFA/SSO; the login readiness selector waits up
 to 120 seconds (`login.timeoutMs` overrides it). Never bypass CAPTCHA or assume
 successful login. Missing credentials or access is required input and cannot
-be auto-selected after an optional-question timeout. During exploration only
+be inferred or supplied by a default. During exploration only
 perform navigation/filter/tab actions; do not submit purchases, send messages,
 delete data, or change account settings without explicit authorization.
 

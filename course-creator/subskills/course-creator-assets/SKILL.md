@@ -17,6 +17,14 @@ Use `--check` for a read-only readiness check. If prerequisites are missing, rer
 Resolve the object or image the work needs, place it where the project can use it,
 and record where it came from. The object vocabulary is in [objects](references/objects.md).
 
+## Clarify before production
+
+Read [intake](references/intake.md) before starting. If missing or ambiguous inputs would change
+the result, ask a concise batch of questions and wait for answers. Offer
+recommended choices; apply them only when the requester selects them or
+explicitly asks you to choose. Use details already supplied rather than asking
+again. Continue directly when the brief is complete.
+
 ## 1. Source in this order
 
 1. **Requester-supplied files** — inspect them first and at readable size.

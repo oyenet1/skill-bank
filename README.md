@@ -232,6 +232,42 @@ Use explainer-video to make a 60-second narrated walkthrough using both desktop 
 Use talking-head-video to caption my recorded presentation.
 ```
 
+### Which video skill should I install?
+
+| Exact skill name | Use it for |
+|---|---|
+| `explainer-video` | Explainers, tutorials and educational walkthroughs |
+| `product-launch-video` | Product ads, launch promos and demos using real product screens |
+| `motion-graphics-video` | Animated text, diagrams, charts and logo reveals |
+| `talking-head-video` | Captions and graphic overlays on an existing recording |
+| `avatar-video` | A generated presenter or talking photo from a script |
+| `voice-narration` | Speech audio from text |
+| `slide-decks` | Presentation slides, including slides used in a video |
+
+For general explainers, start with `explainer-video`. For product advertising,
+start with `product-launch-video`. You do not need every skill.
+
+For Codex, install a chosen skill with:
+
+```sh
+npx skills add oyenet1/skill-bank --skill explainer-video -g -a codex
+```
+
+Replace `explainer-video` with an exact name from the table. Omit `-g` for
+installation in the current project. Explicitly invoke it in a prompt, for example:
+"Use explainer-video to make a video about solar energy. Ask me for any missing
+important details before starting."
+
+Repository edits do not update previously installed skill copies. To try local
+changes before they are published, run this from the repository root:
+
+```sh
+npx skills add . --skill explainer-video -g -a codex
+```
+
+Start a new agent session after replacing an installed skill so its updated
+instructions are loaded.
+
 ### Automatic product screenshots
 
 `product-launch-video` and `explainer-video` can capture real public or logged-in
@@ -243,9 +279,9 @@ Playwright/Chromium runtime and outputs PNGs with provenance. See the
 [capture plan and login guide](skills-src/_shared/product-capture.md).
 Native mobile apps require supplied captures or a separate emulator tool.
 
-Optional intake choices use a 30-second default when the agent host supports
-asynchronous questions and timers. Required access details and approvals remain
-pending. This is skill behavior, not a timer installed into third-party apps.
+When a prompt leaves important details unclear, the skill asks one batch of
+questions and waits for your answers before production. It uses recommended
+defaults only when you explicitly ask it to choose for you.
 
 ## Editing Skills
 
@@ -497,9 +533,10 @@ install works alone.
 
 Every producing skill runs the same intake protocol before it makes anything.
 See [`skills-src/_shared/intake.md`](./skills-src/_shared/intake.md): present
-inputs are used, inferable inputs get a stated default recorded with a reason,
+inputs are used, values determined by supplied context are recorded with a reason,
 and missing inputs that would change the deliverable are asked in **one batched
-block with options and a recommended pick**. Brand values and evidence are never
+block with options and a recommended pick**. Production waits for your answers;
+there is no automatic question timeout. Say "choose for me" to delegate choices. Brand values and evidence are never
 invented.
 
 Brand identity lives in a `brand.md` that skills read and write — colour, type,

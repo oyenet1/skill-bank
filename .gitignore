@@ -16,3 +16,7 @@ course-creator/tools/pockettts/.venv/
 course-creator/tools/pockettts/__pycache__/
 voice-narration/tools/kokoro/models/*.onnx
 voice-narration/tools/kokoro/models/*.bin
+
+# Local generation outputs and tool sessions
+course-creator/assets/audio/
+*.ses

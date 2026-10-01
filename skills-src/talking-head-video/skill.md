@@ -26,6 +26,14 @@ Use this skill when the input already exists as footage. To build a video from
 scratch, use {{sibling:explainer-video}} or {{sibling:product-launch-video}}. To
 generate the presenter itself, use {{sibling:avatar-video}}.
 
+## Clarify before production
+
+Read {{ref:intake}} before starting. If missing or ambiguous inputs would change
+the result, ask a concise batch of questions and wait for answers. Offer
+recommended choices; apply them only when the requester selects them or
+explicitly asks you to choose. Use details already supplied rather than asking
+again. Continue directly when the brief is complete.
+
 ## 1. Intake
 
 Read {{ref:intake}}. Resolve `brand.md` ({{ref:brand}}) first — captions and

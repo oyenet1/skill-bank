@@ -24,6 +24,6 @@ The LodgeStatus promotion uses product-launch-video, motion-graphics-video, expl
 
 The generation benchmark used an already-ready renderer runtime. Its narration and recognition were produced using the isolated sandbox installations. Research, planning and manual authoring are excluded from machine-generation times. No presenter footage was supplied, and the avatar capability probe rejected this machine's AMD/ROCm hardware. Talking-head and avatar inference were therefore not exercised. Hosted avatar and paid image-provider jobs were not used.
 
-The local delivery is `videos/lodgestatus-nigeria/lodgestatus-delivery.zip`, containing clean/captioned MP4s, audio, reviewed SRT/VTT captions, a portable assembly plan, editable HTML/GSAP, Remotion and Slidev sources, and provenance. Generated videos and download caches are excluded from Git.
+The benchmark delivery contained clean/captioned MP4s, audio, reviewed SRT/VTT captions, a portable assembly plan, editable HTML/GSAP, Remotion and Slidev sources, and provenance. Generated deliveries are local outputs, excluded from Git, and are not retained in this skills repository.
 
 Verification: 160 Python tests passed; all 625 generated files matched their sources. Five native video-runtime tests passed, with one ignored integration test. This verifies Linux behavior and source-level OS handling; it does not certify Windows/macOS installation or native app UI interactions. App changes were pushed to `feat/parallel-video-setup` in the devmock repository; unrelated concurrent app work was preserved.

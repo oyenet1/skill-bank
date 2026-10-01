@@ -8,6 +8,14 @@ description: Plan or revise a course hierarchy, prerequisite order, table of con
 Use a plan file as the ordered source for sections, units, concepts, prerequisites
 and projects, and keep a readable outline beside it.
 
+## Clarify before production
+
+Read [intake](references/intake.md) before starting. If missing or ambiguous inputs would change
+the result, ask a concise batch of questions and wait for answers. Offer
+recommended choices; apply them only when the requester selects them or
+explicitly asks you to choose. Use details already supplied rather than asking
+again. Continue directly when the brief is complete.
+
 ## 1. Intake
 
 Read [intake](references/intake.md). Ask only what changes the map: the subject, who it is for,

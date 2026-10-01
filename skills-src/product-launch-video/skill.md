@@ -33,6 +33,14 @@ from this skill directory, where `<renderer>` is `remotion` (default) or
 `hyperframes`. Use the verified executable paths in its JSON result for the
 chosen renderer and FFmpeg; report any setup failure before promising a render.
 
+## Clarify before production
+
+Read {{ref:intake}} before starting. If missing or ambiguous inputs would change
+the result, ask a concise batch of questions and wait for answers. Offer
+recommended choices; apply them only when the requester selects them or
+explicitly asks you to choose. Use details already supplied rather than asking
+again. Continue directly when the brief is complete.
+
 ## Automatic product screenshots
 
 For product demos and launch ads, read {{ref:product-capture}}. When real

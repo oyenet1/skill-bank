@@ -22,6 +22,14 @@ as given, or write one from a brief when asked. A supplied recording always wins
 when the request is to use that recording. Narration stands alone: never produce
 slides, captions or video as a side effect.
 
+## Clarify before production
+
+Read {{ref:intake}} before starting. If missing or ambiguous inputs would change
+the result, ask a concise batch of questions and wait for answers. Offer
+recommended choices; apply them only when the requester selects them or
+explicitly asks you to choose. Use details already supplied rather than asking
+again. Continue directly when the brief is complete.
+
 ## 1. Intake
 
 Read {{ref:intake}} first. Then resolve the voice in this order — language

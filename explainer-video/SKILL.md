@@ -19,6 +19,14 @@ actual existing assets — a Slidev deck can guide the design but is not require
 Work from real material; never invent a UI state, a metric, a testimonial or a
 click result.
 
+## Clarify before production
+
+Read [intake](references/intake.md) before starting. If missing or ambiguous inputs would change
+the result, ask a concise batch of questions and wait for answers. Offer
+recommended choices; apply them only when the requester selects them or
+explicitly asks you to choose. Use details already supplied rather than asking
+again. Continue directly when the brief is complete.
+
 ## 1. Intake
 
 Read [intake](references/intake.md), then [video](references/video.md) for the full decision list. The order

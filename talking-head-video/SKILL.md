@@ -24,6 +24,14 @@ Use this skill when the input already exists as footage. To build a video from
 scratch, use `explainer-video` or `product-launch-video`. To
 generate the presenter itself, use `avatar-video`.
 
+## Clarify before production
+
+Read [intake](references/intake.md) before starting. If missing or ambiguous inputs would change
+the result, ask a concise batch of questions and wait for answers. Offer
+recommended choices; apply them only when the requester selects them or
+explicitly asks you to choose. Use details already supplied rather than asking
+again. Continue directly when the brief is complete.
+
 ## 1. Intake
 
 Read [intake](references/intake.md). Resolve `brand.md` ([brand](references/brand.md)) first — captions and

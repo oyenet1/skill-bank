@@ -18,11 +18,19 @@ Turn a brief, script or verified data into an animation-led video. Motion should
 explain relationships, sequence, emphasis or change. Deliver an actual rendered
 MP4 and editable source when the runtime works; report failures explicitly.
 
+## Clarify before production
+
+Read {{ref:intake}} before starting. If missing or ambiguous inputs would change
+the result, ask a concise batch of questions and wait for answers. Offer
+recommended choices; apply them only when the requester selects them or
+explicitly asks you to choose. Use details already supplied rather than asking
+again. Continue directly when the brief is complete.
+
 ## Resolve the brief
 
 Read {{ref:intake}} and {{ref:brand}}. Capture purpose, audience, platform,
-duration, aspect ratio, key message and audio mode. Use the shared 30-second
-fallback for optional choices when the host supports it. For a course segment,
+duration, aspect ratio, key message and audio mode. Ask for missing deliverable-changing details and wait for answers before
+planning or production, unless the requester delegates those choices. For a course segment,
 inherit the lesson audience, learning objective and course style. For a standalone
 brief, no course map is required. Do not invent brand details or data.
 

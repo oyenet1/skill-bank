@@ -8,13 +8,14 @@ dragging the requester through a drip of single questions.
 | State | Behaviour |
 |---|---|
 | **Present** | Use it as given. |
-| **Inferable** | Apply a stated default, and record it in the working brief as `inferred: <value> — <reason>`. |
-| **Missing and deliverable-changing** | **Ask.** Required facts remain pending; optional choices use the timeout below. |
+| **Inferable** | Derive it from explicit context or supplied materials; record the value and reason. A common default alone does not make an input inferable. |
+| **Missing and deliverable-changing** | **Ask and wait.** Keep the input pending until answered or the requester explicitly delegates the choice. |
 
 An input is *deliverable-changing* when a different answer produces a different
 artifact: aspect ratio, duration, category, palette, font, voice, language,
-CTA destination, evidence for a claim. An input is *inferable* when a defensible
-default exists and the requester can correct it cheaply.
+CTA destination, evidence for a claim. An input is *inferable* when the supplied context determines it: for example,
+TikTok determines portrait layout. An unspecified platform, duration or audio
+mode remains a question even when a popular default exists.
 
 ## How to ask
 
@@ -32,27 +33,32 @@ marked `(recommended)`. The requester answers once.
 Do not re-ask what the request already states. If the request says "a 20-second
 silent intro", items 2 and 4 are answered — move on.
 
-## Optional choices: 30-second fallback
+## Wait for clarification
 
-For optional preferences with a defensible default, offer a recommended choice
-and say: "If there is no reply within 30 seconds, I will use these recommended
-choices." Use the host's asynchronous question/timer capability, keep doing
-independent work, and after 30 seconds select the best choice for the scenario.
-Record `source: default`, the reason, and `unanswered-after: 30s` in the brief.
-An answer received before expiry takes precedence; incorporate late answers when
-still practical. Explicit user instructions always override defaults.
+When missing or ambiguous details affect the deliverable, ask before writing the
+script, storyboard, composition or final artifact. Offer recommendations as
+choices, not as decisions already made. Do not silently assume purpose,
+audience, platform, duration, key message or audio mode from a vague request.
+Ask only what is missing and relevant; group related questions so the brief is
+easy to answer. If the request is complete, proceed without another questionnaire.
 
-Examples: mobile capture for a mobile-product demo, both layouts for a requested
-comparison, desktop capture for desktop software; duration, rendering engine,
-and optional music can similarly use contextual defaults. Do not blindly select
-the first option when the scenario supports another choice.
+Use the host's question tool when available. If no suitable tool exists, ask in
+a normal message and end the turn to wait. A missing timer or question UI does
+not authorize skipping clarification. Elapsed time is not an answer. You may
+inspect supplied files or research facts independently while answers are pending;
+do not start production that depends on them.
 
-The timeout never supplies credentials, MFA, a missing product identity/URL,
-verified claims, a CTA destination, or required consent/approval. Continue
-independent work and leave that input pending. If the host only has blocking
-questions and cannot deliver a timed fallback, use stated defaults immediately
-for optional preferences and report that limitation; do not pretend a timer ran.
-This skill defines agent behavior; it cannot add a timer to an arbitrary host UI.
+If the requester says "choose for me", "use your defaults", or delegates specific
+choices, resolve those choices with stated reasons and proceed. That delegation
+never supplies missing credentials, product identity, evidence or CTA links.
+Record unanswered questions in the working brief. If only some are answered,
+ask for the remaining material details before dependent production.
+
+For example, "make a video for my business" needs the business or source URL,
+the video's purpose and audience, destination platform, length and audio mode.
+A supplied "20-second silent portrait logo intro using this logo" already
+answers length, audio, layout and assets; ask only about any remaining material
+ambiguity.
 
 ## Hard rules
 

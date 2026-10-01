@@ -8,6 +8,14 @@ metadata:
 
 # Course Creator
 
+## Clarify before production
+
+Read the selected subskill's `references/intake.md` before starting. Ask and wait
+when missing details affect the requested result, including audience, scope and
+video delivery choices. Do not replace unanswered questions with timed or silent
+defaults unless the requester explicitly delegates those choices. Use supplied
+answers and continue directly when the brief is complete.
+
 ## Automatic first-use setup
 
 Before production, run `sh tools/setup.sh --yes` on Linux/macOS, or

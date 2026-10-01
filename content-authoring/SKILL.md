@@ -9,6 +9,14 @@ Work on the exact written asset the requester asks for. Accept a brief or
 existing files. Produce only what was requested — not an adjacent chapter, not
 an exercise bank nobody asked for.
 
+## Clarify before production
+
+Read [intake](references/intake.md) before starting. If missing or ambiguous inputs would change
+the result, ask a concise batch of questions and wait for answers. Offer
+recommended choices; apply them only when the requester selects them or
+explicitly asks you to choose. Use details already supplied rather than asking
+again. Continue directly when the brief is complete.
+
 ## 1. Intake
 
 Read [intake](references/intake.md). Resolve tone and vocabulary from [brand](references/brand.md) when a
