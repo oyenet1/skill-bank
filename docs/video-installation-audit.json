@@ -1,0 +1,152 @@
+{
+  "auditDate": "2026-09-30",
+  "publishedSkillDiscovery": {
+    "skill": "motion-graphics-video",
+    "seconds": 309.799,
+    "exitCode": 0,
+    "discoveredSkills": 13
+  },
+  "publishedAllSkills": {
+    "seconds": 108.232,
+    "exitCode": 0,
+    "installedSkills": [
+      "avatar-video",
+      "content-authoring",
+      "course-creator",
+      "curriculum-map",
+      "explainer-video",
+      "marketing-copy",
+      "motion-graphics-video",
+      "product-launch-video",
+      "slide-decks",
+      "spec-driven-development",
+      "talking-head-video",
+      "visual-assets",
+      "voice-narration"
+    ]
+  },
+  "isolatedRuntimeInstall": {
+    "ready": true,
+    "systemToolsReused": [
+      "Node",
+      "npm",
+      "Python launcher",
+      "UV",
+      "FFmpeg",
+      "FFprobe"
+    ],
+    "source": "local working tree with published discovery fix",
+    "stages": [
+      {
+        "name": "skill-files",
+        "seconds": 68.354,
+        "exitCode": 0
+      },
+      {
+        "name": "first-use-setup",
+        "seconds": 1899.116,
+        "exitCode": 1
+      },
+      {
+        "name": "recovery-setup",
+        "seconds": 402.951,
+        "exitCode": 1
+      },
+      {
+        "name": "resumed-setup",
+        "seconds": 622.01,
+        "exitCode": 0
+      },
+      {
+        "name": "cached-setup",
+        "seconds": 7.823,
+        "exitCode": 0
+      },
+      {
+        "name": "read-only-check",
+        "seconds": 6.687,
+        "exitCode": 0
+      }
+    ],
+    "executionSecondsThroughReady": 2992.431,
+    "elapsedSecondsThroughFinalVerification": 3260.626,
+    "recoveries": [
+      "ASR wheel timed out; increased UV timeout and retried successfully",
+      "Chromium extraction exceeded tmpfs user quota; moved the same sandbox to disk",
+      "A relocation invalidated a resolved helper path; restored its compatibility path and resumed"
+    ],
+    "downloadedCachesSeededFromWarmRuntime": false
+  },
+  "video": {
+    "renderersReadyBeforeGeneration": true,
+    "generationExcludesResearchAndManualAuthoring": true,
+    "stages": [
+      {
+        "name": "01-hook-check",
+        "seconds": 10.255,
+        "exitCode": 0
+      },
+      {
+        "name": "02-product-check",
+        "seconds": 15.344,
+        "exitCode": 0
+      },
+      {
+        "name": "05-cta-check",
+        "seconds": 14.868,
+        "exitCode": 0
+      },
+      {
+        "name": "01-hook-render",
+        "seconds": 47.193,
+        "exitCode": 0
+      },
+      {
+        "name": "02-product-render",
+        "seconds": 48.064,
+        "exitCode": 0
+      },
+      {
+        "name": "05-cta-render",
+        "seconds": 27.321,
+        "exitCode": 0
+      },
+      {
+        "name": "03-operations-render",
+        "seconds": 82.776,
+        "exitCode": 0
+      },
+      {
+        "name": "04-setup-render",
+        "seconds": 42.241,
+        "exitCode": 0
+      },
+      {
+        "name": "final-assembly",
+        "seconds": 17.894,
+        "exitCode": 0
+      }
+    ],
+    "renderAssemblyWallSeconds": 189.296,
+    "narrationSeconds": 106.4,
+    "generationSecondsExcludingAuthoringAndResearch": 295.696,
+    "videoDurationSeconds": 29.189333,
+    "transcriptionSeconds": 15.914,
+    "captionRenderSeconds": 24.619,
+    "generationWithTranscriptionAndCaptionRenderSeconds": 349.444,
+    "captionRenderRetrySeconds": 13.215
+  },
+  "verification": {
+    "pythonTests": 160,
+    "generatedFiles": 625,
+    "nativeVideoRuntimeTestsPassed": 5,
+    "nativeTestsIgnored": 1
+  },
+  "limits": [
+    "Linux execution only",
+    "Renderer runtime already ready before video generation",
+    "Research and manual authoring excluded from video machine times",
+    "No talking-head footage supplied",
+    "Avatar hardware probe unsupported AMD/ROCm; no avatar inference or paid hosted jobs"
+  ]
+}

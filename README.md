@@ -181,6 +181,10 @@ errors. Older generated YAML descriptions containing unquoted colons caused
 the CLI to skip `motion-graphics-video` and `avatar-video` and report only eleven
 skills. The generator now serializes valid YAML and checks every target.
 
+Measured installation and LodgeStatus video-generation results are in the
+[installation audit](docs/video-installation-audit.md), including failures,
+recovery, cached checks and workflow coverage.
+
 For a fresh isolated installation audit with per-stage timing, run:
 
 ```bash
