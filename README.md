@@ -370,6 +370,28 @@ is deprecated in favor of skills, so the portable router is the shared workflow.
 Claude Code command templates follow its
 [command format](https://github.com/anthropics/claude-code/blob/main/plugins/plugin-dev/skills/command-development/SKILL.md).
 
+### Included object images
+
+`visual-assets` now ships **56 reviewed device/object images** from devmock in
+`assets/device-objects/`. The course bundle includes the same bank in
+`course-creator/subskills/course-creator-assets/assets/device-objects/`.
+Phones, laptops, tablets, monitors, workstations and a person using a tablet are
+available as real image files, alongside the existing object/diagram guidance.
+
+The [catalog](visual-assets/assets/device-objects/CATALOG.md) lists each object
+and its dimensions. The [manifest](visual-assets/assets/device-objects/manifest.json)
+records source filenames, hashes and the screening decision. Stock-watermarked
+and visibly provider-credited previews are excluded; included files are copied
+unchanged, with no watermark removal. Some contain screen placeholders or
+baked-in backgrounds, so inspect the chosen object before composing it.
+
+Storytelling and other visual skills use this bank through `visual-assets`, which
+is part of their associated skill graph. Update or reinstall `visual-assets` to
+receive the images in an existing installation. Selected images are copied into
+the output project for portability. They are illustrative mockups, not proof of
+real product behavior; their reuse rights are recorded separately from this
+repository's code license.
+
 ### Storytelling: posts, videos or both
 
 Use `/story` followed by your topic, or select storytelling within another

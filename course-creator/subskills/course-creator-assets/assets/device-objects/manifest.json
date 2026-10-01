@@ -1,0 +1,867 @@
+{
+  "schemaVersion": 1,
+  "name": "device-objects",
+  "reviewDate": "2026-10-01",
+  "policy": "Only manually approved images are copied. Stock watermarks and visible provider credits are excluded; marks are not removed.",
+  "assets": [
+    {
+      "file": "3d/3d2.jpeg",
+      "description": "Two floating phone frames",
+      "source": "devmock/public/3d/3d2.jpeg",
+      "sha256": "220b85ceb12010d5d5cd65155b359a3a6b80046512fbd1bc660596fe5b705e5b",
+      "width": 350,
+      "height": 350,
+      "channels": "srgb 3.0",
+      "watermarkReview": "no visible watermark on manual inspection",
+      "rightsStatus": "not established by local import",
+      "usage": "illustrative object or mockup; not evidence of a real product"
+    },
+    {
+      "file": "3d_processed/3d2.png",
+      "description": "Two floating phone frames",
+      "source": "devmock/public/3d_processed/3d2.png",
+      "sha256": "2b33011852687cdb51d69a565c14a73582b481571bec57cd4b64dedac3d06573",
+      "width": 350,
+      "height": 350,
+      "channels": "srgba 4.0",
+      "watermarkReview": "no visible watermark on manual inspection",
+      "rightsStatus": "not established by local import",
+      "usage": "illustrative object or mockup; not evidence of a real product"
+    },
+    {
+      "file": "3d_cutouts/3d2.png",
+      "description": "Two floating phone frames",
+      "source": "devmock/public/3d_cutouts/3d2.png",
+      "sha256": "7ef041a434dc6ce49756b3165ba17f04077c17008c597beab5cef354166ebb65",
+      "width": 350,
+      "height": 350,
+      "channels": "srgba 4.0",
+      "watermarkReview": "no visible watermark on manual inspection",
+      "rightsStatus": "not established by local import",
+      "usage": "illustrative object or mockup; not evidence of a real product"
+    },
+    {
+      "file": "3d/3d3.jpeg",
+      "description": "Phone and avatar app illustration",
+      "source": "devmock/public/3d/3d3.jpeg",
+      "sha256": "f19eb2d579a2ba9e2a457babb3f6fc5633968211b0a4178374a31522b40db6b1",
+      "width": 678,
+      "height": 452,
+      "channels": "srgb 3.0",
+      "watermarkReview": "no visible watermark on manual inspection",
+      "rightsStatus": "not established by local import",
+      "usage": "illustrative object or mockup; not evidence of a real product"
+    },
+    {
+      "file": "3d_processed/3d3.png",
+      "description": "Phone and avatar app illustration",
+      "source": "devmock/public/3d_processed/3d3.png",
+      "sha256": "a4fc978aadeaf4896ca146aedeb41b7e6474b890349c11a6db709f5f2c10107e",
+      "width": 678,
+      "height": 452,
+      "channels": "srgba 4.0",
+      "watermarkReview": "no visible watermark on manual inspection",
+      "rightsStatus": "not established by local import",
+      "usage": "illustrative object or mockup; not evidence of a real product"
+    },
+    {
+      "file": "3d_cutouts/3d3.png",
+      "description": "Phone and avatar app illustration",
+      "source": "devmock/public/3d_cutouts/3d3.png",
+      "sha256": "524db58bddc5fc8fdd96ee9cc9e5dcae0a86958f7ab35d21c137dcfb45c75591",
+      "width": 678,
+      "height": 452,
+      "channels": "srgba 4.0",
+      "watermarkReview": "no visible watermark on manual inspection",
+      "rightsStatus": "not established by local import",
+      "usage": "illustrative object or mockup; not evidence of a real product"
+    },
+    {
+      "file": "3d/3d4.jpeg",
+      "description": "Angled phone mockup",
+      "source": "devmock/public/3d/3d4.jpeg",
+      "sha256": "96a8ffa5af00c9e67e9139bc120f524dd7940d9801fbaee921ff754b8f9610bd",
+      "width": 280,
+      "height": 180,
+      "channels": "srgb 3.0",
+      "watermarkReview": "no visible watermark on manual inspection",
+      "rightsStatus": "not established by local import",
+      "usage": "illustrative object or mockup; not evidence of a real product"
+    },
+    {
+      "file": "3d_processed/3d4.png",
+      "description": "Angled phone mockup",
+      "source": "devmock/public/3d_processed/3d4.png",
+      "sha256": "de7eb26fb9edf2b2beea1d0283215081bf37c54d398455d98284c7c3fcbc14f8",
+      "width": 280,
+      "height": 180,
+      "channels": "srgba 4.0",
+      "watermarkReview": "no visible watermark on manual inspection",
+      "rightsStatus": "not established by local import",
+      "usage": "illustrative object or mockup; not evidence of a real product"
+    },
+    {
+      "file": "3d_cutouts/3d4.png",
+      "description": "Angled phone mockup",
+      "source": "devmock/public/3d_cutouts/3d4.png",
+      "sha256": "e51a246decef92c2140efd104bec31f02c057c9bedd9f7f5d9274799bdf83df4",
+      "width": 280,
+      "height": 180,
+      "channels": "srgba 4.0",
+      "watermarkReview": "no visible watermark on manual inspection",
+      "rightsStatus": "not established by local import",
+      "usage": "illustrative object or mockup; not evidence of a real product"
+    },
+    {
+      "file": "3d/3d6.jpeg",
+      "description": "Desktop and phone mockup",
+      "source": "devmock/public/3d/3d6.jpeg",
+      "sha256": "0d525bf95ddeace1a641b8668f55cb71ef5d7a56a430639ff216571a4c911914",
+      "width": 360,
+      "height": 240,
+      "channels": "srgb 3.0",
+      "watermarkReview": "no visible watermark on manual inspection",
+      "rightsStatus": "not established by local import",
+      "usage": "illustrative object or mockup; not evidence of a real product"
+    },
+    {
+      "file": "3d_processed/3d6.png",
+      "description": "Desktop and phone mockup",
+      "source": "devmock/public/3d_processed/3d6.png",
+      "sha256": "6fff1e6352841294f2bacd0ef8d21c7e314fe69714d4f29613eeb5eba99b7337",
+      "width": 360,
+      "height": 240,
+      "channels": "srgba 4.0",
+      "watermarkReview": "no visible watermark on manual inspection",
+      "rightsStatus": "not established by local import",
+      "usage": "illustrative object or mockup; not evidence of a real product"
+    },
+    {
+      "file": "3d_cutouts/3d6.png",
+      "description": "Desktop and phone mockup",
+      "source": "devmock/public/3d_cutouts/3d6.png",
+      "sha256": "cd67f55bdfa48fee3427132471af958c441fb6aaa77b3fef8d42a95cbfe53d5a",
+      "width": 360,
+      "height": 240,
+      "channels": "srgba 4.0",
+      "watermarkReview": "no visible watermark on manual inspection",
+      "rightsStatus": "not established by local import",
+      "usage": "illustrative object or mockup; not evidence of a real product"
+    },
+    {
+      "file": "3d/3d8.jpeg",
+      "description": "Three phone views",
+      "source": "devmock/public/3d/3d8.jpeg",
+      "sha256": "714721384186df2b5e3fa862d60ac09a0d2eace333827b112649b0af5c9920c5",
+      "width": 590,
+      "height": 350,
+      "channels": "srgb 3.0",
+      "watermarkReview": "no visible watermark on manual inspection",
+      "rightsStatus": "not established by local import",
+      "usage": "illustrative object or mockup; not evidence of a real product"
+    },
+    {
+      "file": "3d_processed/3d8.png",
+      "description": "Three phone views",
+      "source": "devmock/public/3d_processed/3d8.png",
+      "sha256": "b4b80168eb25689c8a2a3fe0fa4ab7169f6b62be890df0f90a1db6de6aefa9b2",
+      "width": 590,
+      "height": 350,
+      "channels": "srgba 4.0",
+      "watermarkReview": "no visible watermark on manual inspection",
+      "rightsStatus": "not established by local import",
+      "usage": "illustrative object or mockup; not evidence of a real product"
+    },
+    {
+      "file": "3d_cutouts/3d8.png",
+      "description": "Three phone views",
+      "source": "devmock/public/3d_cutouts/3d8.png",
+      "sha256": "c5bfc667c3133e47e95be265c4fc3da86bd51e9175fcde972b02b99505094243",
+      "width": 590,
+      "height": 350,
+      "channels": "srgba 4.0",
+      "watermarkReview": "no visible watermark on manual inspection",
+      "rightsStatus": "not established by local import",
+      "usage": "illustrative object or mockup; not evidence of a real product"
+    },
+    {
+      "file": "3d/3d10.jpeg",
+      "description": "Angled phone interface",
+      "source": "devmock/public/3d/3d10.jpeg",
+      "sha256": "35c52470afe71434dbf6c3aa3ed7999ab01a8e23730b34b09a407f154a88c2d0",
+      "width": 202,
+      "height": 250,
+      "channels": "srgb 3.0",
+      "watermarkReview": "no visible watermark on manual inspection",
+      "rightsStatus": "not established by local import",
+      "usage": "illustrative object or mockup; not evidence of a real product"
+    },
+    {
+      "file": "3d_processed/3d10.png",
+      "description": "Angled phone interface",
+      "source": "devmock/public/3d_processed/3d10.png",
+      "sha256": "92a66ecabf681085a9c7385cad60b744052d5bb435d869e6944b5e7c10b9b9b0",
+      "width": 202,
+      "height": 250,
+      "channels": "srgba 4.0",
+      "watermarkReview": "no visible watermark on manual inspection",
+      "rightsStatus": "not established by local import",
+      "usage": "illustrative object or mockup; not evidence of a real product"
+    },
+    {
+      "file": "3d_cutouts/3d10.png",
+      "description": "Angled phone interface",
+      "source": "devmock/public/3d_cutouts/3d10.png",
+      "sha256": "9f41923df43992883cd0637778a09662c349525a73a868f7b9df25a49d27abec",
+      "width": 202,
+      "height": 250,
+      "channels": "srgba 4.0",
+      "watermarkReview": "no visible watermark on manual inspection",
+      "rightsStatus": "not established by local import",
+      "usage": "illustrative object or mockup; not evidence of a real product"
+    },
+    {
+      "file": "3d/3d14.jpeg",
+      "description": "Two pink phone mockups",
+      "source": "devmock/public/3d/3d14.jpeg",
+      "sha256": "34a7119b572ac3218b140025d61209cf9a0d5a692adb79ef45b09d0fd08d2df4",
+      "width": 451,
+      "height": 679,
+      "channels": "srgb 3.0",
+      "watermarkReview": "no visible watermark on manual inspection",
+      "rightsStatus": "not established by local import",
+      "usage": "illustrative object or mockup; not evidence of a real product"
+    },
+    {
+      "file": "3d_processed/3d14.png",
+      "description": "Two pink phone mockups",
+      "source": "devmock/public/3d_processed/3d14.png",
+      "sha256": "eda278a76c286e5c6c45cdc81ebd813145232d69e03f27f9c39768ff1d05c92c",
+      "width": 451,
+      "height": 679,
+      "channels": "srgba 4.0",
+      "watermarkReview": "no visible watermark on manual inspection",
+      "rightsStatus": "not established by local import",
+      "usage": "illustrative object or mockup; not evidence of a real product"
+    },
+    {
+      "file": "3d_cutouts/3d14.png",
+      "description": "Two pink phone mockups",
+      "source": "devmock/public/3d_cutouts/3d14.png",
+      "sha256": "f2242493abe005ab0049aed666428fb60cfab2cadfe9b783618cc7e92587c58a",
+      "width": 451,
+      "height": 679,
+      "channels": "srgba 4.0",
+      "watermarkReview": "no visible watermark on manual inspection",
+      "rightsStatus": "not established by local import",
+      "usage": "illustrative object or mockup; not evidence of a real product"
+    },
+    {
+      "file": "3d/3d15.jpeg",
+      "description": "Tablet dashboard illustration",
+      "source": "devmock/public/3d/3d15.jpeg",
+      "sha256": "ab1666000fa1956e63768982fc75577da29e6cfbf55f0f24b9461fba8b1c85a8",
+      "width": 678,
+      "height": 452,
+      "channels": "srgb 3.0",
+      "watermarkReview": "no visible watermark on manual inspection",
+      "rightsStatus": "not established by local import",
+      "usage": "illustrative object or mockup; not evidence of a real product"
+    },
+    {
+      "file": "3d_processed/3d15.png",
+      "description": "Tablet dashboard illustration",
+      "source": "devmock/public/3d_processed/3d15.png",
+      "sha256": "133e35eb049e5ac24fae5e4928a10707585abab14a1e42e9226ac11f21f61899",
+      "width": 678,
+      "height": 452,
+      "channels": "srgba 4.0",
+      "watermarkReview": "no visible watermark on manual inspection",
+      "rightsStatus": "not established by local import",
+      "usage": "illustrative object or mockup; not evidence of a real product"
+    },
+    {
+      "file": "3d_cutouts/3d15.png",
+      "description": "Tablet dashboard illustration",
+      "source": "devmock/public/3d_cutouts/3d15.png",
+      "sha256": "186d64decb4b81959cdd5ce13a943fda351c77b62df74d77f87398b96b57b59d",
+      "width": 678,
+      "height": 452,
+      "channels": "srgba 4.0",
+      "watermarkReview": "no visible watermark on manual inspection",
+      "rightsStatus": "not established by local import",
+      "usage": "illustrative object or mockup; not evidence of a real product"
+    },
+    {
+      "file": "3d/3d17.jpeg",
+      "description": "Desktop with keyboard and mouse",
+      "source": "devmock/public/3d/3d17.jpeg",
+      "sha256": "39cbea5126a2cb1f41476f589510387d138235fc3167b99cb2dd0e52e825acd5",
+      "width": 299,
+      "height": 168,
+      "channels": "srgb 3.0",
+      "watermarkReview": "no visible watermark on manual inspection",
+      "rightsStatus": "not established by local import",
+      "usage": "illustrative object or mockup; not evidence of a real product"
+    },
+    {
+      "file": "3d_processed/3d17.png",
+      "description": "Desktop with keyboard and mouse",
+      "source": "devmock/public/3d_processed/3d17.png",
+      "sha256": "3810f4c65d572fd4ac0e4fa3fe2f1c66e3fb1c59deae807a51381a9ea322a0a5",
+      "width": 299,
+      "height": 168,
+      "channels": "srgba 4.0",
+      "watermarkReview": "no visible watermark on manual inspection",
+      "rightsStatus": "not established by local import",
+      "usage": "illustrative object or mockup; not evidence of a real product"
+    },
+    {
+      "file": "3d_cutouts/3d17.png",
+      "description": "Desktop with keyboard and mouse",
+      "source": "devmock/public/3d_cutouts/3d17.png",
+      "sha256": "86109be00f30c295e90ffea10d9f5e74c267b9ab79359586955e7279dfad0a72",
+      "width": 299,
+      "height": 168,
+      "channels": "srgba 4.0",
+      "watermarkReview": "no visible watermark on manual inspection",
+      "rightsStatus": "not established by local import",
+      "usage": "illustrative object or mockup; not evidence of a real product"
+    },
+    {
+      "file": "3d/3d18.png",
+      "description": "Blank laptop screen",
+      "source": "devmock/public/3d/3d18.png",
+      "sha256": "204314a183d38a90e17b69be77a6777bd9c7197e16fe5af18ab118883495b14f",
+      "width": 554,
+      "height": 554,
+      "channels": "srgb 4.0",
+      "watermarkReview": "no visible watermark on manual inspection",
+      "rightsStatus": "not established by local import",
+      "usage": "illustrative object or mockup; not evidence of a real product"
+    },
+    {
+      "file": "3d_processed/3d18.png",
+      "description": "Blank laptop screen",
+      "source": "devmock/public/3d_processed/3d18.png",
+      "sha256": "397fc8a7e3141c46f0ff53d2754b6282f57894f72687c9c0bac27c89b271237b",
+      "width": 554,
+      "height": 554,
+      "channels": "srgba 4.0",
+      "watermarkReview": "no visible watermark on manual inspection",
+      "rightsStatus": "not established by local import",
+      "usage": "illustrative object or mockup; not evidence of a real product"
+    },
+    {
+      "file": "3d_cutouts/3d18.png",
+      "description": "Blank laptop screen",
+      "source": "devmock/public/3d_cutouts/3d18.png",
+      "sha256": "40d5e58f19d3bbdd70e60163d5b42736724254f4efc9ee171f7f36a381812b2d",
+      "width": 554,
+      "height": 554,
+      "channels": "srgba 4.0",
+      "watermarkReview": "no visible watermark on manual inspection",
+      "rightsStatus": "not established by local import",
+      "usage": "illustrative object or mockup; not evidence of a real product"
+    },
+    {
+      "file": "3d/3d20.jpeg",
+      "description": "Blank desktop monitor",
+      "source": "devmock/public/3d/3d20.jpeg",
+      "sha256": "c13bcd681f582ed58bc7f4380272cc6b1529749a6fe479aa49ebd1652f341c71",
+      "width": 554,
+      "height": 554,
+      "channels": "srgb 3.0",
+      "watermarkReview": "no visible watermark on manual inspection",
+      "rightsStatus": "not established by local import",
+      "usage": "illustrative object or mockup; not evidence of a real product"
+    },
+    {
+      "file": "3d_processed/3d20.png",
+      "description": "Blank desktop monitor",
+      "source": "devmock/public/3d_processed/3d20.png",
+      "sha256": "c5196c2d5a1eda43d6320f8b82b73d915575864c09e46ffe51e27a7f62c8443e",
+      "width": 554,
+      "height": 554,
+      "channels": "srgba 4.0",
+      "watermarkReview": "no visible watermark on manual inspection",
+      "rightsStatus": "not established by local import",
+      "usage": "illustrative object or mockup; not evidence of a real product"
+    },
+    {
+      "file": "3d_cutouts/3d20.png",
+      "description": "Blank desktop monitor",
+      "source": "devmock/public/3d_cutouts/3d20.png",
+      "sha256": "797d4f2251daa7d177b5451e5dcae030ed8c3a390b32ba807a320d7b1b812dc2",
+      "width": 554,
+      "height": 554,
+      "channels": "srgba 4.0",
+      "watermarkReview": "no visible watermark on manual inspection",
+      "rightsStatus": "not established by local import",
+      "usage": "illustrative object or mockup; not evidence of a real product"
+    },
+    {
+      "file": "3d_cutouts/sample_cd.png",
+      "description": "Desktop computer with landscape screen",
+      "source": "devmock/public/3d_cutouts/sample_cd.png",
+      "sha256": "a64129c1f5cfdcd4642c10f33212bd8e6c56be80c8f1446a48274b32ddea5eb2",
+      "width": 466,
+      "height": 580,
+      "channels": "srgba 4.0",
+      "watermarkReview": "no visible watermark on manual inspection",
+      "rightsStatus": "not established by local import",
+      "usage": "illustrative object or mockup; not evidence of a real product"
+    },
+    {
+      "file": "3d_cutouts/sample_d1.png",
+      "description": "Laptop tablet and phone set",
+      "source": "devmock/public/3d_cutouts/sample_d1.png",
+      "sha256": "9d1c60f19c5989ebbd1ebf3d647498a08fabb1c04f66ade9a391196d737dd643",
+      "width": 404,
+      "height": 315,
+      "channels": "srgba 4.0",
+      "watermarkReview": "no visible watermark on manual inspection",
+      "rightsStatus": "not established by local import",
+      "usage": "illustrative object or mockup; not evidence of a real product"
+    },
+    {
+      "file": "3d_cutouts/sample_d2.png",
+      "description": "Desktop workstation",
+      "source": "devmock/public/3d_cutouts/sample_d2.png",
+      "sha256": "618ce8e41d6e86bf5260150e1932915c95affb384fcba174e1738ab92cdfb242",
+      "width": 447,
+      "height": 447,
+      "channels": "srgba 4.0",
+      "watermarkReview": "no visible watermark on manual inspection",
+      "rightsStatus": "not established by local import",
+      "usage": "illustrative object or mockup; not evidence of a real product"
+    },
+    {
+      "file": "3d_cutouts/sample_d5.png",
+      "description": "Desk with monitor keyboard and props",
+      "source": "devmock/public/3d_cutouts/sample_d5.png",
+      "sha256": "415d8b561b9e471d164c5f0d2c60fe3f7b151b712aa4cea03eddad15e0456de7",
+      "width": 447,
+      "height": 447,
+      "channels": "srgba 4.0",
+      "watermarkReview": "no visible watermark on manual inspection",
+      "rightsStatus": "not established by local import",
+      "usage": "illustrative object or mockup; not evidence of a real product"
+    },
+    {
+      "file": "3d_cutouts/sample_dd1.png",
+      "description": "Laptop and phone dashboard illustration",
+      "source": "devmock/public/3d_cutouts/sample_dd1.png",
+      "sha256": "4f4917adbae3c6a666305f7b50fd97af9f949ef67b1cc397a9f380e946d76e8e",
+      "width": 259,
+      "height": 194,
+      "channels": "srgba 4.0",
+      "watermarkReview": "no visible watermark on manual inspection",
+      "rightsStatus": "not established by local import",
+      "usage": "illustrative object or mockup; not evidence of a real product"
+    },
+    {
+      "file": "3d_cutouts/sample_doned.png",
+      "description": "Phone interface layout",
+      "source": "devmock/public/3d_cutouts/sample_doned.png",
+      "sha256": "98b116afd5a2f78fb75f13a122f0e91a912d2aa8098a0e6fb40bd81b50c40b4f",
+      "width": 452,
+      "height": 678,
+      "channels": "srgba 4.0",
+      "watermarkReview": "no visible watermark on manual inspection",
+      "rightsStatus": "not established by local import",
+      "usage": "illustrative object or mockup; not evidence of a real product"
+    },
+    {
+      "file": "3d_cutouts/sample_dp.png",
+      "description": "Two phone views",
+      "source": "devmock/public/3d_cutouts/sample_dp.png",
+      "sha256": "14bd11056895a54ceae4f3da0d986b9a78d3ba4f96aa0f52c5637c8f3ae65a53",
+      "width": 318,
+      "height": 159,
+      "channels": "srgba 4.0",
+      "watermarkReview": "no visible watermark on manual inspection",
+      "rightsStatus": "not established by local import",
+      "usage": "illustrative object or mockup; not evidence of a real product"
+    },
+    {
+      "file": "3d_cutouts/sample_hand-done.png",
+      "description": "Three pastel phone placeholders",
+      "source": "devmock/public/3d_cutouts/sample_hand done.png",
+      "sha256": "a0fb0b5e33c311baf0c7c4ddcf9d49179e112167573190048480e4019b40a5f1",
+      "width": 275,
+      "height": 183,
+      "channels": "srgba 4.0",
+      "watermarkReview": "no visible watermark on manual inspection",
+      "rightsStatus": "not established by local import",
+      "usage": "illustrative object or mockup; not evidence of a real product"
+    },
+    {
+      "file": "3d_cutouts/sample_ipad.png",
+      "description": "Tablet with screen placeholder",
+      "source": "devmock/public/3d_cutouts/sample_ipad.png",
+      "sha256": "e79d863748c600166e480cfd95f6c802b002171b6263bd6edb6821e04993eda4",
+      "width": 638,
+      "height": 480,
+      "channels": "srgba 4.0",
+      "watermarkReview": "no visible watermark on manual inspection",
+      "rightsStatus": "not established by local import",
+      "usage": "illustrative object or mockup; not evidence of a real product"
+    },
+    {
+      "file": "3d_cutouts/sample_paarange.png",
+      "description": "Three food app screens",
+      "source": "devmock/public/3d_cutouts/sample_paarange.png",
+      "sha256": "cd357ae40cf27694b179aa9b62f8b3fc3a45d5021dd8d081c4bd04b396e29f92",
+      "width": 515,
+      "height": 388,
+      "channels": "srgba 4.0",
+      "watermarkReview": "no visible watermark on manual inspection",
+      "rightsStatus": "not established by local import",
+      "usage": "illustrative object or mockup; not evidence of a real product"
+    },
+    {
+      "file": "3d_cutouts/sample_pd.png",
+      "description": "Phones on a rock",
+      "source": "devmock/public/3d_cutouts/sample_pd.png",
+      "sha256": "f07edad16b4f00f9bbd572a96259093029225f87976a48fbb53ac0594ecc65ec",
+      "width": 399,
+      "height": 300,
+      "channels": "srgba 4.0",
+      "watermarkReview": "no visible watermark on manual inspection",
+      "rightsStatus": "not established by local import",
+      "usage": "illustrative object or mockup; not evidence of a real product"
+    },
+    {
+      "file": "3d_cutouts/sample_person.png",
+      "description": "Person holding a tablet",
+      "source": "devmock/public/3d_cutouts/sample_person.png",
+      "sha256": "1defff95ff6055e43fee281b7a608037c492f443cd0b472a088b5bfbd01a5f78",
+      "width": 451,
+      "height": 679,
+      "channels": "srgba 4.0",
+      "watermarkReview": "no visible watermark on manual inspection",
+      "rightsStatus": "not established by local import",
+      "usage": "illustrative object or mockup; not evidence of a real product"
+    },
+    {
+      "file": "3d_cutouts/sample_ph1.png",
+      "description": "Hiking app screens",
+      "source": "devmock/public/3d_cutouts/sample_ph1.png",
+      "sha256": "1754e5d2ec6753c7c8790b76300d5d125258624e368de02b075d72c3dfe75fde",
+      "width": 678,
+      "height": 452,
+      "channels": "srgba 4.0",
+      "watermarkReview": "no visible watermark on manual inspection",
+      "rightsStatus": "not established by local import",
+      "usage": "illustrative object or mockup; not evidence of a real product"
+    },
+    {
+      "file": "3d_cutouts/sample_pixel.png",
+      "description": "Phone front and back",
+      "source": "devmock/public/3d_cutouts/sample_pixel.png",
+      "sha256": "8de08ad87638bddf9f6e48015cf312facf86330ddb2ccc9788a4c4c6c99e11d7",
+      "width": 439,
+      "height": 330,
+      "channels": "srgba 4.0",
+      "watermarkReview": "no visible watermark on manual inspection",
+      "rightsStatus": "not established by local import",
+      "usage": "illustrative object or mockup; not evidence of a real product"
+    },
+    {
+      "file": "3d_cutouts/sample_pnew.png",
+      "description": "Two numbered phone screens",
+      "source": "devmock/public/3d_cutouts/sample_pnew.png",
+      "sha256": "91639fed0d2066a9adf6166b599ce62ec802ad2240e1071a6e8d5953e42feb2c",
+      "width": 269,
+      "height": 187,
+      "channels": "srgba 4.0",
+      "watermarkReview": "no visible watermark on manual inspection",
+      "rightsStatus": "not established by local import",
+      "usage": "illustrative object or mockup; not evidence of a real product"
+    },
+    {
+      "file": "3d_cutouts/sample_pure.png",
+      "description": "Single phone with blank screen",
+      "source": "devmock/public/3d_cutouts/sample_pure.png",
+      "sha256": "3ab1b35d316bd6dbc233e1f189e34e8d4091cd9555fe36c4a558cfbeab35893b",
+      "width": 481,
+      "height": 636,
+      "channels": "srgba 4.0",
+      "watermarkReview": "no visible watermark on manual inspection",
+      "rightsStatus": "not established by local import",
+      "usage": "illustrative object or mockup; not evidence of a real product"
+    },
+    {
+      "file": "3d_cutouts/sample_p3.png",
+      "description": "Three phone views",
+      "source": "devmock/public/3d_cutouts/sample_p3.png",
+      "sha256": "ab2de9dee9ee6e9652f2a42912bd2823aea9764173509d417e15ac862ae2db67",
+      "width": 259,
+      "height": 194,
+      "channels": "srgba 4.0",
+      "watermarkReview": "no visible watermark on manual inspection",
+      "rightsStatus": "not established by local import",
+      "usage": "illustrative object or mockup; not evidence of a real product"
+    },
+    {
+      "file": "3d_cutouts/sample_p5.png",
+      "description": "Phone front and back views",
+      "source": "devmock/public/3d_cutouts/sample_p5.png",
+      "sha256": "c0d63399acbd2cea01f8a6611b52875917c85d36e707f035b47b87853a1256ac",
+      "width": 259,
+      "height": 194,
+      "channels": "srgba 4.0",
+      "watermarkReview": "no visible watermark on manual inspection",
+      "rightsStatus": "not established by local import",
+      "usage": "illustrative object or mockup; not evidence of a real product"
+    },
+    {
+      "file": "3d_cutouts/sample_psam.png",
+      "description": "Foldable phone pair",
+      "source": "devmock/public/3d_cutouts/sample_psam.png",
+      "sha256": "68782a2b84001b1f71a369dbadb09b7aead538f079a3df61903c87e1c0f4cdde",
+      "width": 259,
+      "height": 194,
+      "channels": "srgba 4.0",
+      "watermarkReview": "no visible watermark on manual inspection",
+      "rightsStatus": "not established by local import",
+      "usage": "illustrative object or mockup; not evidence of a real product"
+    },
+    {
+      "file": "3d_cutouts/sample_samsung.png",
+      "description": "Foldable phone",
+      "source": "devmock/public/3d_cutouts/sample_samsung.png",
+      "sha256": "1ad714e9102cbae1e07716365f3db3223fd326f3a1e3cd6a2626fc5f5a04bc0f",
+      "width": 259,
+      "height": 194,
+      "channels": "srgba 4.0",
+      "watermarkReview": "no visible watermark on manual inspection",
+      "rightsStatus": "not established by local import",
+      "usage": "illustrative object or mockup; not evidence of a real product"
+    },
+    {
+      "file": "3d_cutouts/sample_tab1.png",
+      "description": "Desktop laptop tablet and phone set",
+      "source": "devmock/public/3d_cutouts/sample_tab1.png",
+      "sha256": "bb4bfc318b1dc7a57b4ddc434ebd1b2a1aea51995ab2d30cea0e81bb7d3ddd97",
+      "width": 404,
+      "height": 315,
+      "channels": "srgba 4.0",
+      "watermarkReview": "no visible watermark on manual inspection",
+      "rightsStatus": "not established by local import",
+      "usage": "illustrative object or mockup; not evidence of a real product"
+    },
+    {
+      "file": "3d_cutouts/sample_tabde.png",
+      "description": "Tablet on a stand",
+      "source": "devmock/public/3d_cutouts/sample_tabde.png",
+      "sha256": "1ac8b8127d87ce211dce0c1c70ab4e089f142d820d8e5eb0a0b42adb6b865a51",
+      "width": 251,
+      "height": 201,
+      "channels": "srgba 4.0",
+      "watermarkReview": "no visible watermark on manual inspection",
+      "rightsStatus": "not established by local import",
+      "usage": "illustrative object or mockup; not evidence of a real product"
+    },
+    {
+      "file": "3d_cutouts/sample_tripple.png",
+      "description": "Three colorful phone mockups",
+      "source": "devmock/public/3d_cutouts/sample_tripple.png",
+      "sha256": "d188b6d7dd8b1566e1902e7d90e8aedb11b87ded8430255c1ae86a9c9bafe8dc",
+      "width": 404,
+      "height": 315,
+      "channels": "srgba 4.0",
+      "watermarkReview": "no visible watermark on manual inspection",
+      "rightsStatus": "not established by local import",
+      "usage": "illustrative object or mockup; not evidence of a real product"
+    }
+  ],
+  "duplicateSourcesSkipped": [],
+  "excludedSources": [
+    {
+      "source": "3d/3d1.jpeg",
+      "reason": "Visible stock watermark/provider credit, or not approved during full-size review"
+    },
+    {
+      "source": "3d/3d11.jpeg",
+      "reason": "Visible stock watermark/provider credit, or not approved during full-size review"
+    },
+    {
+      "source": "3d/3d12.jpeg",
+      "reason": "Visible stock watermark/provider credit, or not approved during full-size review"
+    },
+    {
+      "source": "3d/3d13.jpeg",
+      "reason": "Visible stock watermark/provider credit, or not approved during full-size review"
+    },
+    {
+      "source": "3d/3d16.jpeg",
+      "reason": "Visible stock watermark/provider credit, or not approved during full-size review"
+    },
+    {
+      "source": "3d/3d19.jpeg",
+      "reason": "Visible stock watermark/provider credit, or not approved during full-size review"
+    },
+    {
+      "source": "3d/3d5.jpeg",
+      "reason": "Visible stock watermark/provider credit, or not approved during full-size review"
+    },
+    {
+      "source": "3d/3d7.jpeg",
+      "reason": "Visible stock watermark/provider credit, or not approved during full-size review"
+    },
+    {
+      "source": "3d/3d9.jpeg",
+      "reason": "Visible stock watermark/provider credit, or not approved during full-size review"
+    },
+    {
+      "source": "3d_cutouts/3d1.png",
+      "reason": "Visible stock watermark/provider credit, or not approved during full-size review"
+    },
+    {
+      "source": "3d_cutouts/3d11.png",
+      "reason": "Visible stock watermark/provider credit, or not approved during full-size review"
+    },
+    {
+      "source": "3d_cutouts/3d12.png",
+      "reason": "Visible stock watermark/provider credit, or not approved during full-size review"
+    },
+    {
+      "source": "3d_cutouts/3d13.png",
+      "reason": "Visible stock watermark/provider credit, or not approved during full-size review"
+    },
+    {
+      "source": "3d_cutouts/3d16.png",
+      "reason": "Visible stock watermark/provider credit, or not approved during full-size review"
+    },
+    {
+      "source": "3d_cutouts/3d19.png",
+      "reason": "Visible stock watermark/provider credit, or not approved during full-size review"
+    },
+    {
+      "source": "3d_cutouts/3d5.png",
+      "reason": "Visible stock watermark/provider credit, or not approved during full-size review"
+    },
+    {
+      "source": "3d_cutouts/3d7.png",
+      "reason": "Visible stock watermark/provider credit, or not approved during full-size review"
+    },
+    {
+      "source": "3d_cutouts/3d9.png",
+      "reason": "Visible stock watermark/provider credit, or not approved during full-size review"
+    },
+    {
+      "source": "3d_cutouts/sample_cph.png",
+      "reason": "Visible stock watermark/provider credit, or not approved during full-size review"
+    },
+    {
+      "source": "3d_cutouts/sample_desk.png",
+      "reason": "Visible stock watermark/provider credit, or not approved during full-size review"
+    },
+    {
+      "source": "3d_cutouts/sample_four.png",
+      "reason": "Visible stock watermark/provider credit, or not approved during full-size review"
+    },
+    {
+      "source": "3d_cutouts/sample_iphone3.png",
+      "reason": "Visible stock watermark/provider credit, or not approved during full-size review"
+    },
+    {
+      "source": "3d_cutouts/sample_lap.png",
+      "reason": "Visible stock watermark/provider credit, or not approved during full-size review"
+    },
+    {
+      "source": "3d_cutouts/sample_laptop.png",
+      "reason": "Visible stock watermark/provider credit, or not approved during full-size review"
+    },
+    {
+      "source": "3d_cutouts/sample_p1.png",
+      "reason": "Visible stock watermark/provider credit, or not approved during full-size review"
+    },
+    {
+      "source": "3d_cutouts/sample_p2.png",
+      "reason": "Visible stock watermark/provider credit, or not approved during full-size review"
+    },
+    {
+      "source": "3d_cutouts/sample_ph2.png",
+      "reason": "Visible stock watermark/provider credit, or not approved during full-size review"
+    },
+    {
+      "source": "3d_cutouts/sample_ph3.png",
+      "reason": "Visible stock watermark/provider credit, or not approved during full-size review"
+    },
+    {
+      "source": "3d_cutouts/sample_phtrio.png",
+      "reason": "Visible stock watermark/provider credit, or not approved during full-size review"
+    },
+    {
+      "source": "3d_cutouts/sample_pv.png",
+      "reason": "Visible stock watermark/provider credit, or not approved during full-size review"
+    },
+    {
+      "source": "3d_cutouts/sample_smart.png",
+      "reason": "Visible stock watermark/provider credit, or not approved during full-size review"
+    },
+    {
+      "source": "3d_cutouts/sample_smaup.png",
+      "reason": "Visible stock watermark/provider credit, or not approved during full-size review"
+    },
+    {
+      "source": "3d_cutouts/sample_tab2.png",
+      "reason": "Visible stock watermark/provider credit, or not approved during full-size review"
+    },
+    {
+      "source": "3d_cutouts/sample_tabd.png",
+      "reason": "Visible stock watermark/provider credit, or not approved during full-size review"
+    },
+    {
+      "source": "3d_cutouts/sample_tabmok.png",
+      "reason": "Visible stock watermark/provider credit, or not approved during full-size review"
+    },
+    {
+      "source": "3d_cutouts/sample_trio2.png",
+      "reason": "Visible stock watermark/provider credit, or not approved during full-size review"
+    },
+    {
+      "source": "3d_cutouts/sample_vd.png",
+      "reason": "Visible stock watermark/provider credit, or not approved during full-size review"
+    },
+    {
+      "source": "3d_processed/3d1.png",
+      "reason": "Visible stock watermark/provider credit, or not approved during full-size review"
+    },
+    {
+      "source": "3d_processed/3d11.png",
+      "reason": "Visible stock watermark/provider credit, or not approved during full-size review"
+    },
+    {
+      "source": "3d_processed/3d12.png",
+      "reason": "Visible stock watermark/provider credit, or not approved during full-size review"
+    },
+    {
+      "source": "3d_processed/3d13.png",
+      "reason": "Visible stock watermark/provider credit, or not approved during full-size review"
+    },
+    {
+      "source": "3d_processed/3d16.png",
+      "reason": "Visible stock watermark/provider credit, or not approved during full-size review"
+    },
+    {
+      "source": "3d_processed/3d19.png",
+      "reason": "Visible stock watermark/provider credit, or not approved during full-size review"
+    },
+    {
+      "source": "3d_processed/3d5.png",
+      "reason": "Visible stock watermark/provider credit, or not approved during full-size review"
+    },
+    {
+      "source": "3d_processed/3d7.png",
+      "reason": "Visible stock watermark/provider credit, or not approved during full-size review"
+    },
+    {
+      "source": "3d_processed/3d9.png",
+      "reason": "Visible stock watermark/provider credit, or not approved during full-size review"
+    }
+  ]
+}

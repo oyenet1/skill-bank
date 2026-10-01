@@ -16,6 +16,22 @@ import install_sibling_skill as siblings
 
 
 class SiblingSkillTests(unittest.TestCase):
+    def test_real_snapshot_installs_binary_object_assets_without_changes(self):
+        payload = ROOT / 'storytelling/tools/sibling_skills.json'
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            result = siblings._install_one('visual-assets', root, payload)
+            self.assertTrue(result['ready'])
+            bank = root / 'visual-assets/assets/device-objects'
+            manifest = json.loads((bank / 'manifest.json').read_text())
+            self.assertGreater(len(manifest['assets']), 0)
+            for asset in manifest['assets']:
+                content = (bank / asset['file']).read_bytes()
+                self.assertEqual(hashlib.sha256(content).hexdigest(), asset['sha256'])
+                self.assertEqual(content, (ROOT / 'skills-src/_shared/assets/device-objects' / asset['file']).read_bytes())
+            for excluded in manifest['excludedSources']:
+                self.assertFalse((bank / excluded['source']).exists())
+
     def payload(self, root, entries, digest=None, skills=None):
         stream = io.BytesIO()
         with zipfile.ZipFile(stream, 'w') as archive:

@@ -137,6 +137,24 @@ def render(skill_dir: Path, mode: str, fm: dict, body: str, caps: dict, modules:
     )
 
 
+def asset_files(man: dict | None = None) -> dict[Path, bytes]:
+    """Return the byte-exact files shipped by each declared shared asset set."""
+    man = man or load_manifest()
+    out: dict[Path, bytes] = {}
+    for spec in man["capabilities"].values():
+        for name in spec.get("asset_sets", []):
+            source = SRC / man["shared_dir"] / "assets" / name
+            if not source.is_dir():
+                raise ValueError(f"missing asset set: {name}")
+            for path in sorted(source.rglob("*")):
+                if not path.is_file():
+                    continue
+                relative = path.relative_to(source)
+                for target in (REPO / spec["standalone"], REPO / "course-creator/subskills" / spec["bundle"]):
+                    out[target / "assets" / name / relative] = path.read_bytes()
+    return out
+
+
 def build() -> dict[Path, str]:
     """Return {path: expected_content} for every generated file."""
     man = load_manifest()
@@ -228,6 +246,9 @@ def build() -> dict[Path, str]:
     files = {str(path.relative_to(REPO)).replace("\\", "/"): content
              for path, content in out.items()
              if path.relative_to(REPO).parts[0] in standalone_names}
+    files.update({path.relative_to(REPO).as_posix(): content
+                  for path, content in asset_files(man).items()
+                  if path.relative_to(REPO).parts[0] in standalone_names})
     for src_rel, dest_rel in TOOL_COPIES:
         src = REPO / src_rel
         for path in sorted(src.rglob("*")):
@@ -246,7 +267,7 @@ def build() -> dict[Path, str]:
             info.compress_type = zipfile.ZIP_DEFLATED
             info.create_system = 3
             info.external_attr = 0o100644 << 16
-            archive.writestr(info, content.encode("utf-8"))
+            archive.writestr(info, content if isinstance(content, bytes) else content.encode("utf-8"))
     snapshot = stream.getvalue()
     payload = json.dumps({"schemaVersion": 1, "skills": sorted(standalone_names),
                           "sha256": hashlib.sha256(snapshot).hexdigest(),
@@ -348,6 +369,9 @@ def write_all(out: dict[Path, str]) -> None:
     for path, content in out.items():
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(content)
+    for path, content in asset_files().items():
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(content)
     sync_tools()
 
 
@@ -359,12 +383,18 @@ def check(out: dict[Path, str]) -> int:
         elif path.read_text() != content:
             stale.append(f"stale     {path.relative_to(REPO)}")
     stale.extend(check_tools())
+    assets = asset_files()
+    for path, content in assets.items():
+        if not path.is_file():
+            stale.append(f"missing   {path.relative_to(REPO)}")
+        elif path.read_bytes() != content:
+            stale.append(f"stale     {path.relative_to(REPO)}")
     if stale:
         print("generated output is out of date; run: python scripts/gen_skills.py")
         for line in sorted(stale):
             print(" ", line)
         return 1
-    print(f"ok: {len(out)} generated files are current")
+    print(f"ok: {len(out)} generated files and {len(assets)} asset files are current")
     return 0
 
 

@@ -54,6 +54,7 @@ capabilities:
   assets:
     standalone: visual-assets
     bundle: course-creator-assets
+    asset_sets: [device-objects]
     modules: [intake, brand, objects, generated-assets]
     shared_tools: [bootstrap_uv.py, uv_wheels.json, network_tls.py, generate_image_asset.py]
     bootstrap:

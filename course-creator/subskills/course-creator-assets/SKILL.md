@@ -76,6 +76,17 @@ plus icon and illustration rules. Follow it when one exists.
 Read [generated-assets](references/generated-assets.md) when generating supporting scene images. Keep the
 verified image and its provider/model/prompt metadata with the editable project.
 
+## Bundled device objects
+
+Inspect `assets/device-objects/CATALOG.md` and `assets/device-objects/manifest.json`
+in this installed skill before sourcing a phone, laptop, tablet, monitor or
+workstation illustration. This bank contains manually reviewed devmock images
+without visible stock watermarks or provider credits. Preserve the provenance
+when copying a chosen object into the output project. These are illustrative
+raster images; some include screen placeholders or baked-in backgrounds.
+Do not imply that a mockup shows a real product or assume a PNG is transparent.
+Never use watermarked previews or remove a watermark to make a file eligible.
+
 ## Course integration
 
 Read the [bundled asset guide](../../references/bundled-assets.md) and the visual-sourcing

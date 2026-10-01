@@ -12,6 +12,13 @@ missing — go online, then generate.
 2. **Use the asset bank** — the bundled 580 SVGs (`course-creator/assets/` when
    the bundle is installed) plus the project's own assets: icons, logos,
    technology marks, existing diagrams.
+   For device objects, read `assets/device-objects/CATALOG.md` in the installed
+   `visual-assets` skill (or the bundle's `course-creator-assets` subskill).
+   It ships reviewed devmock phones, laptops, tablets, monitors and workstations,
+   with provenance in `manifest.json`. Copy suitable objects into the project;
+   inspect screen placeholders, backgrounds and dimensions before use.
+   Watermarked images and visible provider-credit previews are excluded.
+   Do not remove or obscure watermarks to make a source usable.
 3. **Go online.** Find a reusable image or asset and record its source URL,
    licence and retrieval date in `assets/manifest.json` before use. Verify the
    terms before anything is published.
