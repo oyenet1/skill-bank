@@ -9,6 +9,13 @@ Work on the exact written asset the requester asks for. Accept a brief or
 existing files. Produce only what was requested — not an adjacent chapter, not
 an exercise bank nobody asked for.
 
+## When storytelling is selected
+
+Follow [storytelling](references/storytelling.md) when the requester selects a storytelling treatment.
+Resolve post / video / both before production. Story videos use Slidev unless
+explicitly overridden, with relevant object visuals, clear flows and smooth
+entrances/exits; programming explanations use Mermaid. Posts remain text-only.
+
 ## Clarify before production
 
 Read [intake](references/intake.md) before starting. If missing or ambiguous inputs would change

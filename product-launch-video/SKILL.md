@@ -28,6 +28,13 @@ from this skill directory, where `<renderer>` is `remotion` (default) or
 `hyperframes`. Use the verified executable paths in its JSON result for the
 chosen renderer and FFmpeg; report any setup failure before promising a render.
 
+## When storytelling is selected
+
+Follow [storytelling](references/storytelling.md) when the requester selects a storytelling treatment.
+Resolve post / video / both before production. Story videos use Slidev unless
+explicitly overridden, with relevant object visuals, clear flows and smooth
+entrances/exits; programming explanations use Mermaid. Posts remain text-only.
+
 ## Short prompt alias
 
 When a submitted request begins with `/product-launch`, treat the following text as the

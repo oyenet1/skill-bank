@@ -24,6 +24,13 @@ Before building, read {{ref:preflight}} and run
 `python3 tools/ensure_video_runtime.py slide-decks` from this skill directory.
 Use the verified executable paths in its JSON result for Slidev and exports.
 
+## When storytelling is selected
+
+Follow {{ref:storytelling}} when the requester selects a storytelling treatment.
+Resolve post / video / both before production. Story videos use Slidev unless
+explicitly overridden, with relevant object visuals, clear flows and smooth
+entrances/exits; programming explanations use Mermaid. Posts remain text-only.
+
 ## Clarify before production
 
 Read {{ref:intake}} before starting. If missing or ambiguous inputs would change

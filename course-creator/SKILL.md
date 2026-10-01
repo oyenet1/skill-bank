@@ -41,6 +41,7 @@ Identify the requested action and target before generating anything. Ask only fo
 | Create a Slidev deck or slide PDF | Create the selected lesson deck or export it | [slide decks](subskills/course-creator-slide-decks/SKILL.md) |
 | Generate speech from text | Produce only the requested script and Kokoro WAV narration | [voice narration](subskills/course-creator-voice-narration/SKILL.md) |
 | Create an educational video or CapCut handoff | Produce the selected lesson video artifacts and editing directions | [explainer video](subskills/course-creator-explainer-video/SKILL.md) |
+| Explain through a catchy story for posts or video | Produce text stories or Slidev story videos with Mermaid programming flows and relevant object visuals | [storytelling](subskills/course-creator-storytelling/SKILL.md) |
 | Animate lesson diagrams, processes, charts or chapter titles | Produce a motion graphics video with editable source and optional narration | [motion graphics](subskills/course-creator-motion-graphics-video/SKILL.md) |
 | Sell a course or skill | Write only the requested hook, listing, page, post, email, or promotional script | [marketing copy](subskills/course-creator-marketing-copy/SKILL.md) |
 | Launch a product with a Remotion ad or screenshot demo | Build a source-grounded product video from real screens and product information | [product launch](subskills/course-creator-product-launch-video/SKILL.md) |

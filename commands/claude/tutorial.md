@@ -8,6 +8,13 @@ SKILL.md and references/intake.md before production. If it is not installed,
 report the missing skill and its install command; do not substitute another
 workflow or claim that production succeeded.
 
+## Storytelling selection
+
+If storytelling is selected, resolve post / video / both before production and
+load the storytelling skill or this workflow's storytelling reference. Use
+Slidev for story videos, relevant visual assets and Mermaid programming flows.
+A post-only story does not need a video platform, audio mode or runtime setup.
+
 ## Clarification breakpoint
 
 Treat the text after the shortcut as the brief. Use details already supplied in

@@ -13,7 +13,7 @@ class ShortcutInstallation(unittest.TestCase):
             with self.subTest(host=host), tempfile.TemporaryDirectory() as tmp:
                 target = Path(tmp) / "commands"
                 paths = install_video_shortcuts.install(host, target)
-                self.assertEqual(len(paths), 6)
+                self.assertEqual(len(paths), 7)
                 for dest in paths:
                     source = install_video_shortcuts.REPO / "commands" / host / dest.name
                     self.assertEqual(dest.read_bytes(), source.read_bytes())
@@ -47,7 +47,7 @@ class ShortcutInstallation(unittest.TestCase):
             target = Path(tmp)
             (target / "tutorial.md").write_text("Old command")
             paths = install_video_shortcuts.install("claude", target, overwrite=True)
-            self.assertEqual(len(paths), 6)
+            self.assertEqual(len(paths), 7)
             self.assertEqual(
                 (target / "tutorial.md").read_bytes(),
                 (install_video_shortcuts.REPO / "commands/claude/tutorial.md").read_bytes(),

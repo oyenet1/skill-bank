@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "skill": "course-creator-storytelling",
+  "capability": "storytelling",
+  "repo": "oyenet1/skill-bank",
+  "routes": [
+    "slide-decks"
+  ],
+  "voice": false,
+  "transcription": true,
+  "associated": []
+}

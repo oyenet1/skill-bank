@@ -25,6 +25,13 @@ exists, the destination, and the channel. Write only the requested asset.
 **Do not start writing until you have read `references/marketing-playbook.md`** —
 it is the house knowledge for every piece this skill produces.
 
+## When storytelling is selected
+
+Follow {{ref:storytelling}} when the requester selects a storytelling treatment.
+Resolve post / video / both before production. Story videos use Slidev unless
+explicitly overridden, with relevant object visuals, clear flows and smooth
+entrances/exits; programming explanations use Mermaid. Posts remain text-only.
+
 ## Clarify before production
 
 Read {{ref:intake}} before starting. If missing or ambiguous inputs would change

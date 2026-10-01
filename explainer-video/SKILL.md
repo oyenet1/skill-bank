@@ -19,6 +19,13 @@ actual existing assets — a Slidev deck can guide the design but is not require
 Work from real material; never invent a UI state, a metric, a testimonial or a
 click result.
 
+## When storytelling is selected
+
+Follow [storytelling](references/storytelling.md) when the requester selects a storytelling treatment.
+Resolve post / video / both before production. Story videos use Slidev unless
+explicitly overridden, with relevant object visuals, clear flows and smooth
+entrances/exits; programming explanations use Mermaid. Posts remain text-only.
+
 ## Short prompt alias
 
 When a submitted request begins with `/tutorial`, treat the following text as the

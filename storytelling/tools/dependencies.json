@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "skill": "storytelling",
+  "capability": "storytelling",
+  "repo": "oyenet1/skill-bank",
+  "routes": [
+    "slide-decks"
+  ],
+  "voice": true,
+  "transcription": true,
+  "associated": [
+    "slide-decks",
+    "visual-assets",
+    "voice-narration",
+    "explainer-video"
+  ]
+}

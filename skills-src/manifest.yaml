@@ -22,6 +22,7 @@ modules:
   code: code.md
   generated-assets: generated-assets.md
   product-capture: product-capture.md
+  storytelling: storytelling.md
 
 # prompts/ is copied as references/prompts/ for capabilities that list "prompts".
 
@@ -33,6 +34,17 @@ modules:
 # target directory does not already contain them.
 
 capabilities:
+
+  storytelling:
+    standalone: storytelling
+    bundle: course-creator-storytelling
+    modules: [intake, brand, storytelling, objects, slidev, code, generated-assets, voice, preflight]
+    shared_tools: [bootstrap_uv.py, uv_wheels.json, network_tls.py, ensure_video_runtime.py, runtime_requirements.json, ensure_python_runtime.py, transcribe_with_faster_whisper.py]
+    bootstrap:
+      routes: [slide-decks]
+      voice: true
+      transcription: true
+      associated: [slide-decks, visual-assets, voice-narration, explainer-video]
 
   map:
     standalone: curriculum-map
@@ -51,12 +63,12 @@ capabilities:
   content-authoring:
     standalone: content-authoring
     bundle: course-creator-content-authoring
-    modules: [intake, brand, code]
+    modules: [intake, brand, code, storytelling, objects, slidev]
 
   slide-decks:
     standalone: slide-decks
     bundle: course-creator-slide-decks
-    modules: [intake, brand, objects, preflight, slidev, code]
+    modules: [intake, brand, objects, preflight, slidev, code, storytelling]
     shared_tools: [bootstrap_uv.py, uv_wheels.json, network_tls.py, ensure_video_runtime.py, runtime_requirements.json]
     bootstrap:
       routes: [slide-decks]
@@ -65,7 +77,7 @@ capabilities:
   explainer-video:
     standalone: explainer-video
     bundle: course-creator-explainer-video
-    modules: [intake, brand, video, voice, preflight, generated-assets, product-capture, objects, slidev, code, prompts]
+    modules: [intake, brand, video, voice, preflight, generated-assets, product-capture, objects, slidev, code, prompts, storytelling]
     shared_tools: [capture_product_screens.py, capture_product_screens.cjs, bootstrap_uv.py, uv_wheels.json, network_tls.py, generate_image_asset.py, write_subtitles.py, review_captions.py, transcribe_captions.py, ensure_python_runtime.py, transcribe_with_faster_whisper.py, assemble_video.py, render_slidev_video.py, render_remotion_video.py, render_hyperframes_video.py, run_video_job.py, run_desktop_video_job.py, author_desktop_video.py, desktop_fonts.py, render_desktop_sources.py, ensure_video_runtime.py, runtime_requirements.json]
     bootstrap:
       routes: [explainer-video]
@@ -85,7 +97,7 @@ capabilities:
   marketing-copy:
     standalone: marketing-copy
     bundle: course-creator-marketing-copy
-    modules: [intake, brand]
+    modules: [intake, brand, storytelling, objects, slidev]
     ships:
       - files/references/marketing-playbook.md
     library: [marketing]
@@ -93,7 +105,7 @@ capabilities:
   product-launch-video:
     standalone: product-launch-video
     bundle: course-creator-product-launch-video
-    modules: [intake, brand, video, voice, preflight, generated-assets, product-capture, objects, slidev, code, prompts]
+    modules: [intake, brand, video, voice, preflight, generated-assets, product-capture, objects, slidev, code, prompts, storytelling]
     shared_tools: [capture_product_screens.py, capture_product_screens.cjs, bootstrap_uv.py, uv_wheels.json, network_tls.py, generate_image_asset.py, write_subtitles.py, review_captions.py, transcribe_captions.py, ensure_python_runtime.py, transcribe_with_faster_whisper.py, assemble_video.py, render_remotion_video.py, render_hyperframes_video.py, run_video_job.py, run_desktop_video_job.py, author_desktop_video.py, desktop_fonts.py, render_desktop_sources.py, ensure_video_runtime.py, runtime_requirements.json]
     bootstrap:
       routes: [product-launch-video]

@@ -1,6 +1,6 @@
 ---
 name: video-shortcuts
-description: Route /tutorial, /product-launch, /motion-graphics, /talking-head, /avatar and /narration prompts to video skills, asking for missing details before production.
+description: Route /tutorial, /product-launch, /motion-graphics, /talking-head, /avatar, /narration and /story prompts to video skills, asking for missing details before production.
 ---
 
 # Video shortcuts
@@ -22,6 +22,15 @@ workflow. If the skill is absent, report its exact name and installation command
 can render. If multiple shortcuts are supplied, use the requested workflows in
 dependency order. If the shortcut is unknown, show the supported list and ask
 which output is intended; do not select a different workflow silently.
+
+## Storytelling mode
+
+`/story` selects storytelling. If another shortcut explicitly requests a
+storytelling treatment, load the storytelling skill or the selected skill's
+storytelling reference before production. Resolve post / video / both first.
+Story videos use Slidev, assets that show the objects being discussed, Mermaid
+programming flows and smooth entrances/exits. Posts do not need video choices
+or runtime setup.
 
 ## Clarification breakpoint
 

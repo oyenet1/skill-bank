@@ -18,7 +18,7 @@ A collection of reusable AI agent skills by [Bowofade Oyerinde](https://github.c
 
 Plans and builds instructor-led courses one action at a time, for technology or other subjects. A course map contains sections, chapters, lessons, concepts, prerequisites, and a simple-to-complex project ladder. Teachers can reorder it without losing stable lesson IDs.
 
-Installing `course-creator` includes its [eleven focused subskills](./course-creator/SKILL.md): curriculum mapping, content authoring, visual assets, Slidev decks, Remotion or HyperFrames lesson video, Kokoro voice narration, marketing copy, motion graphics, product launch, talking-head packaging, and avatar video. The parent chooses only the subskills needed for the teacher's request. They can work alone or share the same course map and assets.
+Installing `course-creator` includes its [twelve focused subskills](./course-creator/SKILL.md): curriculum mapping, content authoring, visual assets, Slidev decks, Remotion or HyperFrames lesson video, Kokoro voice narration, marketing copy, motion graphics, product launch, talking-head packaging, avatar video, and storytelling. The parent chooses only the subskills needed for the teacher's request. They can work alone or share the same course map and assets.
 
 Independent actions include lesson writing; notes as PDF or an online page; optional exercises; publishable assignments, quizzes, and rubrics; lesson-by-lesson Slidev decks; optional local Kokoro voice narration; Remotion or HyperFrames videos using supplied text, audio, or teacher footage; captioning or overlay packaging of an existing talking-head clip; AI avatar, talking-photo or dubbed presenter video; and a timecoded CapCut Desktop handoff. Written material, decks, narration, and video can be produced separately or combined. Visual outputs can use the 580 bundled SVG images and icons. Videos use a shared course style and a per-video `style.md`.
 
@@ -145,7 +145,7 @@ npx skills list -g
 
 ### Complete installable skill catalog
 
-All fourteen top-level skills, including the `video-shortcuts` router, can be installed independently. Use
+All fifteen top-level skills, including the `video-shortcuts` router, can be installed independently. Use
 `npx skills add oyenet1/skill-bank --skill NAME -g -a codex` with any name below.
 Omit `-a codex` to choose another supported agent.
 
@@ -163,8 +163,9 @@ Omit `-a codex` to choose another supported agent.
 | `product-launch-video` | `explainer-video`, `voice-narration` |
 | `talking-head-video` | `avatar-video`, `explainer-video`, `product-launch-video` |
 | `avatar-video` | `talking-head-video`, `voice-narration` |
-| `course-creator` | All eleven course subskills already bundled; no separate sibling copies |
-| `video-shortcuts` | Router only; install the six matching video/narration skills alongside it |
+| `course-creator` | All twelve course subskills already bundled; no separate sibling copies |
+| `storytelling` | `slide-decks`, `visual-assets`, `voice-narration`, `explainer-video` |
+| `video-shortcuts` | Router only; install the matching video/narration/storytelling skills alongside it |
 
 The associated graph is resolved recursively, including dependencies of
 dependencies. `npx skills add` itself copies only the selected skill; its
@@ -323,6 +324,7 @@ The portable `video-shortcuts` skill routes short prompts across coding agents:
 | `/talking-head` | `talking-head-video` | `/talking-head caption [video path]` |
 | `/avatar` | `avatar-video` | `/avatar use [photo] to present [script]` |
 | `/narration` | `voice-narration` | `/narration read [script] in British English` |
+| `/story` | `storytelling` | `/story explain an API using a catchy story; give me a post and a video` |
 
 Each shortcut has a **clarification breakpoint**: use details in your prompt or
 previous answers, ask a batch of questions for missing important inputs, and
@@ -357,7 +359,7 @@ python3 scripts/install_video_shortcuts.py --host claude
 python3 scripts/install_video_shortcuts.py --host codex
 ```
 
-All six shortcuts install together. Restart the agent to load them. Existing
+All seven shortcuts install together. Restart the agent to load them. Existing
 conflicting command files are preserved unless you explicitly pass `--overwrite`.
 `--target PATH` installs into a different command directory. Other coding agents
 can use portable prompt aliases or adapt `commands/claude/` to their documented
@@ -367,6 +369,54 @@ Codex's [custom prompt mechanism](https://learn.chatgpt.com/docs/custom-prompts)
 is deprecated in favor of skills, so the portable router is the shared workflow.
 Claude Code command templates follow its
 [command format](https://github.com/anthropics/claude-code/blob/main/plugins/plugin-dev/skills/command-development/SKILL.md).
+
+### Storytelling: posts, videos or both
+
+Use `/story` followed by your topic, or select storytelling within another
+workflow. If the output is unclear, the agent asks **post / video / both** and
+waits for the missing audience, purpose and delivery details. Example prompts:
+
+```text
+Use /story explain API requests to beginners as a catchy LinkedIn post.
+Use /story explain how water moves through a plant in a 45-second narrated portrait video. Ask for any missing details.
+Use /story explain authentication to beginner programmers; give me both a post and a Slidev video. Ask for missing details.
+```
+
+Stories open with a relatable problem or curiosity hook, explain what happens
+and why, and finish with a clear payoff. Illustrative stories stay labelled;
+product claims and real customer results need evidence.
+
+- **Post:** ready-to-copy text adapted to the selected platform, without video setup.
+- **Video:** editable Slidev scenes, a script, storyboard, portable assets and MP4
+  when rendering succeeds. Slidev is used whenever storytelling video is selected,
+  unless you explicitly choose another framework.
+- **Both:** one grounded story adapted into complete post text and spoken narration.
+
+Programming explanations use Mermaid for control flow, request/data movement,
+interactions and state changes, linked to concrete inputs, outputs and code.
+Other stories show the relevant objects, parts or substances and their processes,
+with labelled flows rather than text-only scenes. Assets show what narration
+actually describes. Motion follows entrance → readable hold/action → exit,
+with consistent easing, smooth transitions and highlights timed to the explanation.
+
+Slidev's [Mermaid integration](https://sli.dev/features/mermaid) and
+[animation primitives](https://sli.dev/guide/animations) support this authoring.
+The existing static PNG export helper does not preserve live animation; the
+storytelling workflow requires live Slidev capture and checks the exported MP4.
+If capture is unavailable, it reports the blocked render and preserves the
+editable sources instead of claiming a static montage has smooth animation.
+
+To add the storytelling skill and shortcut router to an existing installation:
+
+```sh
+npx skills add oyenet1/skill-bank --skill storytelling --skill video-shortcuts -g
+```
+
+Choose your coding agent when prompted. Installing every skill with `--skill '*'`
+also includes storytelling. After updating, reinstall the native command adapters
+if you use them, then restart the agent to load `/story` (Claude Code) or
+`/prompts:story` (Codex). Other agents can use `Use /story ...` as ordinary text
+with the portable router.
 
 ### Automatic product screenshots
 
@@ -475,7 +525,7 @@ The dependency layers, from prerequisites to consumers, are:
    `motion-graphics-video` brings in that group through its narration/asset
    associations. `talking-head-video` and `avatar-video` install each other
    and that group. Cycles are visited once and existing skills are preserved.
-   `course-creator` already contains all eleven course subskills, so it does
+   `course-creator` already contains all twelve course subskills, so it does
    not install separate sibling copies.
 8. **Optional features:** Local avatars require compatible accelerator hardware,
    backend-specific Python/PyTorch packages and model downloads; ordinary setup

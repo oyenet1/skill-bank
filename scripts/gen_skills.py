@@ -164,8 +164,8 @@ def build() -> dict[Path, str]:
                 prefix = "../../" if mode == "bundle" and spec["bootstrap"].get("voice") else ""
                 setup = (
                     "\n## Automatic first-use setup\n\n"
-                    "Before production, run the bundled launcher with `--yes`; it detects the host, "
-                    "prepares private runtimes, and installs the declared sibling dependency graph. "
+                    + ("For video or deck output only, after clarification, run the bundled launcher with `--yes`; it detects the host, " if cap_id == "storytelling" else "Before production, run the bundled launcher with `--yes`; it detects the host, ")
+                    + "prepares private runtimes, and installs the declared sibling dependency graph. "
                     "Do not ask the requester to install packages manually.\n\n"
                     f"- Linux/macOS: `sh {prefix}tools/setup.sh --yes`\n"
                     f"- Windows: `powershell.exe -NoProfile -ExecutionPolicy Bypass -File {prefix}tools/setup.ps1 --yes`\n\n"
@@ -279,6 +279,13 @@ def build() -> dict[Path, str]:
 SKILL.md and references/intake.md before production. If it is not installed,
 report the missing skill and its install command; do not substitute another
 workflow or claim that production succeeded.
+
+## Storytelling selection
+
+If storytelling is selected, resolve post / video / both before production and
+load the storytelling skill or this workflow's storytelling reference. Use
+Slidev for story videos, relevant visual assets and Mermaid programming flows.
+A post-only story does not need a video platform, audio mode or runtime setup.
 
 ## Clarification breakpoint
 
